@@ -1,0 +1,260 @@
+.notifications-page {
+    background-color: #f0f4f8;
+    min-height: 100vh;
+    padding: 40px 20px;
+    font-family: var(--font-family);
+}
+
+.notif-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.notif-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.notif-title-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-bell {
+    font-size: 1.8rem;
+    color: var(--primary-color, #0ea5e9);
+}
+
+.notif-header h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+}
+
+.mark-all-btn {
+    background: white;
+    color: var(--primary-color, #0ea5e9);
+    border: 1px solid #e2e8f0;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mark-all-btn:hover {
+    background: #f8fafc;
+    border-color: var(--primary-color, #0ea5e9);
+}
+
+.notif-content {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #e8edf2;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.notif-item {
+    display: flex;
+    padding: 20px;
+    border-bottom: 1px solid #f1f5f9;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.notif-item:last-child {
+    border-bottom: none;
+}
+
+.notif-item:hover {
+    background: #fbfdff;
+}
+
+.notif-item.unread {
+    background: #f0f9ff;
+}
+
+.notif-item.unread:hover {
+    background: #e0f2fe;
+}
+
+.notif-icon-col {
+    width: 48px;
+    margin-right: 16px;
+    display: flex;
+    justify-content: center;
+}
+
+.notif-icon {
+    font-size: 1.5rem;
+}
+
+.notif-icon.success {
+    color: #22c55e;
+}
+
+.notif-icon.error {
+    color: #ef4444;
+}
+
+.notif-icon.message {
+    color: #3b82f6;
+}
+
+.notif-icon.order {
+    color: #8b5cf6;
+}
+
+.notif-icon.info {
+    color: #64748b;
+}
+
+.notif-info-col {
+    flex: 1;
+}
+
+.notif-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.notif-top-row h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.notif-time {
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+.notif-msg {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.notif-link {
+    color: var(--primary-color, #0ea5e9);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.notif-link:hover {
+    text-decoration: underline;
+}
+
+.unread-dot {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 8px;
+    height: 8px;
+    background: var(--primary-color, #0ea5e9);
+    border-radius: 50%;
+}
+
+/* Empty State */
+.empty-state {
+    padding: 80px 40px;
+    text-align: center;
+}
+
+.empty-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.empty-icon {
+    font-size: 2.5rem;
+    color: #cbd5e1;
+}
+
+.empty-state h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    color: #64748b;
+    margin-bottom: 24px;
+}
+
+.home-btn {
+    background: var(--primary-color, #0ea5e9);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+
+.home-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Loading State */
+.loading-state {
+    padding: 100px;
+    display: flex;
+    justify-content: center;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f1f5f9;
+    border-top-color: var(--primary-color, #0ea5e9);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 600px) {
+    .notifications-page {
+        padding: 20px 10px;
+    }
+
+    .notif-header h1 {
+        font-size: 1.4rem;
+    }
+
+    .notif-item {
+        padding: 15px;
+    }
+
+    .notif-time {
+        display: none;
+    }
+}

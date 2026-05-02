@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "Kaydetmek",
+    "saving": "Kaydediliyor...",
+    "cancel": "İptal etmek",
+    "edit": "Düzenlemek",
+    "delete": "Silmek",
+    "actions": "Eylemler",
+    "search": "Aramak...",
+    "loading": "Yükleniyor...",
+    "no_data": "Veri yok",
+    "no_img": "Resim yok",
+    "yes": "Evet",
+    "no": "HAYIR",
+    "status": {
+      "active": "Aktif",
+      "inactive": "Etkin değil",
+      "pending": "Askıda olması",
+      "blocked": "Engellendi"
+    }
+  },
+  "dashboard": {
+    "overview": "Kontrol Paneline Genel Bakış",
+    "metrics": "Sistem performansı ve ölçümleri",
+    "users": {
+      "title": "Kullanıcılar",
+      "total": "Toplam Kullanıcı Sayısı",
+      "today": "Bugünkü Kullanıcılar",
+      "buyers": "Toplam Alıcılar",
+      "sellers": "Toplam Satıcılar"
+    },
+    "listings": {
+      "title": "İlanlar",
+      "total": "Toplam İlanlar",
+      "today": "Bugün Listelemeler"
+    },
+    "orders": {
+      "title": "Siparişler",
+      "total": "Toplam Siparişler",
+      "today": "Bugünkü Siparişler"
+    },
+    "revenue": {
+      "title": "Hasılat",
+      "total_income": "Toplam Gelir",
+      "total_sales": "Toplam Satışlar"
+    },
+    "categories": {
+      "title": "Kategoriler",
+      "total": "Toplam Kategoriler"
+    },
+    "commission": {
+      "title": "Yönetici Komisyon Geliri",
+      "wallet": "Cüzdan",
+      "total_income": "Toplam Gelir"
+    },
+    "tables": {
+      "top_sellers": "En İyi 5 Satıcı",
+      "top_buyers": "İlk 5 Alıcı",
+      "seller": "Satıcı",
+      "buyer": "Alıcı",
+      "total_sales": "Toplam Satışlar",
+      "total_spent": "Toplam Harcanan",
+      "orders_count": "Sipariş Sayısı"
+    },
+    "revenue_chart": "Son 12 Ayın Geliri",
+    "full_analysis": "Tam Analiz",
+    "revenue_summary": "{count} Sipariş için Toplam Gelir {amount}",
+    "latest_bookings": "Son Rezervasyonlar",
+    "latest_listings": "Son İlanlar",
+    "no_recent_bookings": "Yakın zamanda rezervasyon yok",
+    "no_recent_listings": "Yeni liste yok",
+    "table": {
+      "user": "Kullanıcı",
+      "amount": "Miktar",
+      "date": "Tarih",
+      "name": "İsim",
+      "seller": "Satıcı",
+      "status": "Durum"
+    }
+  },
+  "users": {
+    "title": "Kullanıcı Yönetimi",
+    "subtitle": "Tüm kayıtlı kullanıcıları inceleyin ve yönetin",
+    "add_new": "Kullanıcı Ekle",
+    "search_placeholder": "Kullanıcı adına veya e-postaya göre arayın...",
+    "filter_all": "Tüm Kullanıcılar",
+    "filter_today": "Bugünkü Kayıtlar",
+    "table": {
+      "user": "Kullanıcı",
+      "email": "E-posta",
+      "balance": "Denge",
+      "status": "Durum",
+      "verified": "Doğrulandı"
+    },
+    "modal": {
+      "edit_title": "Kullanıcıyı Düzenle",
+      "add_title": "Yeni Kullanıcı Ekle",
+      "username": "Kullanıcı adı",
+      "password": "Şifre",
+      "email": "E-posta",
+      "verification": "Doğrulama Durumu",
+      "is_verified": "Doğrulandı",
+      "not_verified": "Doğrulanmadı",
+      "profile_image": "Profil resmi"
+    }
+  },
+  "listings": {
+    "title": "İlan Yönetimi",
+    "subtitle": "Market ürünlerini inceleyin ve yönetin",
+    "add_new": "İlan Ekle",
+    "search_placeholder": "Başlığa veya kimliğe göre arayın...",
+    "filter_all": "Tüm İlanlar",
+    "filter_today": "Bugünkü Listeler",
+    "loading": "Listeler yükleniyor...",
+    "table": {
+      "item": "Öğe",
+      "price": "Fiyat",
+      "category": "Kategori",
+      "condition": "Durum",
+      "status": "Durum"
+    },
+    "modal": {
+      "edit_title": "İlanı Düzenle",
+      "add_title": "Yeni İlan Ekle",
+      "item_title": "Öğe Başlığı",
+      "item_title_placeholder": "örneğin Vintage Denim Ceket",
+      "price": "Fiyat",
+      "condition": "Durum",
+      "condition_placeholder": "Koşul Seç...",
+      "category": "Kategori",
+      "category_placeholder": "Kategori Seçin...",
+      "subcategory": "Alt kategori",
+      "subcategory_placeholder": "Alt Kategoriyi Seçin...",
+      "description": "Tanım",
+      "description_placeholder": "Bize öğe hakkında daha fazla bilgi verin...",
+      "is_sold": "Satıldı mı?",
+      "is_blocked": "Engellendi mi?",
+      "sold": "Satılmış",
+      "available": "Mevcut"
+    }
+  },
+  "orders": {
+    "title": "Sipariş Yönetimi",
+    "subtitle": "Market siparişlerini inceleyin ve yönetin",
+    "search_placeholder": "Sipariş Numarasına veya Kullanıcıya göre arayın...",
+    "filter_all": "Tüm Siparişler",
+    "filter_today": "Bugünkü Siparişler",
+    "loading": "Siparişler yükleniyor...",
+    "table": {
+      "order_no": "Emir #",
+      "item": "Öğe",
+      "buyer": "Alıcı",
+      "seller": "Satıcı",
+      "amount": "Miktar",
+      "payment_status": "Ödeme Durumu",
+      "order_status": "Sipariş Durumu",
+      "date": "Tarih"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Kontrol Paneli",
+    "users": "Kullanıcılar",
+    "listings": "İlanlar",
+    "orders": "Siparişler",
+    "wallet": {
+      "title": "Cüzdan",
+      "withdrawal_requests": "Para Çekme Talepleri",
+      "transactions": "İşlemler",
+      "payment_methods": "Ödeme Yöntemleri"
+    },
+    "categories": {
+      "title": "Kategoriler",
+      "manage": "Kategorileri Yönet",
+      "subcategories": "Alt Kategorileri Yönet",
+      "item_types": "Öğe Türlerini Yönet"
+    },
+    "reports": "Raporlar",
+    "settings": {
+      "title": "Ayarlar",
+      "languages": "Diller",
+      "currencies": "Para birimleri",
+      "general_settings": "Genel Ayarlar",
+      "email_settings": "E-posta Ayarları",
+      "site_settings": "Site Ayarları",
+      "payment_settings": "Ödeme Ayarları",
+      "social_settings": "Sosyal Ayarlar",
+      "notification_settings": "Bildirim Ayarları"
+    }
+  }
+}

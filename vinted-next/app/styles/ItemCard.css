@@ -1,0 +1,433 @@
+/* Global ItemCard Styles */
+
+.listing-card {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    text-decoration: none;
+}
+
+.listing-card:hover {
+    transform: translateY(-5px);
+}
+
+.listing-image-wrapper {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    width: 100%;
+    aspect-ratio: 3 / 4; /* Force strict 3:4 ratio */
+    background-color: #f1f5f9;
+    display: block; /* Ensure it's a block for aspect-ratio to lead */
+}
+
+.listing-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    transition: transform 0.6s ease;
+}
+
+.listing-card:hover .listing-image {
+    transform: scale(1.05);
+}
+
+.favorite-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    z-index: 2;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badge-top-rated {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    background: white;
+    color: var(--primary-color, #0ea5e9);
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 5px 12px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+    z-index: 2;
+    border: 1px solid white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-transform: uppercase;
+}
+
+.listing-details {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.listing-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin: 0;
+    color: #1a2332;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.listing-rating {
+    font-size: 0.85rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    color: #1a2332;
+}
+
+.listing-location {
+    font-size: 0.75rem;
+    color: #999;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.listing-price {
+    font-size: 0.9rem;
+    color: #1a2332;
+    font-weight: 700;
+}
+
+.listing-price strong {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #1a2332;
+}
+
+.action-btn-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--primary-color, #0ea5e9);
+    background: white;
+    color: var(--primary-color, #0ea5e9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.listing-card:hover .action-btn-circle {
+    background: var(--primary-color, #0ea5e9);
+    color: white;
+}
+
+/* New Badge with Shimmer Effect */
+/* Condition Badge Styling */
+.condition-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: var(--primary-color, #0ea5e9);
+    color: white;
+    padding: 5px 14px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid var(--primary-color, #0ea5e9);
+    font-weight: 700;
+    font-size: 0.7rem;
+    line-height: 1;
+    text-transform: uppercase;
+    z-index: 10;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.offer-badge {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background-color: #ef4444;
+    color: white;
+    padding: 5px 14px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid #ef4444;
+    font-weight: 700;
+    font-size: 0.7rem;
+    line-height: 1;
+    text-transform: uppercase;
+    z-index: 10;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    letter-spacing: 0.3px;
+}
+
+.condition-badge::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.15),
+            transparent);
+    transform: skewX(-20deg);
+    animation: shimmer 3s infinite;
+}
+
+/* Additional Condition/Time Styles */
+.item-meta {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.item-condition {
+    background: white;
+    padding: 3px 10px;
+    border-radius: 6px;
+    color: var(--primary-color, #0ea5e9);
+    font-weight: 700;
+    font-size: 0.68rem;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Seller Info Styles */
+.seller-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+    color: #475569;
+}
+
+.seller-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #e2e8f0;
+}
+
+.seller-name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+}
+
+/* SOLD Overlay */
+.sold-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    backdrop-filter: blur(2px);
+}
+
+.sold-overlay span {
+    background: white;
+    color: #ef4444;
+    padding: 6px 20px;
+    border-radius: 6px;
+    font-weight: 900;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: rotate(-12deg);
+    border: 3px solid #ef4444;
+}
+
+/* INACTIVE Overlay */
+.inactive-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(100, 116, 139, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    backdrop-filter: blur(2px);
+}
+
+.inactive-overlay span {
+    background: white;
+    color: #475569;
+    padding: 6px 15px;
+    border-radius: 6px;
+    font-weight: 900;
+    font-size: 0.9rem;
+    letter-spacing: 1.5px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 2px solid #475569;
+}
+
+/* SELLER CARD ACTIONS (Grouped in bottom-right corner) */
+.seller-card-actions {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    display: flex;
+    gap: 8px; 
+    align-items: center;
+    z-index: 30;
+    pointer-events: auto;
+}
+
+.seller-action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: white;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.seller-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.seller-action-btn.edit {
+    color: #0ea5e9;
+}
+
+.seller-action-btn.edit:hover {
+    background: #0ea5e9;
+    color: white;
+}
+
+.seller-action-btn.delete {
+    color: #ef4444; /* Default red as requested */
+}
+
+.seller-action-btn.delete:hover {
+    background: #ef4444;
+    color: white;
+}
+
+.seller-action-btn svg {
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.05));
+}
+
+/* Redefine edit-overlay if needed elsewhere, but we're moving away from it */
+.edit-overlay {
+    display: none; /* Hidden as per user request to show normally */
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Responsive Adjustments */
+/* Removing fixed heights to let aspect-ratio take over */
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+    .listing-image-wrapper {
+        aspect-ratio: 3 / 4;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        height: auto; /* Ensure aspect-ratio takes over */
+    }
+
+    .listing-card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .listing-title {
+        font-size: 0.82rem;
+        line-height: 1.2;
+        min-height: 2.4em; /* Force 2 lines of space */
+        white-space: normal !important; /* Allow wrapping */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin-bottom: 4px !important;
+    }
+
+    .listing-details {
+        padding: 0 4px 4px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .listing-price strong {
+        font-size: 0.9rem;
+    }
+
+    .condition-badge {
+        padding: 3px 8px;
+        font-size: 0.55rem;
+        top: 8px;
+        left: 8px;
+    }
+
+    .favorite-btn {
+        top: 8px;
+        right: 8px;
+    }
+
+    .favorite-btn svg {
+        font-size: 1rem !important;
+    }
+}

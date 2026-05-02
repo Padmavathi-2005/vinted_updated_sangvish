@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "محفوظ کریں۔",
+    "saving": "محفوظ کر رہا ہے...",
+    "cancel": "منسوخ کریں۔",
+    "edit": "ترمیم کریں۔",
+    "delete": "حذف کریں۔",
+    "actions": "اعمال",
+    "search": "تلاش کریں...",
+    "loading": "لوڈ ہو رہا ہے...",
+    "no_data": "کوئی ڈیٹا دستیاب نہیں ہے۔",
+    "no_img": "کوئی امیج نہیں",
+    "yes": "جی ہاں",
+    "no": "نہیں",
+    "status": {
+      "active": "فعال",
+      "inactive": "غیر فعال",
+      "pending": "زیر التواء",
+      "blocked": "مسدود"
+    }
+  },
+  "dashboard": {
+    "overview": "ڈیش بورڈ کا جائزہ",
+    "metrics": "سسٹم کی کارکردگی اور میٹرکس",
+    "users": {
+      "title": "صارفین",
+      "total": "کل صارفین",
+      "today": "آج کے صارفین",
+      "buyers": "کل خریدار",
+      "sellers": "ٹوٹل سیلرز"
+    },
+    "listings": {
+      "title": "فہرستیں",
+      "total": "کل فہرستیں۔",
+      "today": "آج کی فہرستیں۔"
+    },
+    "orders": {
+      "title": "احکامات",
+      "total": "کل آرڈرز",
+      "today": "آج کے احکامات"
+    },
+    "revenue": {
+      "title": "آمدنی",
+      "total_income": "کل آمدنی",
+      "total_sales": "کل فروخت"
+    },
+    "categories": {
+      "title": "زمرہ جات",
+      "total": "کل زمرے"
+    },
+    "commission": {
+      "title": "ایڈمن کمیشن کی آمدنی",
+      "wallet": "پرس",
+      "total_income": "کل آمدنی"
+    },
+    "tables": {
+      "top_sellers": "ٹاپ 5 سیلرز",
+      "top_buyers": "ٹاپ 5 خریدار",
+      "seller": "بیچنے والا",
+      "buyer": "خریدار",
+      "total_sales": "کل فروخت",
+      "total_spent": "کل خرچ",
+      "orders_count": "آرڈرز کا شمار"
+    },
+    "revenue_chart": "پچھلے 12 مہینوں کی آمدنی",
+    "full_analysis": "مکمل تجزیہ",
+    "revenue_summary": "{count} آرڈرز کے لیے کل آمدنی {amount}",
+    "latest_bookings": "تازہ ترین بکنگ",
+    "latest_listings": "تازہ ترین فہرستیں۔",
+    "no_recent_bookings": "کوئی حالیہ بکنگ نہیں ہے۔",
+    "no_recent_listings": "کوئی حالیہ فہرستیں نہیں ہیں۔",
+    "table": {
+      "user": "صارف",
+      "amount": "رقم",
+      "date": "تاریخ",
+      "name": "نام",
+      "seller": "بیچنے والا",
+      "status": "حیثیت"
+    }
+  },
+  "users": {
+    "title": "صارفین کا انتظام",
+    "subtitle": "تمام رجسٹرڈ صارفین کا جائزہ لیں اور ان کا نظم کریں۔",
+    "add_new": "صارف شامل کریں۔",
+    "search_placeholder": "صارف نام یا ای میل کے ذریعے تلاش کریں...",
+    "filter_all": "تمام صارفین",
+    "filter_today": "آج کی رجسٹریشنز",
+    "table": {
+      "user": "صارف",
+      "email": "ای میل",
+      "balance": "توازن",
+      "status": "حیثیت",
+      "verified": "تصدیق شدہ"
+    },
+    "modal": {
+      "edit_title": "صارف میں ترمیم کریں۔",
+      "add_title": "نیا صارف شامل کریں۔",
+      "username": "صارف نام",
+      "password": "پاس ورڈ",
+      "email": "ای میل",
+      "verification": "تصدیق کی حیثیت",
+      "is_verified": "تصدیق شدہ ہے۔",
+      "not_verified": "تصدیق شدہ نہیں۔",
+      "profile_image": "پروفائل امیج"
+    }
+  },
+  "listings": {
+    "title": "فہرستوں کا انتظام",
+    "subtitle": "مارکیٹ پلیس پروڈکٹس کا جائزہ لیں اور ان کا نظم کریں۔",
+    "add_new": "فہرست شامل کریں۔",
+    "search_placeholder": "عنوان یا ID کے لحاظ سے تلاش کریں...",
+    "filter_all": "تمام فہرستیں۔",
+    "filter_today": "آج کی فہرستیں۔",
+    "loading": "فہرستیں لوڈ ہو رہی ہیں...",
+    "table": {
+      "item": "آئٹم",
+      "price": "قیمت",
+      "category": "زمرہ",
+      "condition": "حالت",
+      "status": "حیثیت"
+    },
+    "modal": {
+      "edit_title": "فہرست میں ترمیم کریں۔",
+      "add_title": "نئی فہرست شامل کریں۔",
+      "item_title": "آئٹم کا عنوان",
+      "item_title_placeholder": "جیسے ونٹیج ڈینم جیکٹ",
+      "price": "قیمت",
+      "condition": "حالت",
+      "condition_placeholder": "شرط منتخب کریں...",
+      "category": "زمرہ",
+      "category_placeholder": "زمرہ منتخب کریں...",
+      "subcategory": "ذیلی زمرہ",
+      "subcategory_placeholder": "ذیلی زمرہ منتخب کریں...",
+      "description": "تفصیل",
+      "description_placeholder": "ہمیں آئٹم کے بارے میں مزید بتائیں...",
+      "is_sold": "فروخت کیا جاتا ہے؟",
+      "is_blocked": "مسدود ہے؟",
+      "sold": "فروخت",
+      "available": "دستیاب ہے۔"
+    }
+  },
+  "orders": {
+    "title": "آرڈر مینجمنٹ",
+    "subtitle": "مارکیٹ پلیس آرڈرز کا جائزہ لیں اور ان کا نظم کریں۔",
+    "search_placeholder": "آرڈر # یا صارف کے ذریعہ تلاش کریں...",
+    "filter_all": "تمام احکامات",
+    "filter_today": "آج کے احکامات",
+    "loading": "آرڈرز لوڈ ہو رہے ہیں...",
+    "table": {
+      "order_no": "آرڈر #",
+      "item": "آئٹم",
+      "buyer": "خریدار",
+      "seller": "بیچنے والا",
+      "amount": "رقم",
+      "payment_status": "ادائیگی کی حیثیت",
+      "order_status": "آرڈر کی حیثیت",
+      "date": "تاریخ"
+    }
+  },
+  "sidebar": {
+    "dashboard": "ڈیش بورڈ",
+    "users": "صارفین",
+    "listings": "فہرستیں",
+    "orders": "احکامات",
+    "wallet": {
+      "title": "پرس",
+      "withdrawal_requests": "واپسی کی درخواستیں۔",
+      "transactions": "لین دین",
+      "payment_methods": "ادائیگی کے طریقے"
+    },
+    "categories": {
+      "title": "زمرہ جات",
+      "manage": "زمرہ جات کا نظم کریں۔",
+      "subcategories": "ذیلی زمرہ جات کا نظم کریں۔",
+      "item_types": "آئٹم کی اقسام کا نظم کریں۔"
+    },
+    "reports": "رپورٹس",
+    "settings": {
+      "title": "ترتیبات",
+      "languages": "زبانیں",
+      "currencies": "کرنسیاں",
+      "general_settings": "عمومی ترتیبات",
+      "email_settings": "ای میل کی ترتیبات",
+      "site_settings": "سائٹ کی ترتیبات",
+      "payment_settings": "ادائیگی کی ترتیبات",
+      "social_settings": "سماجی ترتیبات",
+      "notification_settings": "اطلاع کی ترتیبات"
+    }
+  }
+}

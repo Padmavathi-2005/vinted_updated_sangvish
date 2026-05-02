@@ -1,0 +1,278 @@
+{
+    "header": {
+        "select_language": "Select Language",
+        "search_language": "Search language...",
+        "select_currency": "Select Currency",
+        "search_currency": "Search currency...",
+        "recent_messages": "Recent Messages",
+        "recent_notifications": "Recent Notifications",
+        "view_all": "View All",
+        "mark_all_read": "All Read",
+        "no_messages": "No messages yet",
+        "no_notifications": "No notifications yet"
+    },
+    "common": {
+        "save": "Save",
+        "saving": "Saving...",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "delete": "Delete",
+        "actions": "Actions",
+        "search": "Search...",
+        "loading": "Loading...",
+        "no_data": "No data available",
+        "no_img": "No Img",
+        "yes": "Yes",
+        "no": "No",
+        "status": {
+            "active": "Active",
+            "inactive": "Inactive",
+            "pending": "Pending",
+            "blocked": "Blocked"
+        },
+        "refresh": "Refresh",
+        "export": "Export",
+        "export_csv": "Export to CSV",
+        "export_pdf": "Export to PDF"
+    },
+    "dashboard": {
+        "overview": "Dashboard Overview",
+        "metrics": "System performance and metrics",
+        "users": {
+            "title": "Users",
+            "total": "Total Users",
+            "today": "Today Users",
+            "buyers": "Total Buyers",
+            "sellers": "Total Sellers"
+        },
+        "listings": {
+            "title": "Listings",
+            "total": "Total Listings",
+            "today": "Today Listings"
+        },
+        "orders": {
+            "title": "Orders",
+            "total": "Total Orders",
+            "today": "Today Orders"
+        },
+        "revenue": {
+            "title": "Revenue",
+            "total_income": "Total Income",
+            "today_income": "Today Income",
+            "total_sales": "Total Sales",
+            "today_sales": "Today Sales"
+        },
+        "categories": {
+            "title": "Categories",
+            "total": "Total Categories"
+        },
+        "content": {
+            "title": "Content & Operations",
+            "pending_withdrawals": "Pending Withdrawals",
+            "pending_items": "Pending Items",
+            "total_categories": "Total Categories"
+        },
+        "commission": {
+            "title": "Admin Commission Income",
+            "wallet": "Wallet",
+            "total_income": "Total Income"
+        },
+        "tables": {
+            "top_sellers": "Top 5 Sellers",
+            "top_buyers": "Top 5 Buyers",
+            "seller": "Seller",
+            "buyer": "Buyer",
+            "total_sales": "Total Sales",
+            "total_spent": "Total Spent",
+            "orders_count": "Orders Count"
+        },
+        "revenue_chart": "Revenue of Past 12 Months",
+        "full_analysis": "Full Analysis",
+        "revenue_summary": "Total Revenue {amount} for {count} Orders",
+        "latest_bookings": "Latest Bookings",
+        "latest_listings": "Latest Listings",
+        "no_recent_bookings": "No recent bookings",
+        "no_recent_listings": "No recent listings",
+        "table": {
+            "user": "User",
+            "amount": "Amount",
+            "date": "Date",
+            "name": "Name",
+            "seller": "Seller",
+            "status": "Status"
+        }
+    },
+    "users": {
+        "title": "Users Management",
+        "subtitle": "Review and manage all registered users",
+        "add_new": "Add User",
+        "search_placeholder": "Search by username or email...",
+        "filter_all": "All Users",
+        "filter_today": "Today's Registrations",
+        "table": {
+            "user": "User Details",
+            "email": "Email",
+            "balance": "Wallet Balance",
+            "status": "Status",
+            "verified": "Verified",
+            "ratings": "Ratings & Reviews",
+            "network": "User Network",
+            "followers": "Followers",
+            "following": "Following",
+            "joined": "Joined Date",
+            "updated": "Last Activity"
+        },
+        "modal": {
+            "edit_title": "Edit User Profile",
+            "add_title": "Add New User",
+            "username": "Username",
+            "password": "Password",
+            "email": "Email Address",
+            "bio": "Bio / Description",
+            "verification": "Verification Status",
+            "is_verified": "Verified Account",
+            "not_verified": "Not Verified",
+            "profile_image": "Profile Image"
+        }
+    },
+    "listings": {
+        "title": "Listings Management",
+        "subtitle": "Review and manage marketplace products",
+        "add_new": "Add Listing",
+        "search_placeholder": "Search by title or ID...",
+        "filter_all": "All Listings",
+        "filter_today": "Today's Listings",
+        "loading": "Loading listings...",
+        "no_listings": "No listings found.",
+        "toast": {
+            "create_success": "Listing created successfully",
+            "update_success": "Listing updated successfully",
+            "delete_success": "Listing deleted successfully",
+            "status_update_success": "Listing status updated successfully",
+            "status_update_error": "Failed to update listing status",
+            "save_error": "Failed to save listing details",
+            "delete_error": "Failed to delete listing"
+        },
+        "table": {
+            "item": "Item",
+            "price": "Price",
+            "category": "Category",
+            "condition": "Condition",
+            "status": "Status",
+            "availability": "Availability"
+        },
+        "modal": {
+            "edit_title": "Edit Listing",
+            "add_title": "Add New Listing",
+            "item_title": "Item Title",
+            "item_title_placeholder": "e.g. Vintage Denim Jacket",
+            "price": "Price",
+            "condition": "Condition",
+            "condition_placeholder": "Select Condition...",
+            "category": "Category",
+            "category_placeholder": "Select Category...",
+            "category_error": "Please select a category",
+            "subcategory": "Subcategory",
+            "subcategory_placeholder": "Select Subcategory...",
+            "description": "Description",
+            "description_placeholder": "Tell us more about the item...",
+            "fill_required": "Please fill in Title and Price",
+            "is_sold": "Is Sold?",
+            "is_blocked": "Is Blocked?",
+            "sold": "Sold",
+            "available": "Available",
+            "blocked": "Blocked",
+            "active": "Active",
+            "images": "Images",
+            "save": "Save",
+            "cancel": "Cancel"
+        }
+    },
+    "orders": {
+        "title": "Orders Management",
+        "subtitle": "Review and manage marketplace orders",
+        "search_placeholder": "Search by Order # or User...",
+        "filter_all": "All Orders",
+        "filter_today": "Today's Orders",
+        "loading": "Loading orders...",
+        "no_orders": "No orders found.",
+        "toast": {
+            "update_success": "Order updated successfully",
+            "delete_success": "Order deleted"
+        },
+        "table": {
+            "order_no": "Order #",
+            "item": "Item",
+            "buyer": "Buyer",
+            "seller": "Seller",
+            "amount": "Amount",
+            "payment_status": "Payment Status",
+            "order_status": "Order Status",
+            "date": "Date"
+        },
+        "status": {
+            "placed": "Placed",
+            "dispatched": "Dispatched",
+            "on_the_way": "On the Way",
+            "delivered": "Delivered",
+            "cancelled": "Cancelled",
+            "pending": "Pending",
+            "paid": "Paid",
+            "failed": "Failed",
+            "refunded": "Refunded"
+        },
+        "modal": {
+            "edit_title": "Edit Order",
+            "order_summary": "Order Summary",
+            "order_status": "Order Status",
+            "payment_status": "Payment Status",
+            "tracking_code": "Tracking Code",
+            "tracking_code_placeholder": "Enter tracking number...",
+            "tracking_help": "Updating the tracking code will notify the buyer.",
+            "save": "Update Order",
+            "cancel": "Cancel",
+            "saving": "Updating..."
+        }
+    },
+    "sidebar": {
+        "dashboard": "Dashboard",
+        "users": "Users",
+        "listings": "Listings",
+        "orders": "Orders",
+        "wallet": {
+            "title": "Withdrawals",
+            "withdrawal_requests": "Withdrawal Requests",
+            "transactions": "Transactions",
+            "payment_methods": "Payment Methods",
+            "payout_methods": "User Payout Methods"
+        },
+        "categories": {
+            "title": "Categories",
+            "manage": "Manage Categories",
+            "subcategories": "Manage Subcategories",
+            "item_types": "Manage Item Types"
+        },
+        "reports": "Reports",
+        "settings": {
+            "title": "Settings",
+            "languages": "Languages",
+            "currencies": "Currencies",
+            "general_settings": "General Settings",
+            "email_settings": "Email Settings",
+            "site_settings": "Site Settings",
+            "footer_settings": "Footer Settings",
+            "payment_settings": "Payment Settings",
+            "social_settings": "Social Links",
+            "api_settings": "API Settings",
+            "cookie_settings": "Cookie Settings",
+            "recaptcha_settings": "Recaptcha Settings",
+            "social_login_settings": "Social Login",
+            "notification_settings": "Notification Settings"
+        },
+        "notifications": "Notifications",
+        "messages": "Messages",
+        "newsletter": "Newsletter",
+        "static_pages": "Static Pages",
+        "frontend_content": "Frontend Content"
+    }
+}

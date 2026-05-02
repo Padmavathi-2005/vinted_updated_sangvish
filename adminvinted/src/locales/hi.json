@@ -1,0 +1,237 @@
+{
+  "header": {
+    "select_language": "भाषा चुनें",
+    "search_language": "भाषा खोजें...",
+    "select_currency": "मुद्रा चुनें",
+    "search_currency": "मुद्रा खोजें...",
+    "recent_messages": "हाल के संदेश",
+    "recent_notifications": "हाल की सूचनाएं",
+    "view_all": "सभी देखें",
+    "no_messages": "अभी तक कोई संदेश नहीं",
+    "no_notifications": "अभी तक कोई सूचना नहीं"
+  },
+  "common": {
+    "save": "बचाना",
+    "saving": "सहेजा जा रहा है...",
+    "cancel": "रद्द करना",
+    "edit": "संपादन करना",
+    "delete": "मिटाना",
+    "actions": "कार्रवाई",
+    "search": "खोज...",
+    "loading": "लोड हो रहा है...",
+    "no_data": "कोई डेटा मौजूद नहीं",
+    "no_img": "कोई आईएमजी नहीं",
+    "yes": "हाँ",
+    "no": "नहीं",
+    "status": {
+      "active": "सक्रिय",
+      "inactive": "निष्क्रिय",
+      "pending": "लंबित",
+      "blocked": "अवरोधित"
+    }
+  },
+  "dashboard": {
+    "overview": "डैशबोर्ड अवलोकन",
+    "metrics": "सिस्टम प्रदर्शन और मेट्रिक्स",
+    "users": {
+      "title": "उपयोगकर्ताओं",
+      "total": "कुल उपयोगकर्ता",
+      "today": "आज के उपयोगकर्ता",
+      "buyers": "कुल खरीदार",
+      "sellers": "कुल विक्रेता"
+    },
+    "listings": {
+      "title": "लिस्टिंग",
+      "total": "कुल सूचियाँ",
+      "today": "आज की सूची"
+    },
+    "orders": {
+      "title": "आदेश",
+      "total": "कुल ऑर्डर",
+      "today": "आज ऑर्डर"
+    },
+    "revenue": {
+      "title": "आय",
+      "total_income": "कुल आय",
+      "total_sales": "कुल बिक्री"
+    },
+    "categories": {
+      "title": "श्रेणियाँ",
+      "total": "कुल श्रेणियाँ"
+    },
+    "commission": {
+      "title": "व्यवस्थापक आयोग आय",
+      "wallet": "बटुआ",
+      "total_income": "कुल आय"
+    },
+    "tables": {
+      "top_sellers": "शीर्ष 5 विक्रेता",
+      "top_buyers": "शीर्ष 5 खरीदार",
+      "seller": "विक्रेता",
+      "buyer": "क्रेता",
+      "total_sales": "कुल बिक्री",
+      "total_spent": "कुल खर्च",
+      "orders_count": "ऑर्डर गिनती"
+    },
+    "revenue_chart": "पिछले 12 महीनों का राजस्व",
+    "full_analysis": "पूर्ण विश्लेषण",
+    "revenue_summary": "{गिनती} ऑर्डर के लिए कुल राजस्व {राशि}",
+    "latest_bookings": "नवीनतम बुकिंग",
+    "latest_listings": "नवीनतम सूचियाँ",
+    "no_recent_bookings": "कोई हालिया बुकिंग नहीं",
+    "no_recent_listings": "कोई हालिया लिस्टिंग नहीं",
+    "table": {
+      "user": "उपयोगकर्ता",
+      "amount": "मात्रा",
+      "date": "तारीख",
+      "name": "नाम",
+      "seller": "विक्रेता",
+      "status": "स्थिति"
+    }
+  },
+  "users": {
+    "title": "उपयोगकर्ता प्रबंधन",
+    "subtitle": "सभी पंजीकृत उपयोगकर्ताओं की समीक्षा करें और उन्हें प्रबंधित करें",
+    "add_new": "उपयोगकर्ता जोड़ें",
+    "search_placeholder": "उपयोगकर्ता नाम या ईमेल द्वारा खोजें...",
+    "filter_all": "सभी उपयोगकर्ता",
+    "filter_today": "आज के पंजीकरण",
+    "table": {
+      "user": "उपयोगकर्ता विवरण",
+      "email": "ईमेल",
+      "balance": "वॉलेट बैलेंस",
+      "status": "स्थिति",
+      "verified": "सत्यापित",
+      "ratings": "रेटिंग और समीक्षाएं",
+      "network": "उपयोगकर्ता नेटवर्क",
+      "followers": "अनुयायी",
+      "following": "फ़ॉलो कर रहे हैं",
+      "joined": "शामिल होने की तिथि",
+      "updated": "पिछली गतिविधि"
+    },
+    "modal": {
+      "edit_title": "उपयोगकर्ता प्रोफ़ाइल संपादित करें",
+      "add_title": "नया उपयोगकर्ता जोड़ें",
+      "username": "उपयोगकर्ता नाम",
+      "password": "पासवर्ड",
+      "email": "ईमेल पता",
+      "bio": "बायो / विवरण",
+      "verification": "सत्यापन स्थिति",
+      "is_verified": "सत्यापित खाता",
+      "not_verified": "सत्यापित नहीं",
+      "profile_image": "प्रोफ़ाइल छवि"
+    }
+  },
+  "listings": {
+    "title": "लिस्टिंग प्रबंधन",
+    "subtitle": "बाज़ार के उत्पादों की समीक्षा करें और उन्हें प्रबंधित करें",
+    "add_new": "सूची जोड़ें",
+    "search_placeholder": "शीर्षक या आईडी के आधार पर खोजें...",
+    "filter_all": "सारी सूचियां",
+    "filter_today": "आज की सूचियाँ",
+    "loading": "सूचियाँ लोड हो रही हैं...",
+    "table": {
+      "item": "वस्तु",
+      "price": "कीमत",
+      "category": "वर्ग",
+      "condition": "स्थिति",
+      "status": "स्थिति",
+      "availability": "उपलब्धता"
+    },
+    "modal": {
+      "edit_title": "एडिट लिस्टिंग",
+      "add_title": "नई सूची जोड़ें",
+      "item_title": "मद शीर्षक",
+      "item_title_placeholder": "जैसे विंटेज डेनिम जैकेट",
+      "price": "कीमत",
+      "condition": "स्थिति",
+      "condition_placeholder": "शर्त चुनें...",
+      "category": "वर्ग",
+      "category_placeholder": "श्रेणी चुनना...",
+      "subcategory": "उपश्रेणी",
+      "subcategory_placeholder": "उपश्रेणी चुनें...",
+      "description": "विवरण",
+      "description_placeholder": "आइटम के बारे में हमें और बताएं...",
+      "is_sold": "बेचा जाता है?",
+      "is_blocked": "अवरुद्ध है?",
+      "sold": "बिका हुआ",
+      "available": "उपलब्ध",
+      "blocked": "अवरुद्ध",
+      "active": "सक्रिय",
+      "images": "छवियां",
+      "save": "सहेजें",
+      "cancel": "रद्द करें"
+    }
+  },
+  "orders": {
+    "title": "आदेश प्रबंधन",
+    "subtitle": "मार्केटप्लेस ऑर्डर की समीक्षा करें और प्रबंधित करें",
+    "search_placeholder": "ऑर्डर # या उपयोगकर्ता के आधार पर खोजें...",
+    "filter_all": "सभी आदेश",
+    "filter_today": "आज के आदेश",
+    "loading": "ऑर्डर लोड हो रहे हैं...",
+    "table": {
+      "order_no": "आदेश #",
+      "item": "वस्तु",
+      "buyer": "क्रेता",
+      "seller": "विक्रेता",
+      "amount": "मात्रा",
+      "payment_status": "भुगतान की स्थिति",
+      "order_status": "आदेश की स्थिति",
+      "date": "तारीख"
+    },
+    "status": {
+      "placed": "रखा गया",
+      "dispatched": "भेज दिया",
+      "on_the_way": "रास्ते में",
+      "delivered": "पहुंचा दिया",
+      "cancelled": "रद्द",
+      "pending": "लंबित",
+      "paid": "भुगतान किया गया",
+      "failed": "विफल",
+      "refunded": "धनवापसी"
+    },
+    "modal": {
+      "edit_title": "ऑर्डर संपादित करें",
+      "order_summary": "ऑर्डर सारांश",
+      "order_status": "ऑर्डर की स्थिति",
+      "payment_status": "भुगतान की स्थिति",
+      "tracking_code": "ट्रैकिंग कोड",
+      "tracking_code_placeholder": "ट्रैकिंग नंबर लिखें...",
+      "tracking_help": "ट्रैकिंग कोड अपडेट करने पर खरीदार को सूचित किया जाएगा।",
+      "save": "ऑर्डर अपडेट करें",
+      "cancel": "रद्द करें",
+      "saving": "अपडेट हो रहा है..."
+    }
+  },
+  "sidebar": {
+    "dashboard": "डैशबोर्ड",
+    "users": "उपयोगकर्ताओं",
+    "listings": "लिस्टिंग",
+    "orders": "आदेश",
+    "wallet": {
+      "title": "बटुआ",
+      "withdrawal_requests": "निकासी अनुरोध",
+      "transactions": "लेनदेन",
+      "payment_methods": "भुगतान के तरीके"
+    },
+    "categories": {
+      "title": "श्रेणियाँ",
+      "manage": "श्रेणी व्यवस्थित करें",
+      "subcategories": "उपश्रेणियाँ प्रबंधित करें",
+      "item_types": "आइटम प्रकार प्रबंधित करें"
+    },
+    "reports": "रिपोर्टों",
+    "settings": {
+      "title": "सेटिंग्स",
+      "languages": "बोली",
+      "currencies": "मुद्राओं",
+      "general_settings": "सामान्य सेटिंग्स",
+      "email_settings": "ईमेल सेटिंग्स",
+      "site_settings": "साइट सेटिंग्स",
+      "payment_settings": "भुगतान सेटिंग",
+      "social_settings": "सामाजिक सेटिंग्स",
+      "notification_settings": "अधिसूचना सेटिंग्स"
+    }
+  }
+}

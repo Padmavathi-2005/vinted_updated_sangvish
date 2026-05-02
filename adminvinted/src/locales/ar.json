@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "يحفظ",
+    "saving": "توفير...",
+    "cancel": "يلغي",
+    "edit": "يحرر",
+    "delete": "يمسح",
+    "actions": "الإجراءات",
+    "search": "يبحث...",
+    "loading": "تحميل...",
+    "no_data": "لا توجد بيانات متاحة",
+    "no_img": "لا صورة",
+    "yes": "نعم",
+    "no": "لا",
+    "status": {
+      "active": "نشيط",
+      "inactive": "غير نشط",
+      "pending": "قيد الانتظار",
+      "blocked": "محظور"
+    }
+  },
+  "dashboard": {
+    "overview": "نظرة عامة على لوحة القيادة",
+    "metrics": "أداء النظام والمقاييس",
+    "users": {
+      "title": "المستخدمين",
+      "total": "إجمالي المستخدمين",
+      "today": "المستخدمين اليوم",
+      "buyers": "إجمالي المشترين",
+      "sellers": "إجمالي البائعين"
+    },
+    "listings": {
+      "title": "القوائم",
+      "total": "إجمالي القوائم",
+      "today": "قوائم اليوم"
+    },
+    "orders": {
+      "title": "طلبات",
+      "total": "إجمالي الطلبات",
+      "today": "طلبات اليوم"
+    },
+    "revenue": {
+      "title": "ربح",
+      "total_income": "إجمالي الدخل",
+      "total_sales": "إجمالي المبيعات"
+    },
+    "categories": {
+      "title": "فئات",
+      "total": "إجمالي الفئات"
+    },
+    "commission": {
+      "title": "دخل عمولة المشرف",
+      "wallet": "محفظة",
+      "total_income": "إجمالي الدخل"
+    },
+    "tables": {
+      "top_sellers": "أعلى 5 البائعين",
+      "top_buyers": "أعلى 5 مشترين",
+      "seller": "بائع",
+      "buyer": "المشتري",
+      "total_sales": "إجمالي المبيعات",
+      "total_spent": "إجمالي الإنفاق",
+      "orders_count": "عدد الطلبات"
+    },
+    "revenue_chart": "إيرادات الـ 12 شهرًا الماضية",
+    "full_analysis": "تحليل كامل",
+    "revenue_summary": "إجمالي الإيرادات {amount} لعدد {count} من الطلبات",
+    "latest_bookings": "أحدث الحجوزات",
+    "latest_listings": "أحدث القوائم",
+    "no_recent_bookings": "لا توجد حجوزات حديثة",
+    "no_recent_listings": "لا توجد قوائم الأخيرة",
+    "table": {
+      "user": "مستخدم",
+      "amount": "كمية",
+      "date": "تاريخ",
+      "name": "اسم",
+      "seller": "بائع",
+      "status": "حالة"
+    }
+  },
+  "users": {
+    "title": "إدارة المستخدمين",
+    "subtitle": "مراجعة وإدارة كافة المستخدمين المسجلين",
+    "add_new": "إضافة مستخدم",
+    "search_placeholder": "البحث حسب اسم المستخدم أو البريد الإلكتروني...",
+    "filter_all": "كافة المستخدمين",
+    "filter_today": "التسجيلات اليوم",
+    "table": {
+      "user": "مستخدم",
+      "email": "بريد إلكتروني",
+      "balance": "توازن",
+      "status": "حالة",
+      "verified": "تم التحقق منه"
+    },
+    "modal": {
+      "edit_title": "تحرير المستخدم",
+      "add_title": "إضافة مستخدم جديد",
+      "username": "اسم المستخدم",
+      "password": "كلمة المرور",
+      "email": "بريد إلكتروني",
+      "verification": "حالة التحقق",
+      "is_verified": "تم التحقق",
+      "not_verified": "لم يتم التحقق منها",
+      "profile_image": "صورة الملف الشخصي"
+    }
+  },
+  "listings": {
+    "title": "إدارة القوائم",
+    "subtitle": "مراجعة وإدارة منتجات السوق",
+    "add_new": "إضافة قائمة",
+    "search_placeholder": "البحث حسب العنوان أو المعرف...",
+    "filter_all": "جميع القوائم",
+    "filter_today": "قوائم اليوم",
+    "loading": "جارٍ تحميل القوائم...",
+    "table": {
+      "item": "غرض",
+      "price": "سعر",
+      "category": "فئة",
+      "condition": "حالة",
+      "status": "حالة"
+    },
+    "modal": {
+      "edit_title": "تحرير القائمة",
+      "add_title": "إضافة قائمة جديدة",
+      "item_title": "عنوان العنصر",
+      "item_title_placeholder": "على سبيل المثال سترة الدنيم خمر",
+      "price": "سعر",
+      "condition": "حالة",
+      "condition_placeholder": "حدد الشرط...",
+      "category": "فئة",
+      "category_placeholder": "اختر الفئة...",
+      "subcategory": "فئة فرعية",
+      "subcategory_placeholder": "حدد فئة فرعية...",
+      "description": "وصف",
+      "description_placeholder": "أخبرنا المزيد عن المادة...",
+      "is_sold": "هل يباع؟",
+      "is_blocked": "هل تم حظره؟",
+      "sold": "مُباع",
+      "available": "متاح"
+    }
+  },
+  "orders": {
+    "title": "إدارة الطلبات",
+    "subtitle": "مراجعة وإدارة أوامر السوق",
+    "search_placeholder": "البحث حسب الطلب # أو المستخدم...",
+    "filter_all": "جميع الطلبات",
+    "filter_today": "طلبات اليوم",
+    "loading": "جارٍ تحميل الطلبات...",
+    "table": {
+      "order_no": "طلب #",
+      "item": "غرض",
+      "buyer": "المشتري",
+      "seller": "بائع",
+      "amount": "كمية",
+      "payment_status": "حالة الدفع",
+      "order_status": "حالة الطلب",
+      "date": "تاريخ"
+    }
+  },
+  "sidebar": {
+    "dashboard": "لوحة القيادة",
+    "users": "المستخدمين",
+    "listings": "القوائم",
+    "orders": "طلبات",
+    "wallet": {
+      "title": "محفظة",
+      "withdrawal_requests": "طلبات السحب",
+      "transactions": "المعاملات",
+      "payment_methods": "طرق الدفع"
+    },
+    "categories": {
+      "title": "فئات",
+      "manage": "إدارة الفئات",
+      "subcategories": "إدارة الفئات الفرعية",
+      "item_types": "إدارة أنواع العناصر"
+    },
+    "reports": "التقارير",
+    "settings": {
+      "title": "إعدادات",
+      "languages": "اللغات",
+      "currencies": "العملات",
+      "general_settings": "الإعدادات العامة",
+      "email_settings": "إعدادات البريد الإلكتروني",
+      "site_settings": "إعدادات الموقع",
+      "payment_settings": "إعدادات الدفع",
+      "social_settings": "الإعدادات الاجتماعية",
+      "notification_settings": "إعدادات الإخطار"
+    }
+  }
+}

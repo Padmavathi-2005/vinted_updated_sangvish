@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "Cứu",
+    "saving": "Đang lưu...",
+    "cancel": "Hủy bỏ",
+    "edit": "Biên tập",
+    "delete": "Xóa bỏ",
+    "actions": "hành động",
+    "search": "Tìm kiếm...",
+    "loading": "Đang tải...",
+    "no_data": "Không có sẵn dữ liệu",
+    "no_img": "Không, hình ảnh",
+    "yes": "Đúng",
+    "no": "KHÔNG",
+    "status": {
+      "active": "Tích cực",
+      "inactive": "Không hoạt động",
+      "pending": "Chưa giải quyết",
+      "blocked": "Bị chặn"
+    }
+  },
+  "dashboard": {
+    "overview": "Tổng quan về trang tổng quan",
+    "metrics": "Hiệu suất và số liệu của hệ thống",
+    "users": {
+      "title": "Người dùng",
+      "total": "Tổng số người dùng",
+      "today": "Người dùng hôm nay",
+      "buyers": "Tổng số người mua",
+      "sellers": "Tổng số người bán"
+    },
+    "listings": {
+      "title": "Danh sách",
+      "total": "Tổng số danh sách",
+      "today": "Danh sách hôm nay"
+    },
+    "orders": {
+      "title": "Đơn đặt hàng",
+      "total": "Tổng số đơn đặt hàng",
+      "today": "Đơn đặt hàng hôm nay"
+    },
+    "revenue": {
+      "title": "Doanh thu",
+      "total_income": "Tổng thu nhập",
+      "total_sales": "Tổng doanh thu"
+    },
+    "categories": {
+      "title": "Thể loại",
+      "total": "Tổng số danh mục"
+    },
+    "commission": {
+      "title": "Thu nhập hoa hồng quản trị",
+      "wallet": "Cái ví",
+      "total_income": "Tổng thu nhập"
+    },
+    "tables": {
+      "top_sellers": "5 người bán hàng đầu",
+      "top_buyers": "5 người mua hàng đầu",
+      "seller": "Người bán",
+      "buyer": "Người mua",
+      "total_sales": "Tổng doanh thu",
+      "total_spent": "Tổng chi tiêu",
+      "orders_count": "Số lượng đơn hàng"
+    },
+    "revenue_chart": "Doanh thu của 12 tháng qua",
+    "full_analysis": "Phân tích đầy đủ",
+    "revenue_summary": "Tổng doanh thu {amount} cho {count} đơn đặt hàng",
+    "latest_bookings": "Đặt chỗ mới nhất",
+    "latest_listings": "Danh sách mới nhất",
+    "no_recent_bookings": "Không có lượt đặt chỗ nào gần đây",
+    "no_recent_listings": "Không có danh sách gần đây",
+    "table": {
+      "user": "người dùng",
+      "amount": "Số lượng",
+      "date": "Ngày",
+      "name": "Tên",
+      "seller": "Người bán",
+      "status": "Trạng thái"
+    }
+  },
+  "users": {
+    "title": "Quản lý người dùng",
+    "subtitle": "Xem xét và quản lý tất cả người dùng đã đăng ký",
+    "add_new": "Thêm người dùng",
+    "search_placeholder": "Tìm kiếm theo tên người dùng hoặc email...",
+    "filter_all": "Tất cả người dùng",
+    "filter_today": "Đăng ký hôm nay",
+    "table": {
+      "user": "người dùng",
+      "email": "E-mail",
+      "balance": "Sự cân bằng",
+      "status": "Trạng thái",
+      "verified": "Đã xác minh"
+    },
+    "modal": {
+      "edit_title": "Chỉnh sửa người dùng",
+      "add_title": "Thêm người dùng mới",
+      "username": "Tên người dùng",
+      "password": "Mật khẩu",
+      "email": "E-mail",
+      "verification": "Trạng thái xác minh",
+      "is_verified": "Đã được xác minh",
+      "not_verified": "Chưa được xác minh",
+      "profile_image": "Hình ảnh hồ sơ"
+    }
+  },
+  "listings": {
+    "title": "Quản lý danh sách",
+    "subtitle": "Xem xét và quản lý các sản phẩm trên thị trường",
+    "add_new": "Thêm danh sách",
+    "search_placeholder": "Tìm kiếm theo tiêu đề hoặc ID...",
+    "filter_all": "Tất cả danh sách",
+    "filter_today": "Danh sách hôm nay",
+    "loading": "Đang tải danh sách...",
+    "table": {
+      "item": "Mục",
+      "price": "Giá",
+      "category": "Loại",
+      "condition": "Tình trạng",
+      "status": "Trạng thái"
+    },
+    "modal": {
+      "edit_title": "Chỉnh sửa danh sách",
+      "add_title": "Thêm danh sách mới",
+      "item_title": "Tiêu đề mục",
+      "item_title_placeholder": "ví dụ. Áo khoác denim cổ điển",
+      "price": "Giá",
+      "condition": "Tình trạng",
+      "condition_placeholder": "Chọn điều kiện...",
+      "category": "Loại",
+      "category_placeholder": "Chọn danh mục...",
+      "subcategory": "Tiểu thể loại",
+      "subcategory_placeholder": "Chọn danh mục phụ...",
+      "description": "Sự miêu tả",
+      "description_placeholder": "Hãy cho chúng tôi biết thêm về mặt hàng...",
+      "is_sold": "Đã bán chưa?",
+      "is_blocked": "Có bị chặn không?",
+      "sold": "Đã bán",
+      "available": "Có sẵn"
+    }
+  },
+  "orders": {
+    "title": "Quản lý đơn hàng",
+    "subtitle": "Xem xét và quản lý các đơn đặt hàng trên thị trường",
+    "search_placeholder": "Tìm kiếm theo số đơn hàng hoặc người dùng...",
+    "filter_all": "Tất cả đơn hàng",
+    "filter_today": "Đơn đặt hàng hôm nay",
+    "loading": "Đang tải đơn đặt hàng...",
+    "table": {
+      "order_no": "Đặt hàng #",
+      "item": "Mục",
+      "buyer": "Người mua",
+      "seller": "Người bán",
+      "amount": "Số lượng",
+      "payment_status": "Trạng thái thanh toán",
+      "order_status": "Trạng thái đơn hàng",
+      "date": "Ngày"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Trang tổng quan",
+    "users": "Người dùng",
+    "listings": "Danh sách",
+    "orders": "Đơn đặt hàng",
+    "wallet": {
+      "title": "Cái ví",
+      "withdrawal_requests": "Yêu cầu rút tiền",
+      "transactions": "Giao dịch",
+      "payment_methods": "Phương thức thanh toán"
+    },
+    "categories": {
+      "title": "Thể loại",
+      "manage": "Quản lý danh mục",
+      "subcategories": "Quản lý danh mục con",
+      "item_types": "Quản lý các loại mặt hàng"
+    },
+    "reports": "Báo cáo",
+    "settings": {
+      "title": "Cài đặt",
+      "languages": "Ngôn ngữ",
+      "currencies": "Tiền tệ",
+      "general_settings": "Cài đặt chung",
+      "email_settings": "Cài đặt email",
+      "site_settings": "Cài đặt trang web",
+      "payment_settings": "Cài đặt thanh toán",
+      "social_settings": "Cài đặt xã hội",
+      "notification_settings": "Cài đặt thông báo"
+    }
+  }
+}

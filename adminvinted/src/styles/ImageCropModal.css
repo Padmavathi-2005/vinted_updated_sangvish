@@ -1,0 +1,250 @@
+.crop-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.crop-modal-container {
+  width: 95%;
+  max-width: 500px;
+  max-height: 90vh;
+  background-color: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.crop-modal-scroll-area {
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.crop-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.crop-modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a202c;
+}
+
+.crop-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    color: #4a5568;
+    cursor: pointer;
+}
+
+.crop-modal-body {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  background-color: #333;
+}
+
+.crop-container {
+  position: relative;
+  width: 100%;
+  height: 300px;
+}
+
+.crop-modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.crop-actions-top {
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: center;
+}
+
+.btn-skip {
+    width: 100%;
+    padding: 10px;
+    background-color: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-skip:hover {
+    background-color: #e2e8f0;
+}
+
+.crop-help-tip {
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    color: #166534;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+}
+
+.aspect-ratio-selector {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.aspect-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.aspect-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.aspect-btn {
+  padding: 6px 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.aspect-btn:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.aspect-btn.active {
+  background: #0ea5e9;
+  border-color: #0ea5e9;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+}
+
+.crop-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.control-label-text {
+    width: 60px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.slider-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.control-icon {
+    font-size: 1.1rem;
+    color: #0ea5e9;
+    cursor: pointer;
+    transition: transform 0.2s, color 0.2s;
+}
+
+.control-icon:hover {
+    transform: scale(1.15);
+    color: #0284c7;
+}
+
+.zoom-range, .rotation-range {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #e2e8f0;
+    border-radius: 2px;
+    outline: none;
+}
+
+.zoom-range::-webkit-slider-thumb, .rotation-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #0ea5e9;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.crop-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.crop-actions button {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel {
+    background-color: #f7fafc;
+    border: 1px solid #e2e8f0;
+    color: #4a5568;
+}
+
+.btn-cancel:hover {
+    background-color: #edf2f7;
+}
+
+.btn-save {
+    background-color: #0ea5e9;
+    border: 1px solid #0ea5e9;
+    color: #fff;
+}
+
+.btn-save:hover {
+    background-color: #0284c7;
+}

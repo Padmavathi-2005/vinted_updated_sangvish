@@ -1,0 +1,238 @@
+/* Notifications Page Styles (Vinted Redesign) */
+
+.notifications-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.notifications-layout {
+    background: white;
+    display: flex;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    border: 1px solid #edf2f7;
+    border-radius: 12px;
+}
+
+.list-panel-bg {
+    background-color: #ffffff;
+    border-right: 1px solid #f1f5f9;
+}
+
+.list-panel-header {
+    background: white;
+    z-index: 10;
+}
+
+.notif-list-item {
+    background-color: white;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 3px solid transparent;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.notif-list-item:hover {
+    background-color: #f8fafc;
+}
+
+.notif-list-item.active-item {
+    background-color: #f0f7ff;
+    border-left-color: #3b82f6;
+}
+
+.notif-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.1rem;
+}
+
+.notif-icon-box.info {
+    background: #3b82f6;
+}
+
+.notif-icon-box.message {
+    background: #8b5cf6;
+}
+
+.notif-icon-box.order,
+.notif-icon-box.success {
+    background: #10b981;
+}
+
+.notif-icon-box.error {
+    background: #ef4444;
+}
+
+.notif-icon-box.request {
+    background: #f59e0b;
+}
+
+.unread-dot-indicator {
+    width: 8px;
+    height: 8px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Detail Pane */
+.detail-pane {
+    border-left: 1px solid #f1f5f9;
+}
+
+.detail-icon-box {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.4rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.detail-icon-box.info {
+    background: #3b82f6;
+}
+
+.detail-icon-box.message {
+    background: #8b5cf6;
+}
+
+.detail-icon-box.order,
+.detail-icon-box.success {
+    background: #10b981;
+}
+
+.detail-icon-box.error {
+    background: #ef4444;
+}
+
+.detail-icon-box.request {
+    background: #f59e0b;
+}
+
+.notif-content-box {
+    border: 1px solid #e2e8f0;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Scroll Area */
+.scroll-area::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scroll-area::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 991.98px) {
+    .notifications-container {
+        padding: 0 !important;
+        border-radius: 0;
+    }
+
+    .notifications-layout {
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .detail-pane {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+        background: white !important;
+    }
+
+    .notification-list-scrollable {
+        max-height: calc(100vh - 180px) !important;
+    }
+}
+
+/* Detail Pane Split Styling */
+.detail-pane {
+    background-color: #fafbfc !important;
+}
+
+.detail-header {
+    background-color: white;
+}
+
+.notif-content-box {
+    background-color: white !important;
+    border: 1px solid #edf2f7 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.notification-list-scrollable {
+    flex-grow: 1;
+}
+
+/* Dark Mode support */
+
+[data-admin-theme="dark"] .notifications-layout,
+[data-admin-theme="dark"] .list-panel-header,
+[data-admin-theme="dark"] .bg-white {
+    background: #1a2332 !important;
+    border-color: #334155 !important;
+}
+
+[data-admin-theme="dark"] .notif-list-item:hover {
+    background: #1e293b;
+}
+
+[data-admin-theme="dark"] .notif-list-item.active-item {
+    background: #1e293b;
+}
+
+[data-admin-theme="dark"] .text-dark,
+[data-admin-theme="dark"] h4,
+[data-admin-theme="dark"] h6 {
+    color: #f1f5f9 !important;
+}
+
+[data-admin-theme="dark"] .bg-light,
+[data-admin-theme="dark"] .notif-content-box {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-admin-theme="dark"] .border-end,
+[data-admin-theme="dark"] .border-bottom {
+    border-color: #334155 !important;
+}

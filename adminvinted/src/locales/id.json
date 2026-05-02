@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "Menyimpan",
+    "saving": "Penghematan...",
+    "cancel": "Membatalkan",
+    "edit": "Sunting",
+    "delete": "Menghapus",
+    "actions": "Tindakan",
+    "search": "Mencari...",
+    "loading": "Memuat...",
+    "no_data": "Tidak ada data yang tersedia",
+    "no_img": "Tidak ada Gambar",
+    "yes": "Ya",
+    "no": "TIDAK",
+    "status": {
+      "active": "Aktif",
+      "inactive": "Tidak aktif",
+      "pending": "Tertunda",
+      "blocked": "Diblokir"
+    }
+  },
+  "dashboard": {
+    "overview": "Ikhtisar Dasbor",
+    "metrics": "Performa dan metrik sistem",
+    "users": {
+      "title": "Pengguna",
+      "total": "Jumlah Pengguna",
+      "today": "Pengguna Hari Ini",
+      "buyers": "Jumlah Pembeli",
+      "sellers": "Jumlah Penjual"
+    },
+    "listings": {
+      "title": "Daftar",
+      "total": "Daftar Total",
+      "today": "Daftar Hari Ini"
+    },
+    "orders": {
+      "title": "Pesanan",
+      "total": "Jumlah Pesanan",
+      "today": "Pesanan Hari Ini"
+    },
+    "revenue": {
+      "title": "Pendapatan",
+      "total_income": "Jumlah Pendapatan",
+      "total_sales": "Jumlah Penjualan"
+    },
+    "categories": {
+      "title": "Kategori",
+      "total": "Jumlah Kategori"
+    },
+    "commission": {
+      "title": "Pendapatan Komisi Admin",
+      "wallet": "Dompet",
+      "total_income": "Jumlah Pendapatan"
+    },
+    "tables": {
+      "top_sellers": "5 Penjual Teratas",
+      "top_buyers": "5 Pembeli Teratas",
+      "seller": "Penjual",
+      "buyer": "Pembeli",
+      "total_sales": "Jumlah Penjualan",
+      "total_spent": "Jumlah yang Dibelanjakan",
+      "orders_count": "Jumlah Pesanan"
+    },
+    "revenue_chart": "Pendapatan 12 Bulan Terakhir",
+    "full_analysis": "Analisis Lengkap",
+    "revenue_summary": "Pendapatan Total {amount} untuk {count} Pesanan",
+    "latest_bookings": "Pemesanan Terbaru",
+    "latest_listings": "Daftar Terbaru",
+    "no_recent_bookings": "Tidak ada pemesanan terbaru",
+    "no_recent_listings": "Tidak ada daftar terbaru",
+    "table": {
+      "user": "Pengguna",
+      "amount": "Jumlah",
+      "date": "Tanggal",
+      "name": "Nama",
+      "seller": "Penjual",
+      "status": "Status"
+    }
+  },
+  "users": {
+    "title": "Manajemen Pengguna",
+    "subtitle": "Tinjau dan kelola semua pengguna terdaftar",
+    "add_new": "Tambahkan Pengguna",
+    "search_placeholder": "Cari berdasarkan nama pengguna atau email...",
+    "filter_all": "Semua Pengguna",
+    "filter_today": "Pendaftaran Hari Ini",
+    "table": {
+      "user": "Pengguna",
+      "email": "E-mail",
+      "balance": "Keseimbangan",
+      "status": "Status",
+      "verified": "Terverifikasi"
+    },
+    "modal": {
+      "edit_title": "Sunting Pengguna",
+      "add_title": "Tambahkan Pengguna Baru",
+      "username": "Nama belakang",
+      "password": "Kata sandi",
+      "email": "E-mail",
+      "verification": "Status Verifikasi",
+      "is_verified": "Terverifikasi",
+      "not_verified": "Tidak Terverifikasi",
+      "profile_image": "Gambar profil"
+    }
+  },
+  "listings": {
+    "title": "Manajemen Daftar",
+    "subtitle": "Tinjau dan kelola produk pasar",
+    "add_new": "Tambahkan Daftar",
+    "search_placeholder": "Cari berdasarkan judul atau ID...",
+    "filter_all": "Semua Daftar",
+    "filter_today": "Daftar Hari Ini",
+    "loading": "Memuat daftar...",
+    "table": {
+      "item": "Barang",
+      "price": "Harga",
+      "category": "Kategori",
+      "condition": "Kondisi",
+      "status": "Status"
+    },
+    "modal": {
+      "edit_title": "Sunting Daftar",
+      "add_title": "Tambahkan Daftar Baru",
+      "item_title": "Judul Barang",
+      "item_title_placeholder": "misalnya Jaket Denim Antik",
+      "price": "Harga",
+      "condition": "Kondisi",
+      "condition_placeholder": "Pilih Kondisi...",
+      "category": "Kategori",
+      "category_placeholder": "Pilih Kategori...",
+      "subcategory": "Subkategori",
+      "subcategory_placeholder": "Pilih Subkategori...",
+      "description": "Keterangan",
+      "description_placeholder": "Beritahu kami lebih banyak tentang barang tersebut...",
+      "is_sold": "Apakah Terjual?",
+      "is_blocked": "Apakah Diblokir?",
+      "sold": "Terjual",
+      "available": "Tersedia"
+    }
+  },
+  "orders": {
+    "title": "Manajemen Pesanan",
+    "subtitle": "Tinjau dan kelola pesanan pasar",
+    "search_placeholder": "Cari berdasarkan Pesanan # atau Pengguna...",
+    "filter_all": "Semua Pesanan",
+    "filter_today": "Pesanan Hari Ini",
+    "loading": "Memuat pesanan...",
+    "table": {
+      "order_no": "Memesan #",
+      "item": "Barang",
+      "buyer": "Pembeli",
+      "seller": "Penjual",
+      "amount": "Jumlah",
+      "payment_status": "Status Pembayaran",
+      "order_status": "Status Pesanan",
+      "date": "Tanggal"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Dasbor",
+    "users": "Pengguna",
+    "listings": "Daftar",
+    "orders": "Pesanan",
+    "wallet": {
+      "title": "Dompet",
+      "withdrawal_requests": "Permintaan Penarikan",
+      "transactions": "Transaksi",
+      "payment_methods": "Metode Pembayaran"
+    },
+    "categories": {
+      "title": "Kategori",
+      "manage": "Kelola Kategori",
+      "subcategories": "Kelola Subkategori",
+      "item_types": "Kelola Jenis Barang"
+    },
+    "reports": "Laporan",
+    "settings": {
+      "title": "Pengaturan",
+      "languages": "Bahasa",
+      "currencies": "Mata uang",
+      "general_settings": "Pengaturan Umum",
+      "email_settings": "Pengaturan Surel",
+      "site_settings": "Pengaturan Situs",
+      "payment_settings": "Pengaturan Pembayaran",
+      "social_settings": "Pengaturan Sosial",
+      "notification_settings": "Pengaturan Pemberitahuan"
+    }
+  }
+}

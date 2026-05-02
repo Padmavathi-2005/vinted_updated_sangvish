@@ -1,0 +1,214 @@
+/* ── Overlay ── */
+.popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    /* backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px); */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    padding: 20px;
+    animation: popupFadeIn 0.2s ease;
+}
+
+@keyframes popupFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* ── Card ── */
+.popup-card {
+    background: white;
+    border-radius: 20px;
+    padding: 36px 32px 28px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    animation: popupSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-family: var(--font-family);
+}
+
+@keyframes popupSlideUp {
+    from {
+        transform: translateY(30px) scale(0.95);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* ── Close Button ── */
+.popup-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: #f1f5f9;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.popup-close-btn:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+/* ── Icon Ring ── */
+.popup-icon-ring {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin: 0 auto 18px;
+}
+
+.popup-icon-success {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.popup-icon-error {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.popup-icon-warning {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.popup-icon-info {
+    background: #f0f9ff;
+    color: #0ea5e9;
+}
+
+.popup-icon-confirm {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+/* ── Text ── */
+.popup-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 8px;
+}
+
+.popup-message {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin: 0 0 24px;
+    line-height: 1.5;
+}
+
+/* ── Actions ── */
+.popup-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.popup-btn {
+    padding: 10px 28px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-family);
+    transition: all 0.2s;
+    min-width: 100px;
+}
+
+.popup-btn-cancel {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.popup-btn-cancel:hover {
+    background: #e2e8f0;
+}
+
+.popup-btn-success {
+    background: #16a34a;
+    color: white;
+}
+
+.popup-btn-success:hover {
+    background: #15803d;
+}
+
+.popup-btn-error {
+    background: #dc2626;
+    color: white;
+}
+
+.popup-btn-error:hover {
+    background: #b91c1c;
+}
+
+.popup-btn-warning {
+    background: #d97706;
+    color: white;
+}
+
+.popup-btn-warning:hover {
+    background: #b45309;
+}
+
+.popup-btn-info {
+    background: var(--primary-color, #0ea5e9);
+    color: white;
+}
+
+.popup-btn-info:hover {
+    background: color-mix(in srgb, var(--primary-color, #0ea5e9), black 15%);
+}
+
+.popup-btn-confirm {
+    background: #d97706;
+    color: white;
+}
+
+.popup-btn-confirm:hover {
+    background: #b45309;
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+    .popup-card {
+        padding: 28px 20px 22px;
+    }
+
+    .popup-actions {
+        flex-direction: column;
+    }
+
+    .popup-btn {
+        width: 100%;
+    }
+}

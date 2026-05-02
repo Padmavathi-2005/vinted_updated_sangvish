@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "구하다",
+    "saving": "절약...",
+    "cancel": "취소",
+    "edit": "편집하다",
+    "delete": "삭제",
+    "actions": "행위",
+    "search": "찾다...",
+    "loading": "로드 중...",
+    "no_data": "사용 가능한 데이터가 없습니다.",
+    "no_img": "이미지 없음",
+    "yes": "예",
+    "no": "아니요",
+    "status": {
+      "active": "활동적인",
+      "inactive": "비활성",
+      "pending": "보류 중",
+      "blocked": "막힌"
+    }
+  },
+  "dashboard": {
+    "overview": "대시보드 개요",
+    "metrics": "시스템 성능 및 지표",
+    "users": {
+      "title": "사용자",
+      "total": "총 사용자",
+      "today": "오늘의 사용자",
+      "buyers": "총 구매자",
+      "sellers": "총 판매자"
+    },
+    "listings": {
+      "title": "목록",
+      "total": "총 목록",
+      "today": "오늘의 목록"
+    },
+    "orders": {
+      "title": "명령",
+      "total": "총 주문",
+      "today": "오늘 주문"
+    },
+    "revenue": {
+      "title": "수익",
+      "total_income": "총 수입",
+      "total_sales": "총 매출액"
+    },
+    "categories": {
+      "title": "카테고리",
+      "total": "총 카테고리"
+    },
+    "commission": {
+      "title": "관리 수수료 수입",
+      "wallet": "지갑",
+      "total_income": "총 수입"
+    },
+    "tables": {
+      "top_sellers": "상위 5개 판매자",
+      "top_buyers": "상위 5개 구매자",
+      "seller": "파는 사람",
+      "buyer": "사는 사람",
+      "total_sales": "총 매출액",
+      "total_spent": "총 지출",
+      "orders_count": "주문수"
+    },
+    "revenue_chart": "지난 12개월간 수익",
+    "full_analysis": "전체 분석",
+    "revenue_summary": "{count} 주문에 대한 총 수익 {amount}",
+    "latest_bookings": "최근 예약",
+    "latest_listings": "최신 목록",
+    "no_recent_bookings": "최근 예약이 없습니다",
+    "no_recent_listings": "최근 매물이 없습니다",
+    "table": {
+      "user": "사용자",
+      "amount": "양",
+      "date": "날짜",
+      "name": "이름",
+      "seller": "파는 사람",
+      "status": "상태"
+    }
+  },
+  "users": {
+    "title": "사용자 관리",
+    "subtitle": "등록된 모든 사용자를 검토하고 관리합니다.",
+    "add_new": "사용자 추가",
+    "search_placeholder": "사용자 이름이나 이메일로 검색하세요...",
+    "filter_all": "모든 사용자",
+    "filter_today": "오늘의 등록",
+    "table": {
+      "user": "사용자",
+      "email": "이메일",
+      "balance": "균형",
+      "status": "상태",
+      "verified": "확인됨"
+    },
+    "modal": {
+      "edit_title": "사용자 편집",
+      "add_title": "새 사용자 추가",
+      "username": "사용자 이름",
+      "password": "비밀번호",
+      "email": "이메일",
+      "verification": "확인 상태",
+      "is_verified": "확인됨",
+      "not_verified": "확인되지 않음",
+      "profile_image": "프로필 이미지"
+    }
+  },
+  "listings": {
+    "title": "목록 관리",
+    "subtitle": "마켓플레이스 제품 검토 및 관리",
+    "add_new": "목록 추가",
+    "search_placeholder": "제목이나 ID로 검색하세요...",
+    "filter_all": "모든 목록",
+    "filter_today": "오늘의 목록",
+    "loading": "목록 로드 중...",
+    "table": {
+      "item": "목",
+      "price": "가격",
+      "category": "범주",
+      "condition": "상태",
+      "status": "상태"
+    },
+    "modal": {
+      "edit_title": "목록 편집",
+      "add_title": "새 목록 추가",
+      "item_title": "항목 제목",
+      "item_title_placeholder": "예를 들어 빈티지 데님 재킷",
+      "price": "가격",
+      "condition": "상태",
+      "condition_placeholder": "조건 선택...",
+      "category": "범주",
+      "category_placeholder": "카테고리 선택...",
+      "subcategory": "하위 카테고리",
+      "subcategory_placeholder": "하위 카테고리 선택...",
+      "description": "설명",
+      "description_placeholder": "아이템에 대해 자세히 알려주세요...",
+      "is_sold": "판매되었나요?",
+      "is_blocked": "차단되었나요?",
+      "sold": "판매된",
+      "available": "사용 가능"
+    }
+  },
+  "orders": {
+    "title": "주문 관리",
+    "subtitle": "마켓플레이스 주문 검토 및 관리",
+    "search_placeholder": "주문 번호 또는 사용자로 검색...",
+    "filter_all": "모든 주문",
+    "filter_today": "오늘의 주문",
+    "loading": "주문 로드 중...",
+    "table": {
+      "order_no": "주문하다 #",
+      "item": "목",
+      "buyer": "사는 사람",
+      "seller": "파는 사람",
+      "amount": "양",
+      "payment_status": "결제 상태",
+      "order_status": "주문 상태",
+      "date": "날짜"
+    }
+  },
+  "sidebar": {
+    "dashboard": "계기반",
+    "users": "사용자",
+    "listings": "목록",
+    "orders": "명령",
+    "wallet": {
+      "title": "지갑",
+      "withdrawal_requests": "출금 요청",
+      "transactions": "업무",
+      "payment_methods": "결제 방법"
+    },
+    "categories": {
+      "title": "카테고리",
+      "manage": "카테고리 관리",
+      "subcategories": "하위 카테고리 관리",
+      "item_types": "품목 유형 관리"
+    },
+    "reports": "보고서",
+    "settings": {
+      "title": "설정",
+      "languages": "언어",
+      "currencies": "통화",
+      "general_settings": "일반 설정",
+      "email_settings": "이메일 설정",
+      "site_settings": "사이트 설정",
+      "payment_settings": "결제 설정",
+      "social_settings": "소셜 설정",
+      "notification_settings": "알림 설정"
+    }
+  }
+}

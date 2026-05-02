@@ -1,0 +1,15 @@
+node_modules/
+.next/
+dist/
+build/
+.env
+.env.local
+.DS_Store
+*.log
+# Database backups and sensitive stores
+**/backups/
+**/db_backup/
+**/support_db_backup/
+**/database_store/
+**/debug_logs/
+*.json.bak

@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "Ahorrar",
+    "saving": "Ahorro...",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Borrar",
+    "actions": "Comportamiento",
+    "search": "Buscar...",
+    "loading": "Cargando...",
+    "no_data": "No hay datos disponibles",
+    "no_img": "Sin imagen",
+    "yes": "Sí",
+    "no": "No",
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo",
+      "pending": "Pendiente",
+      "blocked": "Obstruido"
+    }
+  },
+  "dashboard": {
+    "overview": "Descripción general del panel",
+    "metrics": "Rendimiento y métricas del sistema",
+    "users": {
+      "title": "Usuarios",
+      "total": "Usuarios totales",
+      "today": "Usuarios de hoy",
+      "buyers": "Compradores totales",
+      "sellers": "Vendedores totales"
+    },
+    "listings": {
+      "title": "Listados",
+      "total": "Listados totales",
+      "today": "Listados de hoy"
+    },
+    "orders": {
+      "title": "Órdenes",
+      "total": "Órdenes totales",
+      "today": "Pedidos de hoy"
+    },
+    "revenue": {
+      "title": "Ganancia",
+      "total_income": "Ingresos totales",
+      "total_sales": "Ventas totales"
+    },
+    "categories": {
+      "title": "Categorías",
+      "total": "Categorías totales"
+    },
+    "commission": {
+      "title": "Ingresos por comisiones administrativas",
+      "wallet": "Billetera",
+      "total_income": "Ingresos totales"
+    },
+    "tables": {
+      "top_sellers": "Los 5 mejores vendedores",
+      "top_buyers": "Los 5 principales compradores",
+      "seller": "Vendedor",
+      "buyer": "Comprador",
+      "total_sales": "Ventas totales",
+      "total_spent": "Total gastado",
+      "orders_count": "Recuento de pedidos"
+    },
+    "revenue_chart": "Ingresos de los últimos 12 meses",
+    "full_analysis": "Análisis completo",
+    "revenue_summary": "Ingresos totales {cantidad} para {count} pedidos",
+    "latest_bookings": "Últimas reservas",
+    "latest_listings": "Últimos listados",
+    "no_recent_bookings": "No hay reservas recientes",
+    "no_recent_listings": "No hay listados recientes",
+    "table": {
+      "user": "Usuario",
+      "amount": "Cantidad",
+      "date": "Fecha",
+      "name": "Nombre",
+      "seller": "Vendedor",
+      "status": "Estado"
+    }
+  },
+  "users": {
+    "title": "Gestión de usuarios",
+    "subtitle": "Revisar y gestionar todos los usuarios registrados.",
+    "add_new": "Agregar usuario",
+    "search_placeholder": "Buscar por nombre de usuario o correo electrónico...",
+    "filter_all": "Todos los usuarios",
+    "filter_today": "Inscripciones de hoy",
+    "table": {
+      "user": "Usuario",
+      "email": "Correo electrónico",
+      "balance": "Balance",
+      "status": "Estado",
+      "verified": "Verificado"
+    },
+    "modal": {
+      "edit_title": "Editar usuario",
+      "add_title": "Agregar nuevo usuario",
+      "username": "Nombre de usuario",
+      "password": "Contraseña",
+      "email": "Correo electrónico",
+      "verification": "Estado de verificación",
+      "is_verified": "Está verificado",
+      "not_verified": "No verificado",
+      "profile_image": "Imagen de perfil"
+    }
+  },
+  "listings": {
+    "title": "Gestión de listados",
+    "subtitle": "Revisar y gestionar productos del mercado.",
+    "add_new": "Agregar listado",
+    "search_placeholder": "Buscar por título o ID...",
+    "filter_all": "Todos los listados",
+    "filter_today": "Listados de hoy",
+    "loading": "Cargando listados...",
+    "table": {
+      "item": "Artículo",
+      "price": "Precio",
+      "category": "Categoría",
+      "condition": "Condición",
+      "status": "Estado"
+    },
+    "modal": {
+      "edit_title": "Editar listado",
+      "add_title": "Agregar nuevo listado",
+      "item_title": "Título del artículo",
+      "item_title_placeholder": "p.ej. Chaqueta vaquera vintage",
+      "price": "Precio",
+      "condition": "Condición",
+      "condition_placeholder": "Seleccione Condición...",
+      "category": "Categoría",
+      "category_placeholder": "Seleccione Categoría...",
+      "subcategory": "Subcategoría",
+      "subcategory_placeholder": "Seleccione Subcategoría...",
+      "description": "Descripción",
+      "description_placeholder": "Cuéntanos más sobre el artículo...",
+      "is_sold": "¿Se vende?",
+      "is_blocked": "¿Está bloqueado?",
+      "sold": "Vendido",
+      "available": "Disponible"
+    }
+  },
+  "orders": {
+    "title": "Gestión de pedidos",
+    "subtitle": "Revisar y gestionar pedidos del mercado",
+    "search_placeholder": "Buscar por número de pedido o usuario...",
+    "filter_all": "Todos los pedidos",
+    "filter_today": "Pedidos de hoy",
+    "loading": "Cargando pedidos...",
+    "table": {
+      "order_no": "Orden #",
+      "item": "Artículo",
+      "buyer": "Comprador",
+      "seller": "Vendedor",
+      "amount": "Cantidad",
+      "payment_status": "Estado de pago",
+      "order_status": "Estado del pedido",
+      "date": "Fecha"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Panel",
+    "users": "Usuarios",
+    "listings": "Listados",
+    "orders": "Órdenes",
+    "wallet": {
+      "title": "Billetera",
+      "withdrawal_requests": "Solicitudes de retiro",
+      "transactions": "Actas",
+      "payment_methods": "Métodos de pago"
+    },
+    "categories": {
+      "title": "Categorías",
+      "manage": "Administrar categorías",
+      "subcategories": "Administrar subcategorías",
+      "item_types": "Administrar tipos de artículos"
+    },
+    "reports": "Informes",
+    "settings": {
+      "title": "Ajustes",
+      "languages": "Idiomas",
+      "currencies": "Monedas",
+      "general_settings": "Configuraciones generales",
+      "email_settings": "Configuración de correo electrónico",
+      "site_settings": "Configuración del sitio",
+      "payment_settings": "Configuración de pago",
+      "social_settings": "Configuraciones sociales",
+      "notification_settings": "Configuración de notificaciones"
+    }
+  }
+}

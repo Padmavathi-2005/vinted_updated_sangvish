@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "Redden",
+    "saving": "Besparing...",
+    "cancel": "Annuleren",
+    "edit": "Bewerking",
+    "delete": "Verwijderen",
+    "actions": "Acties",
+    "search": "Zoekopdracht...",
+    "loading": "Laden...",
+    "no_data": "Geen gegevens beschikbaar",
+    "no_img": "Nee Afb",
+    "yes": "Ja",
+    "no": "Nee",
+    "status": {
+      "active": "Actief",
+      "inactive": "Inactief",
+      "pending": "In behandeling",
+      "blocked": "Geblokkeerd"
+    }
+  },
+  "dashboard": {
+    "overview": "Dashboardoverzicht",
+    "metrics": "Systeemprestaties en statistieken",
+    "users": {
+      "title": "Gebruikers",
+      "total": "Totaal aantal gebruikers",
+      "today": "Vandaag gebruikers",
+      "buyers": "Totaal aantal kopers",
+      "sellers": "Totaal aantal verkopers"
+    },
+    "listings": {
+      "title": "Advertenties",
+      "total": "Totaal aantal vermeldingen",
+      "today": "Vandaag aanbiedingen"
+    },
+    "orders": {
+      "title": "Bestellingen",
+      "total": "Totaal aantal bestellingen",
+      "today": "Vandaag bestellingen"
+    },
+    "revenue": {
+      "title": "Winst",
+      "total_income": "Totaal inkomen",
+      "total_sales": "Totale omzet"
+    },
+    "categories": {
+      "title": "Categorieën",
+      "total": "Totaal categorieën"
+    },
+    "commission": {
+      "title": "Inkomen beheerderscommissie",
+      "wallet": "Portemonnee",
+      "total_income": "Totaal inkomen"
+    },
+    "tables": {
+      "top_sellers": "Top 5 verkopers",
+      "top_buyers": "Top 5 kopers",
+      "seller": "Verkoper",
+      "buyer": "Koper",
+      "total_sales": "Totale omzet",
+      "total_spent": "Totaal uitgegeven",
+      "orders_count": "Bestellingen tellen"
+    },
+    "revenue_chart": "Omzet van de afgelopen 12 maanden",
+    "full_analysis": "Volledige analyse",
+    "revenue_summary": "Totale opbrengst {amount} voor {count} bestellingen",
+    "latest_bookings": "Laatste boekingen",
+    "latest_listings": "Laatste aanbiedingen",
+    "no_recent_bookings": "Geen recente boekingen",
+    "no_recent_listings": "Geen recente vermeldingen",
+    "table": {
+      "user": "Gebruiker",
+      "amount": "Hoeveelheid",
+      "date": "Datum",
+      "name": "Naam",
+      "seller": "Verkoper",
+      "status": "Status"
+    }
+  },
+  "users": {
+    "title": "Gebruikersbeheer",
+    "subtitle": "Bekijk en beheer alle geregistreerde gebruikers",
+    "add_new": "Gebruiker toevoegen",
+    "search_placeholder": "Zoek op gebruikersnaam of e-mailadres...",
+    "filter_all": "Alle gebruikers",
+    "filter_today": "De inschrijvingen van vandaag",
+    "table": {
+      "user": "Gebruiker",
+      "email": "E-mail",
+      "balance": "Evenwicht",
+      "status": "Status",
+      "verified": "Geverifieerd"
+    },
+    "modal": {
+      "edit_title": "Gebruiker bewerken",
+      "add_title": "Nieuwe gebruiker toevoegen",
+      "username": "Gebruikersnaam",
+      "password": "Wachtwoord",
+      "email": "E-mail",
+      "verification": "Verificatiestatus",
+      "is_verified": "Is geverifieerd",
+      "not_verified": "Niet geverifieerd",
+      "profile_image": "Profielafbeelding"
+    }
+  },
+  "listings": {
+    "title": "Advertentiebeheer",
+    "subtitle": "Marktplaatsproducten beoordelen en beheren",
+    "add_new": "Voeg vermelding toe",
+    "search_placeholder": "Zoek op titel of ID...",
+    "filter_all": "Alle vermeldingen",
+    "filter_today": "De aanbiedingen van vandaag",
+    "loading": "Advertenties laden...",
+    "table": {
+      "item": "Item",
+      "price": "Prijs",
+      "category": "Categorie",
+      "condition": "Voorwaarde",
+      "status": "Status"
+    },
+    "modal": {
+      "edit_title": "Bewerk vermelding",
+      "add_title": "Nieuwe vermelding toevoegen",
+      "item_title": "Titel van item",
+      "item_title_placeholder": "bijv. Vintage spijkerjasje",
+      "price": "Prijs",
+      "condition": "Voorwaarde",
+      "condition_placeholder": "Selecteer voorwaarde...",
+      "category": "Categorie",
+      "category_placeholder": "Categorie selecteren...",
+      "subcategory": "Subcategorie",
+      "subcategory_placeholder": "Selecteer subcategorie...",
+      "description": "Beschrijving",
+      "description_placeholder": "Vertel ons meer over het artikel...",
+      "is_sold": "Wordt verkocht?",
+      "is_blocked": "Is geblokkeerd?",
+      "sold": "Verkocht",
+      "available": "Beschikbaar"
+    }
+  },
+  "orders": {
+    "title": "Orderbeheer",
+    "subtitle": "Beoordeel en beheer marktplaatsbestellingen",
+    "search_placeholder": "Zoek op bestelnummer of gebruiker...",
+    "filter_all": "Alle bestellingen",
+    "filter_today": "De bestellingen van vandaag",
+    "loading": "Bestellingen laden...",
+    "table": {
+      "order_no": "Volgorde #",
+      "item": "Item",
+      "buyer": "Koper",
+      "seller": "Verkoper",
+      "amount": "Hoeveelheid",
+      "payment_status": "Betalingsstatus",
+      "order_status": "Bestelstatus",
+      "date": "Datum"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "users": "Gebruikers",
+    "listings": "Advertenties",
+    "orders": "Bestellingen",
+    "wallet": {
+      "title": "Portemonnee",
+      "withdrawal_requests": "Intrekkingsverzoeken",
+      "transactions": "Transacties",
+      "payment_methods": "Betaalmethoden"
+    },
+    "categories": {
+      "title": "Categorieën",
+      "manage": "Beheer categorieën",
+      "subcategories": "Beheer subcategorieën",
+      "item_types": "Beheer artikeltypen"
+    },
+    "reports": "Rapporten",
+    "settings": {
+      "title": "Instellingen",
+      "languages": "Talen",
+      "currencies": "Valuta's",
+      "general_settings": "Algemene instellingen",
+      "email_settings": "E-mailinstellingen",
+      "site_settings": "Site-instellingen",
+      "payment_settings": "Betalingsinstellingen",
+      "social_settings": "Sociale instellingen",
+      "notification_settings": "Meldingsinstellingen"
+    }
+  }
+}

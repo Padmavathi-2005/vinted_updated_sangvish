@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "Spara",
+    "saving": "Sparande...",
+    "cancel": "Avboka",
+    "edit": "Redigera",
+    "delete": "Radera",
+    "actions": "Åtgärder",
+    "search": "Söka...",
+    "loading": "Belastning...",
+    "no_data": "Inga data tillgängliga",
+    "no_img": "Ingen bild",
+    "yes": "Ja",
+    "no": "Inga",
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "pending": "I avvaktan på",
+      "blocked": "Blockerad"
+    }
+  },
+  "dashboard": {
+    "overview": "Översikt över instrumentpanelen",
+    "metrics": "Systemprestanda och mätvärden",
+    "users": {
+      "title": "Användare",
+      "total": "Totalt antal användare",
+      "today": "Idag användare",
+      "buyers": "Totala köpare",
+      "sellers": "Totala säljare"
+    },
+    "listings": {
+      "title": "Listor",
+      "total": "Totala listor",
+      "today": "Idag listor"
+    },
+    "orders": {
+      "title": "Order",
+      "total": "Totalt antal beställningar",
+      "today": "Beställningar idag"
+    },
+    "revenue": {
+      "title": "Inkomst",
+      "total_income": "Total inkomst",
+      "total_sales": "Total försäljning"
+    },
+    "categories": {
+      "title": "Kategorier",
+      "total": "Totala kategorier"
+    },
+    "commission": {
+      "title": "Administratörskommissionens inkomst",
+      "wallet": "Plånbok",
+      "total_income": "Total inkomst"
+    },
+    "tables": {
+      "top_sellers": "Topp 5 säljare",
+      "top_buyers": "Topp 5 köpare",
+      "seller": "Säljare",
+      "buyer": "Köpare",
+      "total_sales": "Total försäljning",
+      "total_spent": "Totalt spenderat",
+      "orders_count": "Beställningar räknas"
+    },
+    "revenue_chart": "Intäkter för de senaste 12 månaderna",
+    "full_analysis": "Fullständig analys",
+    "revenue_summary": "Totala intäkter {amount} för {count} beställningar",
+    "latest_bookings": "Senaste bokningar",
+    "latest_listings": "Senaste listor",
+    "no_recent_bookings": "Inga senaste bokningar",
+    "no_recent_listings": "Inga nya listor",
+    "table": {
+      "user": "Användare",
+      "amount": "Belopp",
+      "date": "Datum",
+      "name": "Namn",
+      "seller": "Säljare",
+      "status": "Status"
+    }
+  },
+  "users": {
+    "title": "Användarhantering",
+    "subtitle": "Granska och hantera alla registrerade användare",
+    "add_new": "Lägg till användare",
+    "search_placeholder": "Sök efter användarnamn eller e-post...",
+    "filter_all": "Alla användare",
+    "filter_today": "Dagens anmälningar",
+    "table": {
+      "user": "Användare",
+      "email": "E-post",
+      "balance": "Balans",
+      "status": "Status",
+      "verified": "Verifierad"
+    },
+    "modal": {
+      "edit_title": "Redigera användare",
+      "add_title": "Lägg till ny användare",
+      "username": "Användarnamn",
+      "password": "Lösenord",
+      "email": "E-post",
+      "verification": "Verifieringsstatus",
+      "is_verified": "Är verifierad",
+      "not_verified": "Ej verifierad",
+      "profile_image": "Profilbild"
+    }
+  },
+  "listings": {
+    "title": "Annonshantering",
+    "subtitle": "Granska och hantera marknadsplatsprodukter",
+    "add_new": "Lägg till annons",
+    "search_placeholder": "Sök efter titel eller ID...",
+    "filter_all": "Alla listor",
+    "filter_today": "Dagens listor",
+    "loading": "Laddar uppgifter...",
+    "table": {
+      "item": "Punkt",
+      "price": "Pris",
+      "category": "Kategori",
+      "condition": "Skick",
+      "status": "Status"
+    },
+    "modal": {
+      "edit_title": "Redigera lista",
+      "add_title": "Lägg till ny notering",
+      "item_title": "Objektets titel",
+      "item_title_placeholder": "till exempel Vintage jeansjacka",
+      "price": "Pris",
+      "condition": "Skick",
+      "condition_placeholder": "Välj skick...",
+      "category": "Kategori",
+      "category_placeholder": "Välj kategori...",
+      "subcategory": "Underkategori",
+      "subcategory_placeholder": "Välj underkategori...",
+      "description": "Beskrivning",
+      "description_placeholder": "Berätta mer om varan...",
+      "is_sold": "Är såld?",
+      "is_blocked": "Är blockerad?",
+      "sold": "Såld",
+      "available": "Tillgänglig"
+    }
+  },
+  "orders": {
+    "title": "Orderhantering",
+    "subtitle": "Granska och hantera marknadsplatsordrar",
+    "search_placeholder": "Sök efter beställningsnummer eller användare...",
+    "filter_all": "Alla beställningar",
+    "filter_today": "Dagens beställningar",
+    "loading": "Laddar beställningar...",
+    "table": {
+      "order_no": "Beställningsnummer",
+      "item": "Punkt",
+      "buyer": "Köpare",
+      "seller": "Säljare",
+      "amount": "Belopp",
+      "payment_status": "Betalningsstatus",
+      "order_status": "Orderstatus",
+      "date": "Datum"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Instrumentbräda",
+    "users": "Användare",
+    "listings": "Listor",
+    "orders": "Order",
+    "wallet": {
+      "title": "Plånbok",
+      "withdrawal_requests": "Uttagsbegäranden",
+      "transactions": "Transaktioner",
+      "payment_methods": "Betalningsmetoder"
+    },
+    "categories": {
+      "title": "Kategorier",
+      "manage": "Hantera kategorier",
+      "subcategories": "Hantera underkategorier",
+      "item_types": "Hantera objekttyper"
+    },
+    "reports": "Rapporter",
+    "settings": {
+      "title": "Inställningar",
+      "languages": "Språk",
+      "currencies": "Valutor",
+      "general_settings": "Allmänna inställningar",
+      "email_settings": "E-postinställningar",
+      "site_settings": "Webbplatsinställningar",
+      "payment_settings": "Betalningsinställningar",
+      "social_settings": "Sociala inställningar",
+      "notification_settings": "Aviseringsinställningar"
+    }
+  }
+}

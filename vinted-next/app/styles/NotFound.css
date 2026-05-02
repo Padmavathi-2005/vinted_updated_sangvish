@@ -1,0 +1,118 @@
+/* NotFound.css */
+.not-found-container {
+    min-height: calc(100vh - 150px);
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+}
+
+.text-section {
+    z-index: 2;
+}
+
+/* Base style for the glitch effect container */
+.glitch-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.glitch {
+    position: relative;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--primary-color, #0ea5e9);
+    letter-spacing: -2px;
+    margin: 0;
+}
+
+/* Button Styling for the 404 Action buttons */
+.action-btn {
+    border-radius: 50px;
+    padding: 12px 30px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.back-home-btn {
+    background-color: var(--primary-color, #0ea5e9);
+    border: none;
+    color: white;
+}
+
+.back-home-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.3);
+    color: white;
+}
+
+.search-btn {
+    border: 2px solid #333;
+    color: #333;
+    background: transparent;
+}
+
+.search-btn:hover {
+    background: #333;
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(51, 51, 51, 0.2);
+}
+
+/* Robot Image Wrapper */
+.image-section {
+    z-index: 1;
+}
+
+.robot-wrapper {
+    background: white;
+    padding: 2rem;
+    border-radius: 30px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    position: relative;
+    max-width: 500px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.robot-gif {
+    width: 100%;
+    height: auto;
+    border-radius: 15px;
+    mix-blend-mode: multiply;
+    /* Helps blend white background gifs into the white container */
+}
+
+.floating-animation {
+    animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+/* Responsive Overrides */
+@media (max-width: 768px) {
+    .glitch {
+        font-size: 2.5rem;
+    }
+
+    .robot-wrapper {
+        margin-top: 3rem;
+        padding: 1rem;
+    }
+}

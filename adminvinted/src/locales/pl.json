@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "Ratować",
+    "saving": "Oszczędność...",
+    "cancel": "Anulować",
+    "edit": "Redagować",
+    "delete": "Usuwać",
+    "actions": "Działania",
+    "search": "Szukaj...",
+    "loading": "Załadunek...",
+    "no_data": "Brak dostępnych danych",
+    "no_img": "Brak obrazu",
+    "yes": "Tak",
+    "no": "NIE",
+    "status": {
+      "active": "Aktywny",
+      "inactive": "Nieaktywny",
+      "pending": "Aż do",
+      "blocked": "Zablokowany"
+    }
+  },
+  "dashboard": {
+    "overview": "Przegląd panelu",
+    "metrics": "Wydajność i metryki systemu",
+    "users": {
+      "title": "Użytkownicy",
+      "total": "Całkowita liczba użytkowników",
+      "today": "Dzisiaj Użytkownicy",
+      "buyers": "Całkowita liczba kupujących",
+      "sellers": "Wszystkich sprzedawców"
+    },
+    "listings": {
+      "title": "Oferty",
+      "total": "Łączna liczba ofert",
+      "today": "Dzisiejsze zestawienia"
+    },
+    "orders": {
+      "title": "Święcenia",
+      "total": "Łączna liczba zamówień",
+      "today": "Dzisiejsze zamówienia"
+    },
+    "revenue": {
+      "title": "Przychód",
+      "total_income": "Całkowity dochód",
+      "total_sales": "Całkowita sprzedaż"
+    },
+    "categories": {
+      "title": "Kategorie",
+      "total": "Wszystkie kategorie"
+    },
+    "commission": {
+      "title": "Dochód z prowizji administracyjnej",
+      "wallet": "Portfel",
+      "total_income": "Całkowity dochód"
+    },
+    "tables": {
+      "top_sellers": "5 najlepszych sprzedawców",
+      "top_buyers": "5 najlepszych kupujących",
+      "seller": "Sprzedający",
+      "buyer": "Kupujący",
+      "total_sales": "Całkowita sprzedaż",
+      "total_spent": "Łącznie wydane",
+      "orders_count": "Liczba zamówień"
+    },
+    "revenue_chart": "Przychody z ostatnich 12 miesięcy",
+    "full_analysis": "Pełna analiza",
+    "revenue_summary": "Całkowity przychód {amount} dla {count} zamówień",
+    "latest_bookings": "Najnowsze rezerwacje",
+    "latest_listings": "Najnowsze zestawienia",
+    "no_recent_bookings": "Brak ostatnich rezerwacji",
+    "no_recent_listings": "Brak ostatnich wpisów",
+    "table": {
+      "user": "Użytkownik",
+      "amount": "Kwota",
+      "date": "Data",
+      "name": "Nazwa",
+      "seller": "Sprzedający",
+      "status": "Status"
+    }
+  },
+  "users": {
+    "title": "Zarządzanie użytkownikami",
+    "subtitle": "Przeglądaj i zarządzaj wszystkimi zarejestrowanymi użytkownikami",
+    "add_new": "Dodaj użytkownika",
+    "search_placeholder": "Wyszukaj według nazwy użytkownika lub adresu e-mail...",
+    "filter_all": "Wszyscy Użytkownicy",
+    "filter_today": "Dzisiejsze rejestracje",
+    "table": {
+      "user": "Użytkownik",
+      "email": "E-mail",
+      "balance": "Balansować",
+      "status": "Status",
+      "verified": "Zweryfikowano"
+    },
+    "modal": {
+      "edit_title": "Edytuj użytkownika",
+      "add_title": "Dodaj nowego użytkownika",
+      "username": "Nazwa użytkownika",
+      "password": "Hasło",
+      "email": "E-mail",
+      "verification": "Stan weryfikacji",
+      "is_verified": "Jest zweryfikowany",
+      "not_verified": "Nie zweryfikowano",
+      "profile_image": "Zdjęcie profilowe"
+    }
+  },
+  "listings": {
+    "title": "Zarządzanie listami",
+    "subtitle": "Przeglądaj produkty na rynku i zarządzaj nimi",
+    "add_new": "Dodaj ogłoszenie",
+    "search_placeholder": "Szukaj według tytułu lub identyfikatora...",
+    "filter_all": "Wszystkie zestawienia",
+    "filter_today": "Dzisiejsze zestawienia",
+    "loading": "Ładowanie ofert...",
+    "table": {
+      "item": "Przedmiot",
+      "price": "Cena",
+      "category": "Kategoria",
+      "condition": "Stan",
+      "status": "Status"
+    },
+    "modal": {
+      "edit_title": "Edytuj listę",
+      "add_title": "Dodaj nowy wpis",
+      "item_title": "Tytuł przedmiotu",
+      "item_title_placeholder": "np. Kurtka dżinsowa w stylu vintage",
+      "price": "Cena",
+      "condition": "Stan",
+      "condition_placeholder": "Wybierz warunek...",
+      "category": "Kategoria",
+      "category_placeholder": "Wybierz kategorię...",
+      "subcategory": "Podkategoria",
+      "subcategory_placeholder": "Wybierz podkategorię...",
+      "description": "Opis",
+      "description_placeholder": "Powiedz nam więcej o przedmiocie...",
+      "is_sold": "Czy sprzedany?",
+      "is_blocked": "Czy jest zablokowany?",
+      "sold": "Sprzedany",
+      "available": "Dostępny"
+    }
+  },
+  "orders": {
+    "title": "Zarządzanie zamówieniami",
+    "subtitle": "Przeglądaj i zarządzaj zamówieniami na rynku",
+    "search_placeholder": "Wyszukaj według numeru zamówienia lub użytkownika...",
+    "filter_all": "Wszystkie zamówienia",
+    "filter_today": "Dzisiejsze zamówienia",
+    "loading": "Ładowanie zamówień...",
+    "table": {
+      "order_no": "Zamówienie #",
+      "item": "Przedmiot",
+      "buyer": "Kupujący",
+      "seller": "Sprzedający",
+      "amount": "Kwota",
+      "payment_status": "Stan płatności",
+      "order_status": "Stan zamówienia",
+      "date": "Data"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Panel",
+    "users": "Użytkownicy",
+    "listings": "Oferty",
+    "orders": "Święcenia",
+    "wallet": {
+      "title": "Portfel",
+      "withdrawal_requests": "Żądania wypłaty",
+      "transactions": "Transakcje",
+      "payment_methods": "Metody płatności"
+    },
+    "categories": {
+      "title": "Kategorie",
+      "manage": "Zarządzaj kategoriami",
+      "subcategories": "Zarządzaj podkategoriami",
+      "item_types": "Zarządzaj typami elementów"
+    },
+    "reports": "Raporty",
+    "settings": {
+      "title": "Ustawienia",
+      "languages": "Języki",
+      "currencies": "Waluty",
+      "general_settings": "Ustawienia ogólne",
+      "email_settings": "Ustawienia poczty e-mail",
+      "site_settings": "Ustawienia witryny",
+      "payment_settings": "Ustawienia płatności",
+      "social_settings": "Ustawienia społecznościowe",
+      "notification_settings": "Ustawienia powiadomień"
+    }
+  }
+}

@@ -1,0 +1,125 @@
+.filter-pill-container {
+    position: relative;
+    display: inline-block;
+}
+
+.filter-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    color: #475569;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.filter-pill:hover {
+    border-color: #cbd5e1;
+    background-color: #f8fafc;
+}
+
+.filter-pill.active {
+    background-color: #f0f9ff;
+    border-color: #0ea5e9;
+    color: #0369a1;
+    font-weight: 500;
+}
+
+.filter-pill.open {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1);
+}
+
+.filter-pill-arrow {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    transition: transform 0.2s ease;
+}
+
+.filter-pill-arrow.rotated {
+    transform: rotate(180deg);
+}
+
+.filter-pill-clear {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.filter-pill-clear:hover {
+    color: #ef4444;
+}
+
+/* Dropdown */
+.filter-pill-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 200px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+    padding: 4px;
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.filter-options-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.filter-option {
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.1s;
+}
+
+.filter-option:hover {
+    background-color: #f1f5f9;
+}
+
+.filter-option.selected {
+    background-color: #f0f9ff;
+    color: #0ea5e9;
+    font-weight: 500;
+}
+
+.color-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.filter-price-custom {
+    min-width: 250px;
+}
+
+.filter-pill.no-dropdown:hover {
+    background-color: #f0f9ff;
+    border-color: #0ea5e9;
+    cursor: default;
+}
+
+.filter-pill.no-dropdown .filter-pill-clear {
+    cursor: pointer;
+}

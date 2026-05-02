@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "Sauvegarder",
+    "saving": "Économie...",
+    "cancel": "Annuler",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "actions": "Actes",
+    "search": "Recherche...",
+    "loading": "Chargement...",
+    "no_data": "Aucune donnée disponible",
+    "no_img": "Aucune image",
+    "yes": "Oui",
+    "no": "Non",
+    "status": {
+      "active": "Actif",
+      "inactive": "Inactif",
+      "pending": "En attente",
+      "blocked": "Bloqué"
+    }
+  },
+  "dashboard": {
+    "overview": "Présentation du tableau de bord",
+    "metrics": "Performances et mesures du système",
+    "users": {
+      "title": "Utilisateurs",
+      "total": "Nombre total d'utilisateurs",
+      "today": "Utilisateurs d'aujourd'hui",
+      "buyers": "Total des acheteurs",
+      "sellers": "Nombre total de vendeurs"
+    },
+    "listings": {
+      "title": "Annonces",
+      "total": "Total des annonces",
+      "today": "Annonces du jour"
+    },
+    "orders": {
+      "title": "Ordres",
+      "total": "Total des commandes",
+      "today": "Commandes du jour"
+    },
+    "revenue": {
+      "title": "Revenu",
+      "total_income": "Revenu total",
+      "total_sales": "Ventes totales"
+    },
+    "categories": {
+      "title": "Catégories",
+      "total": "Total des catégories"
+    },
+    "commission": {
+      "title": "Revenu de commission d'administration",
+      "wallet": "Portefeuille",
+      "total_income": "Revenu total"
+    },
+    "tables": {
+      "top_sellers": "Top 5 des vendeurs",
+      "top_buyers": "5 meilleurs acheteurs",
+      "seller": "Vendeur",
+      "buyer": "Acheteur",
+      "total_sales": "Ventes totales",
+      "total_spent": "Total dépensé",
+      "orders_count": "Nombre de commandes"
+    },
+    "revenue_chart": "Revenu des 12 derniers mois",
+    "full_analysis": "Analyse complète",
+    "revenue_summary": "Revenu total : {amount} pour {count} commandes",
+    "latest_bookings": "Dernières réservations",
+    "latest_listings": "Dernières annonces",
+    "no_recent_bookings": "Aucune réservation récente",
+    "no_recent_listings": "Aucune annonce récente",
+    "table": {
+      "user": "Utilisateur",
+      "amount": "Montant",
+      "date": "Date",
+      "name": "Nom",
+      "seller": "Vendeur",
+      "status": "Statut"
+    }
+  },
+  "users": {
+    "title": "Gestion des utilisateurs",
+    "subtitle": "Examiner et gérer tous les utilisateurs enregistrés",
+    "add_new": "Ajouter un utilisateur",
+    "search_placeholder": "Rechercher par nom d'utilisateur ou email...",
+    "filter_all": "Tous les utilisateurs",
+    "filter_today": "Les inscriptions du jour",
+    "table": {
+      "user": "Utilisateur",
+      "email": "E-mail",
+      "balance": "Équilibre",
+      "status": "Statut",
+      "verified": "Vérifié"
+    },
+    "modal": {
+      "edit_title": "Modifier l'utilisateur",
+      "add_title": "Ajouter un nouvel utilisateur",
+      "username": "Nom d'utilisateur",
+      "password": "Mot de passe",
+      "email": "E-mail",
+      "verification": "Statut de vérification",
+      "is_verified": "Est vérifié",
+      "not_verified": "Non vérifié",
+      "profile_image": "Image de profil"
+    }
+  },
+  "listings": {
+    "title": "Gestion des annonces",
+    "subtitle": "Examiner et gérer les produits du marché",
+    "add_new": "Ajouter une annonce",
+    "search_placeholder": "Recherche par titre ou identifiant...",
+    "filter_all": "Toutes les annonces",
+    "filter_today": "Les annonces du jour",
+    "loading": "Chargement des annonces...",
+    "table": {
+      "item": "Article",
+      "price": "Prix",
+      "category": "Catégorie",
+      "condition": "Condition",
+      "status": "Statut"
+    },
+    "modal": {
+      "edit_title": "Modifier l'annonce",
+      "add_title": "Ajouter une nouvelle annonce",
+      "item_title": "Titre de l'article",
+      "item_title_placeholder": "par ex. Veste en jean vintage",
+      "price": "Prix",
+      "condition": "Condition",
+      "condition_placeholder": "Sélectionnez la condition...",
+      "category": "Catégorie",
+      "category_placeholder": "Sélectionnez une catégorie...",
+      "subcategory": "Sous-catégorie",
+      "subcategory_placeholder": "Sélectionnez une sous-catégorie...",
+      "description": "Description",
+      "description_placeholder": "Dites-nous en plus sur l'article...",
+      "is_sold": "est vendu ?",
+      "is_blocked": "Est-il bloqué ?",
+      "sold": "Vendu",
+      "available": "Disponible"
+    }
+  },
+  "orders": {
+    "title": "Gestion des commandes",
+    "subtitle": "Examiner et gérer les commandes du marché",
+    "search_placeholder": "Rechercher par numéro de commande ou par utilisateur...",
+    "filter_all": "Toutes les commandes",
+    "filter_today": "Les commandes du jour",
+    "loading": "Chargement des commandes...",
+    "table": {
+      "order_no": "Commande #",
+      "item": "Article",
+      "buyer": "Acheteur",
+      "seller": "Vendeur",
+      "amount": "Montant",
+      "payment_status": "Statut du paiement",
+      "order_status": "Statut de la commande",
+      "date": "Date"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Tableau de bord",
+    "users": "Utilisateurs",
+    "listings": "Annonces",
+    "orders": "Ordres",
+    "wallet": {
+      "title": "Portefeuille",
+      "withdrawal_requests": "Demandes de retrait",
+      "transactions": "Transactions",
+      "payment_methods": "Méthodes de paiement"
+    },
+    "categories": {
+      "title": "Catégories",
+      "manage": "Gérer les catégories",
+      "subcategories": "Gérer les sous-catégories",
+      "item_types": "Gérer les types d'éléments"
+    },
+    "reports": "Rapports",
+    "settings": {
+      "title": "Paramètres",
+      "languages": "Langues",
+      "currencies": "Devises",
+      "general_settings": "Paramètres généraux",
+      "email_settings": "Paramètres de messagerie",
+      "site_settings": "Paramètres du site",
+      "payment_settings": "Paramètres de paiement",
+      "social_settings": "Paramètres sociaux",
+      "notification_settings": "Paramètres de notification"
+    }
+  }
+}

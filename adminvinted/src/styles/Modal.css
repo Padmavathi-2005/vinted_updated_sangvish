@@ -1,0 +1,126 @@
+/* Custom Modal Styles */
+.custom-admin-modal .modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    background: white;
+}
+
+[data-admin-theme="dark"] .custom-admin-modal .modal-content {
+    background: #212529;
+    color: white;
+}
+
+.custom-admin-modal .modal-header {
+    border-bottom: 1px solid #f1f1f1;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+[data-admin-theme="dark"] .custom-admin-modal .modal-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.custom-admin-modal .modal-title {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #1a2332;
+}
+
+[data-admin-theme="dark"] .custom-admin-modal .modal-title {
+    color: white;
+}
+
+.modal-close-btn {
+    background: transparent;
+    border: 1px solid #f1f1f1;
+    color: #64748b;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+[data-admin-theme="dark"] .modal-close-btn {
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #adb5bd;
+}
+
+.modal-close-btn:hover {
+    background: #f8f9fa;
+    color: #dc3545;
+}
+
+[data-admin-theme="dark"] .modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.custom-admin-modal .modal-body {
+    padding: 24px;
+}
+
+.custom-admin-modal .modal-footer {
+    border-top: 1px solid #f1f1f1;
+    padding: 16px 24px;
+    gap: 12px;
+}
+
+[data-admin-theme="dark"] .custom-admin-modal .modal-footer {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Common Form Styles for Modals */
+.form-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1a2332;
+    margin-bottom: 8px;
+}
+
+[data-admin-theme="dark"] .form-label {
+    color: #e9ecef;
+}
+
+.form-control,
+.form-select {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+[data-admin-theme="dark"] .form-control,
+[data-admin-theme="dark"] .form-select {
+    background: #2b3035;
+    border-color: #495057;
+    color: white;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color), transparent 90%);
+}
+
+/* Custom styled select dropdown */
+.custom-select-wrapper {
+    position: relative;
+}
+
+.custom-select-icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    pointer-events: none;
+    font-size: 0.8rem;
+}

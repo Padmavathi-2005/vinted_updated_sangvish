@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "保存",
+    "saving": "保存中...",
+    "cancel": "キャンセル",
+    "edit": "編集",
+    "delete": "消去",
+    "actions": "アクション",
+    "search": "検索...",
+    "loading": "読み込み中...",
+    "no_data": "利用可能なデータがありません",
+    "no_img": "画像なし",
+    "yes": "はい",
+    "no": "いいえ",
+    "status": {
+      "active": "アクティブ",
+      "inactive": "非アクティブ",
+      "pending": "保留中",
+      "blocked": "ブロックされました"
+    }
+  },
+  "dashboard": {
+    "overview": "ダッシュボードの概要",
+    "metrics": "システムのパフォーマンスとメトリクス",
+    "users": {
+      "title": "ユーザー",
+      "total": "総ユーザー数",
+      "today": "現在のユーザー",
+      "buyers": "総購入者数",
+      "sellers": "総販売者数"
+    },
+    "listings": {
+      "title": "リスト",
+      "total": "総出品数",
+      "today": "今日のリスト"
+    },
+    "orders": {
+      "title": "注文",
+      "total": "総注文数",
+      "today": "今日の注文"
+    },
+    "revenue": {
+      "title": "収益",
+      "total_income": "総収入",
+      "total_sales": "総売上高"
+    },
+    "categories": {
+      "title": "カテゴリー",
+      "total": "カテゴリ合計"
+    },
+    "commission": {
+      "title": "管理手数料収入",
+      "wallet": "財布",
+      "total_income": "総収入"
+    },
+    "tables": {
+      "top_sellers": "販売者トップ 5",
+      "top_buyers": "上位 5 人の購入者",
+      "seller": "売り手",
+      "buyer": "買い手",
+      "total_sales": "総売上高",
+      "total_spent": "総支出額",
+      "orders_count": "注文数"
+    },
+    "revenue_chart": "過去 12 か月の収益",
+    "full_analysis": "完全な分析",
+    "revenue_summary": "{count} 件の注文の合計収益 {amount}",
+    "latest_bookings": "最新の予約",
+    "latest_listings": "最新の物件情報",
+    "no_recent_bookings": "最近の予約はありません",
+    "no_recent_listings": "最近のリストはありません",
+    "table": {
+      "user": "ユーザー",
+      "amount": "額",
+      "date": "日付",
+      "name": "名前",
+      "seller": "売り手",
+      "status": "状態"
+    }
+  },
+  "users": {
+    "title": "ユーザー管理",
+    "subtitle": "すべての登録ユーザーを確認および管理する",
+    "add_new": "ユーザーの追加",
+    "search_placeholder": "ユーザー名またはメールアドレスで検索...",
+    "filter_all": "すべてのユーザー",
+    "filter_today": "本日の登録状況",
+    "table": {
+      "user": "ユーザー",
+      "email": "電子メール",
+      "balance": "バランス",
+      "status": "状態",
+      "verified": "確認済み"
+    },
+    "modal": {
+      "edit_title": "ユーザーの編集",
+      "add_title": "新しいユーザーを追加",
+      "username": "ユーザー名",
+      "password": "パスワード",
+      "email": "電子メール",
+      "verification": "検証ステータス",
+      "is_verified": "検証済み",
+      "not_verified": "未検証",
+      "profile_image": "プロフィール画像"
+    }
+  },
+  "listings": {
+    "title": "物件管理",
+    "subtitle": "マーケットプレイス製品のレビューと管理",
+    "add_new": "リストの追加",
+    "search_placeholder": "タイトルまたはIDで検索...",
+    "filter_all": "すべてのリスト",
+    "filter_today": "今日のリスト",
+    "loading": "リストを読み込んでいます...",
+    "table": {
+      "item": "アイテム",
+      "price": "価格",
+      "category": "カテゴリ",
+      "condition": "状態",
+      "status": "状態"
+    },
+    "modal": {
+      "edit_title": "リストの編集",
+      "add_title": "新しいリストを追加",
+      "item_title": "項目タイトル",
+      "item_title_placeholder": "例えばヴィンテージデニムジャケット",
+      "price": "価格",
+      "condition": "状態",
+      "condition_placeholder": "条件を選択...",
+      "category": "カテゴリ",
+      "category_placeholder": "カテゴリを選択...",
+      "subcategory": "サブカテゴリ",
+      "subcategory_placeholder": "サブカテゴリを選択...",
+      "description": "説明",
+      "description_placeholder": "商品について詳しく教えてください...",
+      "is_sold": "販売されていますか?",
+      "is_blocked": "ブロックされていますか?",
+      "sold": "販売済み",
+      "available": "利用可能"
+    }
+  },
+  "orders": {
+    "title": "注文管理",
+    "subtitle": "マーケットプレイスの注文を確認および管理する",
+    "search_placeholder": "注文番号またはユーザーで検索...",
+    "filter_all": "すべての注文",
+    "filter_today": "今日の注文",
+    "loading": "注文を読み込んでいます...",
+    "table": {
+      "order_no": "注文 ＃",
+      "item": "アイテム",
+      "buyer": "買い手",
+      "seller": "売り手",
+      "amount": "額",
+      "payment_status": "支払い状況",
+      "order_status": "注文状況",
+      "date": "日付"
+    }
+  },
+  "sidebar": {
+    "dashboard": "ダッシュボード",
+    "users": "ユーザー",
+    "listings": "リスト",
+    "orders": "注文",
+    "wallet": {
+      "title": "財布",
+      "withdrawal_requests": "出金リクエスト",
+      "transactions": "トランザクション",
+      "payment_methods": "お支払い方法"
+    },
+    "categories": {
+      "title": "カテゴリー",
+      "manage": "カテゴリの管理",
+      "subcategories": "サブカテゴリの管理",
+      "item_types": "アイテムタイプの管理"
+    },
+    "reports": "レポート",
+    "settings": {
+      "title": "設定",
+      "languages": "言語",
+      "currencies": "通貨",
+      "general_settings": "一般設定",
+      "email_settings": "メール設定",
+      "site_settings": "サイト設定",
+      "payment_settings": "支払い設定",
+      "social_settings": "ソーシャル設定",
+      "notification_settings": "通知設定"
+    }
+  }
+}

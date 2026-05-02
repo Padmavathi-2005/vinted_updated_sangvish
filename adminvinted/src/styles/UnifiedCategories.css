@@ -1,0 +1,135 @@
+/* =====================
+   Categories Table Page
+   Matches Users page style
+   ===================== */
+
+/* =====================
+   Segmented Tab Control
+   ===================== */
+.cat-seg-tabs {
+    display: inline-flex;
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 4px;
+    gap: 2px;
+}
+
+.cat-seg-btn {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border-radius: 7px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.cat-seg-btn:hover {
+    color: #334155;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.cat-seg-btn.active {
+    background: #ffffff;
+    color: var(--primary-color, #0ea5e9);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cat-seg-count {
+    background: #e2e8f0;
+    color: #64748b;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 20px;
+    line-height: 1.4;
+}
+
+.cat-seg-btn.active .cat-seg-count {
+    background: rgba(14, 165, 233, 0.12);
+    color: var(--primary-color, #0ea5e9);
+}
+
+
+/* Row Avatar (image/icon inside table) */
+.cat-table-avatar {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 40px;
+    max-height: 40px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.cat-table-avatar img {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 40px;
+    max-height: 40px;
+    object-fit: cover;
+    display: block;
+    flex-shrink: 0;
+}
+
+.cat-table-avatar.type {
+    background: rgba(14, 165, 233, 0.1);
+    color: var(--primary-color, #0ea5e9);
+}
+
+/* Upload box in modal */
+.cat-upload-box {
+    width: 100%;
+    height: 140px;
+    border: 2px dashed #d1d9e0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.2s, background 0.2s;
+    background: #f8fafc;
+}
+
+.cat-upload-box:hover {
+    border-color: var(--primary-color, #0ea5e9);
+    background: #eef7ff;
+}
+
+.cat-upload-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.cat-upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.cat-upload-placeholder small {
+    font-size: 0.72rem;
+    color: #cbd5e1;
+}

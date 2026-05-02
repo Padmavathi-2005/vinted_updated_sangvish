@@ -1,0 +1,151 @@
+/* Main Layout for Settings */
+.admin-settings-layout {
+    background-color: #f4f7f6;
+    min-height: 100vh;
+}
+
+.settings-header-section h4 {
+    color: #31353a;
+    letter-spacing: -0.02em;
+}
+
+.settings-nav-item {
+    transition: all 0.2s;
+    font-weight: 500;
+    color: #495057 !important;
+}
+
+.settings-nav-item:hover {
+    background-color: #f8f9fa;
+}
+
+.settings-nav-item.active {
+    background-color: #343a40 !important;
+    color: #fff !important;
+}
+
+/* Language Tabs */
+.settings-tabs-header {
+    background-color: #f1f4f5 !important;
+}
+
+.lang-tab-btn {
+    font-size: 0.8rem !important;
+    text-transform: capitalize;
+    transition: all 0.2s;
+}
+
+.lang-tab-btn.white {
+    background-color: #fff !important;
+    border: 1px solid #dee2e6 !important;
+}
+
+/* Section Styling */
+.section-header-simple {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.section-header-simple h6 {
+    color: #2c3e50;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Payment Gateway Accordion */
+.payment-gateways-accordion .accordion-item {
+    border: 1px solid #e9ecef !important;
+    border-radius: 4px !important;
+    overflow: hidden;
+}
+
+.payment-gateways-accordion .accordion-header .accordion-button {
+    background-color: #fff !important;
+    color: #333 !important;
+    padding: 15px 20px;
+}
+
+.payment-gateways-accordion .accordion-header .accordion-button:not(.collapsed) {
+    box-shadow: none;
+    border-bottom: 1px solid #eee;
+}
+
+.payment-gateways-accordion .accordion-body {
+    background-color: #fdfdfd;
+}
+
+/* Input Styles */
+.simple-input {
+    border: 1px solid #dce1e5;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+}
+
+.simple-input:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Misc */
+.xx-small {
+    font-size: 0.7rem;
+}
+
+.btn-save-settings {
+    background-color: #10b981 !important;
+    border-color: #10b981 !important;
+    font-size: 0.85rem;
+    text-transform: none;
+}
+
+.btn-save-settings:hover {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+}
+
+.logo-box-mini {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.logo-box-mini img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.currency-row {
+    transition: background-color 0.2s;
+}
+
+.currency-row:hover {
+    background-color: #e9ecef !important;
+}
+
+/* Shared from before but simplified */
+.custom-switch .form-check-input {
+    width: 2.8rem;
+    height: 1.4rem;
+    cursor: pointer;
+}
+
+[data-admin-theme="dark"] .admin-settings-layout {
+    background-color: #0f172a;
+}
+
+[data-admin-theme="dark"] .bg-white {
+    background-color: #1e293b !important;
+}
+
+[data-admin-theme="dark"] .bg-light {
+    background-color: #0f172a !important;
+}
+
+[data-admin-theme="dark"] .text-dark {
+    color: #f1f5f9 !important;
+}

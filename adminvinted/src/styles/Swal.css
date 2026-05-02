@@ -1,0 +1,53 @@
+/* Premium SweetAlert2 Styling */
+.premium-swal-popup {
+    border-radius: 20px !important;
+    padding: 2rem !important;
+    font-family: inherit !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-admin-theme="dark"] .premium-swal-popup {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+
+.premium-swal-title {
+    font-weight: 800 !important;
+    font-size: 1.5rem !important;
+    color: #1e293b !important;
+}
+
+[data-admin-theme="dark"] .premium-swal-title {
+    color: #f8fafc !important;
+}
+
+.premium-swal-confirm {
+    border-radius: 12px !important;
+    padding: 12px 30px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.2) !important;
+    transition: all 0.3s ease !important;
+}
+
+.premium-swal-confirm:hover {
+    filter: brightness(1.1) !important;
+    transform: translateY(-2px) !important;
+}
+
+.premium-swal-cancel {
+    border-radius: 12px !important;
+    padding: 12px 30px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Toast Customization */
+.swal2-toast {
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-admin-theme="dark"] .swal2-toast {
+    background-color: #334155 !important;
+    color: #f8fafc !important;
+}

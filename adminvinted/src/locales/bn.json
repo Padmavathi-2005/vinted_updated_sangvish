@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "সংরক্ষণ করুন",
+    "saving": "সংরক্ষণ করা হচ্ছে...",
+    "cancel": "বাতিল করুন",
+    "edit": "সম্পাদনা করুন",
+    "delete": "মুছে দিন",
+    "actions": "কর্ম",
+    "search": "অনুসন্ধান করুন...",
+    "loading": "লোড হচ্ছে...",
+    "no_data": "কোন তথ্য উপলব্ধ নেই",
+    "no_img": "কোন Img",
+    "yes": "হ্যাঁ",
+    "no": "না",
+    "status": {
+      "active": "সক্রিয়",
+      "inactive": "নিষ্ক্রিয়",
+      "pending": "মুলতুবি",
+      "blocked": "অবরুদ্ধ"
+    }
+  },
+  "dashboard": {
+    "overview": "ড্যাশবোর্ড ওভারভিউ",
+    "metrics": "সিস্টেমের কর্মক্ষমতা এবং মেট্রিক্স",
+    "users": {
+      "title": "ব্যবহারকারীদের",
+      "total": "মোট ব্যবহারকারী",
+      "today": "আজকের ব্যবহারকারীরা",
+      "buyers": "মোট ক্রেতা",
+      "sellers": "মোট বিক্রেতা"
+    },
+    "listings": {
+      "title": "তালিকা",
+      "total": "মোট তালিকা",
+      "today": "আজ তালিকা"
+    },
+    "orders": {
+      "title": "আদেশ",
+      "total": "মোট অর্ডার",
+      "today": "আজকের অর্ডার"
+    },
+    "revenue": {
+      "title": "রাজস্ব",
+      "total_income": "মোট আয়",
+      "total_sales": "মোট বিক্রয়"
+    },
+    "categories": {
+      "title": "ক্যাটাগরি",
+      "total": "মোট বিভাগ"
+    },
+    "commission": {
+      "title": "অ্যাডমিন কমিশনের আয়",
+      "wallet": "ওয়ালেট",
+      "total_income": "মোট আয়"
+    },
+    "tables": {
+      "top_sellers": "শীর্ষ 5 বিক্রেতা",
+      "top_buyers": "শীর্ষ 5 ক্রেতা",
+      "seller": "বিক্রেতা",
+      "buyer": "ক্রেতা",
+      "total_sales": "মোট বিক্রয়",
+      "total_spent": "মোট খরচ হয়েছে",
+      "orders_count": "অর্ডার কাউন্ট"
+    },
+    "revenue_chart": "বিগত 12 মাসের রাজস্ব",
+    "full_analysis": "সম্পূর্ণ বিশ্লেষণ",
+    "revenue_summary": "{count} অর্ডারের জন্য মোট আয় {amount}",
+    "latest_bookings": "সর্বশেষ বুকিং",
+    "latest_listings": "সর্বশেষ তালিকা",
+    "no_recent_bookings": "কোন সাম্প্রতিক বুকিং",
+    "no_recent_listings": "কোন সাম্প্রতিক তালিকা",
+    "table": {
+      "user": "ব্যবহারকারী",
+      "amount": "পরিমাণ",
+      "date": "তারিখ",
+      "name": "নাম",
+      "seller": "বিক্রেতা",
+      "status": "স্ট্যাটাস"
+    }
+  },
+  "users": {
+    "title": "ব্যবহারকারী ব্যবস্থাপনা",
+    "subtitle": "সমস্ত নিবন্ধিত ব্যবহারকারীদের পর্যালোচনা এবং পরিচালনা করুন",
+    "add_new": "ব্যবহারকারী যোগ করুন",
+    "search_placeholder": "ব্যবহারকারীর নাম বা ইমেল দ্বারা অনুসন্ধান করুন...",
+    "filter_all": "সমস্ত ব্যবহারকারী",
+    "filter_today": "আজকের নিবন্ধন",
+    "table": {
+      "user": "ব্যবহারকারী",
+      "email": "ইমেইল",
+      "balance": "ভারসাম্য",
+      "status": "স্ট্যাটাস",
+      "verified": "যাচাই করা হয়েছে"
+    },
+    "modal": {
+      "edit_title": "ব্যবহারকারী সম্পাদনা করুন",
+      "add_title": "নতুন ব্যবহারকারী যোগ করুন",
+      "username": "ব্যবহারকারীর নাম",
+      "password": "পাসওয়ার্ড",
+      "email": "ইমেইল",
+      "verification": "যাচাইকরণের স্থিতি",
+      "is_verified": "যাচাই করা হয়",
+      "not_verified": "যাচাই করা হয়নি",
+      "profile_image": "প্রোফাইল ইমেজ"
+    }
+  },
+  "listings": {
+    "title": "তালিকা ব্যবস্থাপনা",
+    "subtitle": "বাজারজাত পণ্য পর্যালোচনা এবং পরিচালনা করুন",
+    "add_new": "তালিকা যোগ করুন",
+    "search_placeholder": "শিরোনাম বা আইডি দ্বারা অনুসন্ধান করুন...",
+    "filter_all": "সমস্ত তালিকা",
+    "filter_today": "আজকের তালিকা",
+    "loading": "তালিকা লোড হচ্ছে...",
+    "table": {
+      "item": "আইটেম",
+      "price": "দাম",
+      "category": "শ্রেণী",
+      "condition": "অবস্থা",
+      "status": "স্ট্যাটাস"
+    },
+    "modal": {
+      "edit_title": "তালিকা সম্পাদনা করুন",
+      "add_title": "নতুন তালিকা যোগ করুন",
+      "item_title": "আইটেম শিরোনাম",
+      "item_title_placeholder": "যেমন ভিনটেজ ডেনিম জ্যাকেট",
+      "price": "দাম",
+      "condition": "অবস্থা",
+      "condition_placeholder": "শর্ত নির্বাচন করুন...",
+      "category": "শ্রেণী",
+      "category_placeholder": "বিভাগ নির্বাচন করুন...",
+      "subcategory": "উপশ্রেণি",
+      "subcategory_placeholder": "উপশ্রেণি নির্বাচন করুন...",
+      "description": "বর্ণনা",
+      "description_placeholder": "আইটেম সম্পর্কে আমাদের আরও বলুন...",
+      "is_sold": "বিক্রি হয়?",
+      "is_blocked": "অবরুদ্ধ?",
+      "sold": "বিক্রি হয়েছে",
+      "available": "পাওয়া যায়"
+    }
+  },
+  "orders": {
+    "title": "আদেশ ব্যবস্থাপনা",
+    "subtitle": "মার্কেটপ্লেস অর্ডার পর্যালোচনা এবং পরিচালনা করুন",
+    "search_placeholder": "অর্ডার # বা ব্যবহারকারী দ্বারা অনুসন্ধান করুন...",
+    "filter_all": "সমস্ত আদেশ",
+    "filter_today": "আজকের আদেশ",
+    "loading": "অর্ডার লোড হচ্ছে...",
+    "table": {
+      "order_no": "অর্ডার #",
+      "item": "আইটেম",
+      "buyer": "ক্রেতা",
+      "seller": "বিক্রেতা",
+      "amount": "পরিমাণ",
+      "payment_status": "পেমেন্ট স্ট্যাটাস",
+      "order_status": "অর্ডার স্ট্যাটাস",
+      "date": "তারিখ"
+    }
+  },
+  "sidebar": {
+    "dashboard": "ড্যাশবোর্ড",
+    "users": "ব্যবহারকারীদের",
+    "listings": "তালিকা",
+    "orders": "আদেশ",
+    "wallet": {
+      "title": "ওয়ালেট",
+      "withdrawal_requests": "প্রত্যাহারের অনুরোধ",
+      "transactions": "লেনদেন",
+      "payment_methods": "পেমেন্ট পদ্ধতি"
+    },
+    "categories": {
+      "title": "ক্যাটাগরি",
+      "manage": "বিভাগ পরিচালনা করুন",
+      "subcategories": "উপশ্রেণী পরিচালনা করুন",
+      "item_types": "আইটেমের প্রকারগুলি পরিচালনা করুন"
+    },
+    "reports": "রিপোর্ট",
+    "settings": {
+      "title": "সেটিংস",
+      "languages": "ভাষা",
+      "currencies": "মুদ্রা",
+      "general_settings": "সাধারণ সেটিংস",
+      "email_settings": "ইমেল সেটিংস",
+      "site_settings": "সাইট সেটিংস",
+      "payment_settings": "পেমেন্ট সেটিংস",
+      "social_settings": "সামাজিক সেটিংস",
+      "notification_settings": "বিজ্ঞপ্তি সেটিংস"
+    }
+  }
+}

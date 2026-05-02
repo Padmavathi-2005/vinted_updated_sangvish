@@ -1,0 +1,190 @@
+{
+  "common": {
+    "save": "Speichern",
+    "saving": "Sparen...",
+    "cancel": "Stornieren",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "actions": "Aktionen",
+    "search": "Suchen...",
+    "loading": "Laden...",
+    "no_data": "Keine Daten verfügbar",
+    "no_img": "Kein Bild",
+    "yes": "Ja",
+    "no": "NEIN",
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "pending": "Ausstehend",
+      "blocked": "Blockiert"
+    }
+  },
+  "dashboard": {
+    "overview": "Dashboard-Übersicht",
+    "metrics": "Systemleistung und -metriken",
+    "users": {
+      "title": "Benutzer",
+      "total": "Gesamtzahl der Benutzer",
+      "today": "Heute Benutzer",
+      "buyers": "Gesamtzahl der Käufer",
+      "sellers": "Gesamtverkäufer"
+    },
+    "listings": {
+      "title": "Einträge",
+      "total": "Gesamteinträge",
+      "today": "Heute Einträge"
+    },
+    "orders": {
+      "title": "Bestellungen",
+      "total": "Gesamtbestellungen",
+      "today": "Heute Bestellungen"
+    },
+    "revenue": {
+      "title": "Einnahmen",
+      "total_income": "Gesamteinkommen",
+      "total_sales": "Gesamtumsatz"
+    },
+    "categories": {
+      "title": "Kategorien",
+      "total": "Gesamtkategorien"
+    },
+    "commission": {
+      "title": "Einnahmen aus der Verwaltungsprovision",
+      "wallet": "Geldbörse",
+      "total_income": "Gesamteinkommen"
+    },
+    "tables": {
+      "top_sellers": "Top 5 Verkäufer",
+      "top_buyers": "Top 5 Käufer",
+      "seller": "Verkäufer",
+      "buyer": "Käufer",
+      "total_sales": "Gesamtumsatz",
+      "total_spent": "Gesamtausgaben",
+      "orders_count": "Bestellungen zählen"
+    },
+    "revenue_chart": "Umsatz der letzten 12 Monate",
+    "full_analysis": "Vollständige Analyse",
+    "revenue_summary": "Gesamtumsatz {amount} für {count} Bestellungen",
+    "latest_bookings": "Neueste Buchungen",
+    "latest_listings": "Neueste Einträge",
+    "no_recent_bookings": "Keine aktuellen Buchungen",
+    "no_recent_listings": "Keine aktuellen Einträge",
+    "table": {
+      "user": "Benutzer",
+      "amount": "Menge",
+      "date": "Datum",
+      "name": "Name",
+      "seller": "Verkäufer",
+      "status": "Status"
+    }
+  },
+  "users": {
+    "title": "Benutzerverwaltung",
+    "subtitle": "Überprüfen und verwalten Sie alle registrierten Benutzer",
+    "add_new": "Benutzer hinzufügen",
+    "search_placeholder": "Suche nach Benutzername oder E-Mail...",
+    "filter_all": "Alle Benutzer",
+    "filter_today": "Die heutigen Anmeldungen",
+    "table": {
+      "user": "Benutzer",
+      "email": "E-Mail",
+      "balance": "Gleichgewicht",
+      "status": "Status",
+      "verified": "Verifiziert"
+    },
+    "modal": {
+      "edit_title": "Benutzer bearbeiten",
+      "add_title": "Neuen Benutzer hinzufügen",
+      "username": "Benutzername",
+      "password": "Passwort",
+      "email": "E-Mail",
+      "verification": "Verifizierungsstatus",
+      "is_verified": "Ist verifiziert",
+      "not_verified": "Nicht verifiziert",
+      "profile_image": "Profilbild"
+    }
+  },
+  "listings": {
+    "title": "Listings-Management",
+    "subtitle": "Überprüfen und verwalten Sie Marktplatzprodukte",
+    "add_new": "Eintrag hinzufügen",
+    "search_placeholder": "Suche nach Titel oder ID...",
+    "filter_all": "Alle Einträge",
+    "filter_today": "Die heutigen Einträge",
+    "loading": "Einträge werden geladen...",
+    "table": {
+      "item": "Artikel",
+      "price": "Preis",
+      "category": "Kategorie",
+      "condition": "Zustand",
+      "status": "Status"
+    },
+    "modal": {
+      "edit_title": "Eintrag bearbeiten",
+      "add_title": "Neuen Eintrag hinzufügen",
+      "item_title": "Artikeltitel",
+      "item_title_placeholder": "z.B. Vintage Jeansjacke",
+      "price": "Preis",
+      "condition": "Zustand",
+      "condition_placeholder": "Bedingung auswählen...",
+      "category": "Kategorie",
+      "category_placeholder": "Kategorie auswählen...",
+      "subcategory": "Unterkategorie",
+      "subcategory_placeholder": "Unterkategorie auswählen...",
+      "description": "Beschreibung",
+      "description_placeholder": "Erzählen Sie uns mehr über den Artikel...",
+      "is_sold": "Wird verkauft?",
+      "is_blocked": "Ist blockiert?",
+      "sold": "Verkauft",
+      "available": "Verfügbar"
+    }
+  },
+  "orders": {
+    "title": "Auftragsverwaltung",
+    "subtitle": "Überprüfen und verwalten Sie Marktplatzbestellungen",
+    "search_placeholder": "Suche nach Bestellnummer oder Benutzer...",
+    "filter_all": "Alle Bestellungen",
+    "filter_today": "Heutige Befehle",
+    "loading": "Bestellungen werden geladen...",
+    "table": {
+      "order_no": "Befehl #",
+      "item": "Artikel",
+      "buyer": "Käufer",
+      "seller": "Verkäufer",
+      "amount": "Menge",
+      "payment_status": "Zahlungsstatus",
+      "order_status": "Bestellstatus",
+      "date": "Datum"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Armaturenbrett",
+    "users": "Benutzer",
+    "listings": "Einträge",
+    "orders": "Bestellungen",
+    "wallet": {
+      "title": "Geldbörse",
+      "withdrawal_requests": "Auszahlungsanfragen",
+      "transactions": "Transaktionen",
+      "payment_methods": "Zahlungsmethoden"
+    },
+    "categories": {
+      "title": "Kategorien",
+      "manage": "Kategorien verwalten",
+      "subcategories": "Unterkategorien verwalten",
+      "item_types": "Artikeltypen verwalten"
+    },
+    "reports": "Berichte",
+    "settings": {
+      "title": "Einstellungen",
+      "languages": "Sprachen",
+      "currencies": "Währungen",
+      "general_settings": "Allgemeine Einstellungen",
+      "email_settings": "E-Mail-Einstellungen",
+      "site_settings": "Site-Einstellungen",
+      "payment_settings": "Zahlungseinstellungen",
+      "social_settings": "Soziale Einstellungen",
+      "notification_settings": "Benachrichtigungseinstellungen"
+    }
+  }
+}
