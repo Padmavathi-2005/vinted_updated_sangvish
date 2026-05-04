@@ -30,6 +30,18 @@ const AdminHeader = ({ toggleSidebar }) => {
     const [latestMessages, setLatestMessages] = useState([]);
     const [langSearch, setLangSearch] = useState('');
     const [currSearch, setCurrSearch] = useState('');
+    const [activeDropdown, setActiveDropdown] = useState(null); // 'lang', 'curr', 'notif', 'msg'
+
+    const toggleDropdown = (e, name) => {
+        e.stopPropagation();
+        setActiveDropdown(activeDropdown === name ? null : name);
+    };
+
+    useEffect(() => {
+        const closeDropdowns = () => setActiveDropdown(null);
+        window.addEventListener('click', closeDropdowns);
+        return () => window.removeEventListener('click', closeDropdowns);
+    }, []);
 
     useEffect(() => {
         const fetchHeaderData = async () => {
@@ -169,13 +181,13 @@ const AdminHeader = ({ toggleSidebar }) => {
 
                 <div className="admin-header-right">
                     {/* Language Switcher */}
-                    <div className="header-localization-dropdown">
-                        <button className="header-action-btn select-box">
+                    <div className={`header-localization-dropdown ${activeDropdown === 'lang' ? 'mobile-active' : ''}`}>
+                        <button className="header-action-btn select-box" onClick={(e) => toggleDropdown(e, 'lang')}>
                             <FaGlobe className="me-2 opacity-75" />
                             <span className="localization-label">{(language || 'en').toUpperCase()}</span>
                             <FaChevronDown className="ms-auto opacity-50 chevron-icon" />
                         </button>
-                        <div className="localization-menu">
+                        <div className="localization-menu" onClick={(e) => e.stopPropagation()}>
                             <div className="dropdown-header">{t('header.select_language')}</div>
                             <div className="dropdown-search">
                                 <FaSearch className="search-icon" />
@@ -206,13 +218,13 @@ const AdminHeader = ({ toggleSidebar }) => {
                     </div>
 
                     {/* Currency Switcher */}
-                    <div className="header-localization-dropdown">
-                        <button className="header-action-btn select-box">
+                    <div className={`header-localization-dropdown ${activeDropdown === 'curr' ? 'mobile-active' : ''}`}>
+                        <button className="header-action-btn select-box" onClick={(e) => toggleDropdown(e, 'curr')}>
                             <FaCoins className="me-2 opacity-75" />
                             <span className="localization-label">{currency}</span>
                             <FaChevronDown className="ms-auto opacity-50 chevron-icon" />
                         </button>
-                        <div className="localization-menu">
+                        <div className="localization-menu" onClick={(e) => e.stopPropagation()}>
                             <div className="dropdown-header">{t('header.select_currency')}</div>
                             <div className="dropdown-search">
                                 <FaSearch className="search-icon" />
@@ -248,12 +260,12 @@ const AdminHeader = ({ toggleSidebar }) => {
                     </button>
 
                     {/* Messages */}
-                    <div className="header-notification-dropdown">
-                        <button className="header-action-btn">
+                    <div className={`header-notification-dropdown ${activeDropdown === 'msg' ? 'mobile-active' : ''}`}>
+                        <button className="header-action-btn" onClick={(e) => toggleDropdown(e, 'msg')}>
                             <FaEnvelope />
                             {messageCount > 0 && <span className="notification-badge">{messageCount}</span>}
                         </button>
-                        <div className="notification-dropdown-menu">
+                        <div className="notification-dropdown-menu" onClick={(e) => e.stopPropagation()}>
                             <div className="dropdown-header d-flex justify-content-between align-items-center">
                                 <span>{t('header.recent_messages')}</span>
                                 <span className="view-all-link" onClick={() => navigate('/messages')}>{t('header.view_all')}</span>
@@ -286,12 +298,12 @@ const AdminHeader = ({ toggleSidebar }) => {
                     </div>
 
                     {/* Notifications */}
-                    <div className="header-notification-dropdown">
-                        <button className="header-action-btn">
+                    <div className={`header-notification-dropdown ${activeDropdown === 'notif' ? 'mobile-active' : ''}`}>
+                        <button className="header-action-btn" onClick={(e) => toggleDropdown(e, 'notif')}>
                             <FaBell />
                             {notificationCount > 0 && <span className="notification-badge">{notificationCount}</span>}
                         </button>
-                        <div className="notification-dropdown-menu">
+                        <div className="notification-dropdown-menu" onClick={(e) => e.stopPropagation()}>
                             <div className="dropdown-header d-flex justify-content-between align-items-center">
                                 <span>{t('header.recent_notifications')}</span>
                                 <div className="d-flex gap-2">
@@ -347,6 +359,31 @@ const AdminHeader = ({ toggleSidebar }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Mobile Bottom Navigation */}
+            <nav className="admin-bottom-nav d-lg-none">
+                <button className="bottom-nav-item" onClick={() => navigate('/settings/general_settings')}>
+                    <FaCog />
+                    <span className="bottom-nav-label">Settings</span>
+                </button>
+                
+                <button className="bottom-nav-item" onClick={() => navigate('/messages')}>
+                    <FaEnvelope />
+                    {messageCount > 0 && <span className="bottom-notif-badge">{messageCount}</span>}
+                    <span className="bottom-nav-label">Messages</span>
+                </button>
+                
+                <button className="bottom-nav-item" onClick={() => navigate('/notifications')}>
+                    <FaBell />
+                    {notificationCount > 0 && <span className="bottom-notif-badge">{notificationCount}</span>}
+                    <span className="bottom-nav-label">Notifs</span>
+                </button>
+                
+                <button className="bottom-nav-item text-danger" onClick={handleLogout}>
+                    <FaSignOutAlt />
+                    <span className="bottom-nav-label">Logout</span>
+                </button>
+            </nav>
         </header>
     );
 };

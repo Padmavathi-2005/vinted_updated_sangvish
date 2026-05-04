@@ -37,14 +37,10 @@ import { useLocalization } from '../context/LocalizationContext';
 import { getImageUrl } from '../utils/constants';
 import '../styles/AdminSidebar.css';
 
-const AdminSidebar = () => {
+const AdminSidebar = ({ isCollapsed, setIsCollapsed }) => {
     const { t } = useLocalization();
     const location = useLocation();
     const admin = getAdminInfo();
-    const [isCollapsed, setIsCollapsed] = useState(() => {
-        const isMobile = window.innerWidth < 992;
-        return isMobile ? true : (localStorage.getItem('sidebarCollapsed') === 'true');
-    });
     const isMobile = window.innerWidth < 992;
 
     const { settingTypes, siteName, siteLogo } = useSettings();
@@ -85,18 +81,20 @@ const AdminSidebar = () => {
             icon: <FaCog />,
             label: t('sidebar.settings.title'),
             subItems: [
-                ...(Array.isArray(settingTypes) ? settingTypes : []).map(type => {
-                    const labelKey = `sidebar.settings.${type}`;
-                    const translatedLabel = t(labelKey);
+                ...(Array.isArray(settingTypes) ? settingTypes : [])
+                    .filter(type => type !== 'site_settings')
+                    .map(type => {
+                        const labelKey = `sidebar.settings.${type}`;
+                        const translatedLabel = t(labelKey);
 
-                    return {
-                        path: `/settings/${type}`,
-                        label: translatedLabel === labelKey
-                            ? type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                            : translatedLabel,
-                        icon: <FaCogs size={12} />
-                    };
-                }),
+                        return {
+                            path: `/settings/${type}`,
+                            label: translatedLabel === labelKey
+                                ? type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                                : translatedLabel,
+                            icon: <FaCogs size={12} />
+                        };
+                    }),
                 { path: '/frontend/content', label: t('sidebar.frontend_content'), icon: <FaLanguage size={12} /> },
             ]
         },

@@ -8,10 +8,20 @@
    ===================== */
 .cat-seg-tabs {
     display: inline-flex;
+    flex-wrap: nowrap;
     background: #f1f5f9;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 4px;
-    gap: 2px;
+    gap: 4px;
+    border: 1px solid #e2e8f0;
+    max-width: 100%;
+    overflow-x: auto;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.cat-seg-tabs::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome, Safari and Opera */
 }
 
 .cat-seg-btn {
@@ -19,16 +29,18 @@
     box-sizing: border-box;
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    justify-content: center;
+    gap: 8px;
     padding: 8px 16px;
-    border-radius: 7px;
-    font-size: 0.82rem;
+    border-radius: 9px;
+    font-size: 0.85rem;
     font-weight: 600;
     color: #64748b;
     cursor: pointer;
-    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
     user-select: none;
+    border: 1px solid transparent;
 }
 
 .cat-seg-btn:hover {

@@ -317,21 +317,40 @@
 /* Responsive */
 @media (max-width: 991px) {
     .admin-sidebar {
-        /* Default to 80px visibility, override hiding */
-        transform: translateX(0);
-        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+        transform: translateX(-100%);
+        visibility: hidden;
+        width: 0 !important; /* Set width to 0 to remove from flex layout */
+        margin: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        position: fixed; /* Ensure it stays floating when opened */
     }
 
     .admin-sidebar:not(.collapsed) {
-        width: 260px;
-        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.15);
+        transform: translateX(0);
+        visibility: visible;
+        width: 280px !important;
+        box-shadow: 15px 0 40px rgba(0, 0, 0, 0.2);
     }
 
-    .admin-content {
-        margin-left: 80px !important;
+    /* Prevent any "collapsed strip" from showing on mobile */
+    .admin-sidebar.collapsed {
+        width: 0 !important;
+        margin: 0 !important;
+        transform: translateX(-100%);
+        visibility: hidden;
     }
 
     .mobile-sidebar-toggle {
-        display: none !important;
+        display: flex !important;
+    }
+    
+    .sidebar-header {
+        justify-content: space-between !important;
+        padding: 0 20px !important;
+    }
+    
+    .nav-label {
+        display: block !important; /* Always show labels when sidebar is slid out on mobile */
     }
 }

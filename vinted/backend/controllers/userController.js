@@ -300,10 +300,18 @@ const loginUser = asyncHandler(async (req, res) => {
         user.last_login = Date.now();
         await user.save();
 
+        const orders_count = await Order.countDocuments({ buyer_id: user._id });
+        const sold_count = await Order.countDocuments({ seller_id: user._id });
+        const favorites_count = await Favorite.countDocuments({ user_id: user._id });
+
         const userJSON = user.toJSON();
         userJSON.token = generateToken(user._id);
         userJSON.id = user._id;
         userJSON.name = user.username;
+        userJSON.orders_count = orders_count;
+        userJSON.sold_count = sold_count;
+        userJSON.favorites_count = favorites_count;
+
         res.json(userJSON);
     } else {
         res.status(400);
@@ -373,10 +381,20 @@ const getMe = asyncHandler(async (req, res) => {
         res.status(404);
         throw new Error('User not found');
     }
+
+    // Dynamically calculate counts to ensure accuracy
+    const orders_count = await Order.countDocuments({ buyer_id: req.user._id });
+    const sold_count = await Order.countDocuments({ seller_id: req.user._id });
+    const favorites_count = await Favorite.countDocuments({ user_id: req.user._id });
+
     const userJSON = user.toJSON();
     userJSON.id = user._id;
     userJSON.username = user.username;
     userJSON.name = user.username;
+    userJSON.orders_count = orders_count;
+    userJSON.sold_count = sold_count;
+    userJSON.favorites_count = favorites_count;
+
     res.status(200).json(userJSON);
 });
 

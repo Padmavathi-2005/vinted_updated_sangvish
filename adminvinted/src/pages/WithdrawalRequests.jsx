@@ -80,7 +80,11 @@ const WithdrawalRequests = () => {
                 admin_note: adminNote,
                 processed_at: new Date()
             });
-            showToast('success', `Request marked as ${statusUpdate}`);
+            const successMsg = statusUpdate === 'approved' 
+                ? 'Withdrawal Approved Successfully' 
+                : 'Withdrawal Rejected Successfully';
+            
+            showToast('success', successMsg);
             setShowModal(false);
             fetchRequests();
         } catch (err) {

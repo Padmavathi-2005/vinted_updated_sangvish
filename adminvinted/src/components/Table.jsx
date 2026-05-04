@@ -214,7 +214,7 @@ const Table = ({
                 </BTable>
             </div>
 
-            {pagination && data.length > (paginationLimit || 10) && (
+            {pagination && data.length > 0 && (
                 <div className="table-footer">
                     <div className="d-flex align-items-center gap-4">
                         {!isScrollMode && (

@@ -341,6 +341,15 @@
     border-color: var(--primary-color, #0ea5e9);
 }
 
+.si-input.is-invalid {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+}
+
+.si-input.is-invalid:focus {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
 .si-input::placeholder {
     color: #9ca3af;
 }
@@ -362,6 +371,15 @@
 .si-textarea:focus {
     outline: none;
     border-color: var(--primary-color, #0ea5e9);
+}
+
+.si-textarea.is-invalid {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+}
+
+.si-textarea.is-invalid:focus {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
 }
 
 .si-textarea::placeholder {

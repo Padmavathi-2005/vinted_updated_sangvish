@@ -35,10 +35,14 @@ const Listings = () => {
         category_id: '',
         subcategory_id: '',
         item_type_id: '',
+        brand: '',
+        size: '',
+        color: '',
         condition: '',
         status: 'active',
         is_sold: false,
-        is_blocked: false
+        is_blocked: false,
+        attributes: []
     });
     const [formData, setFormData] = useState(initialFormData);
     const [saving, setSaving] = useState(false);
@@ -46,6 +50,35 @@ const Listings = () => {
     const [categoryError, setCategoryError] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [existingImages, setExistingImages] = useState([]);
+    const [errors, setErrors] = useState({});
+
+    const validateField = (name, value) => {
+        let error = '';
+        if (name === 'title') {
+            if (!value) error = 'Title is required';
+            else if (/\d/.test(value)) error = 'Title should not contain numbers';
+        } else if (name === 'price') {
+            if (!value) error = 'Price is required';
+            else if (parseFloat(value) <= 0) error = 'Price must be greater than 0';
+        } else if (name === 'category_id') {
+            if (!value) error = 'Category is required';
+        } else if (name === 'condition') {
+            if (!value) error = 'Condition is required';
+        }
+        setErrors(prev => ({ ...prev, [name]: error }));
+        return error;
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+        validateField(name, value);
+    };
+
+    const handleSelectChange = (name, value) => {
+        setFormData(prev => ({ ...prev, [name]: value }));
+        validateField(name, value);
+    };
     const fileInputRef = useRef(null);
 
     // Pagination and global settings
@@ -124,10 +157,14 @@ const Listings = () => {
             category_id: listing.category_id?._id || listing.category_id || '',
             subcategory_id: listing.subcategory_id?._id || listing.subcategory_id || '',
             item_type_id: listing.item_type_id?._id || listing.item_type_id || '',
+            brand: listing.brand || '',
+            size: listing.size || '',
+            color: listing.color || '',
             condition: listing.condition || '',
             status: listing.status || 'active',
             is_sold: !!listing.is_sold,
-            is_blocked: listing.status === 'inactive'
+            is_blocked: listing.status === 'inactive',
+            attributes: listing.attributes || []
         });
         setExistingImages(listing.images || []);
         setSelectedFiles([]);
@@ -135,14 +172,17 @@ const Listings = () => {
     };
 
     const handleSaveListing = async () => {
-        if (!formData.category_id) {
-            setCategoryError(true);
-            setTimeout(() => setCategoryError(false), 3000);
-            return;
-        }
+        // Final validation check
+        const newErrors = {};
+        const requiredFields = ['title', 'price', 'category_id', 'condition'];
+        requiredFields.forEach(field => {
+            const err = validateField(field, formData[field]);
+            if (err) newErrors[field] = err;
+        });
 
-        if (!formData.title || !formData.price) {
-            showToast('warning', t('listings.modal.fill_required') || 'Please fill in Title and Price');
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            showToast('warning', "Please fix validation errors before saving");
             return;
         }
 
@@ -152,12 +192,13 @@ const Listings = () => {
 
             const data = new FormData();
             Object.keys(formData).forEach(key => {
-                if (key !== 'is_sold' && key !== 'is_blocked' && key !== 'status') {
+                if (key !== 'is_sold' && key !== 'is_blocked' && key !== 'status' && key !== 'attributes') {
                     data.append(key, formData[key]);
                 }
             });
             data.set('status', finalStatus);
             data.set('is_sold', formData.is_sold);
+            data.set('attributes', JSON.stringify(formData.attributes || []));
             data.append('existing_images', JSON.stringify(existingImages));
             
             selectedFiles.forEach(file => {
@@ -276,14 +317,15 @@ const Listings = () => {
         <div className="admin-dashboard p-0">
             <Container fluid className="px-0">
                 <Card className="main-content-card border-0 shadow-sm p-4">
-                    <div className="d-flex justify-content-between align-items-center mb-4">
+                    <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                         <div>
-                            <h1 className="h3 mb-1">{t('listings.title')}</h1>
+                            <h1 className="dashboard-title h3 mb-1 text-primary">{t('listings.title')}</h1>
                             <p className="text-muted small mb-0">{t('listings.subtitle')}</p>
                         </div>
                         <Button variant="primary" className="btn-admin-action" onClick={() => {
                             setFormData(initialFormData);
                             setSelectedListing(null);
+                            setErrors({});
                             setShowEditModal(true);
                         }}>
                             <FaPlus className="me-2" /> {t('listings.add_new')}
@@ -291,7 +333,7 @@ const Listings = () => {
                     </div>
 
                     <div className="d-flex gap-3 flex-wrap mb-4">
-                        <div className="flex-grow-1" style={{ maxWidth: '300px' }}>
+                        <div className="flex-grow-1 search-box-container">
                             <InputGroup>
                                 <InputGroup.Text className="bg-white border-end-0">
                                     <FaSearch className="text-muted" />
@@ -324,7 +366,7 @@ const Listings = () => {
                             data={filteredListings}
                             actions={true}
                             onEdit={handleEdit}
-                            onDelete={(row) => { setSelectedListing(row); setShowDeleteModal(true); }}
+                            onDelete={handleDeleteClick}
                             pagination={true}
                             emptyMessage={t('listings.no_listings')}
                         />
@@ -338,9 +380,10 @@ const Listings = () => {
                     title={selectedListing ? t('listings.modal.edit_title') : t('listings.modal.add_title')}
                     footer={
                         <>
-                            <Button variant="outline-secondary" onClick={() => setShowEditModal(false)}>{t('listings.modal.cancel')}</Button>
-                            <Button variant="primary" onClick={handleSaveListing} disabled={saving}>
-                                {saving ? <Spinner size="sm" /> : t('listings.modal.save')}
+                            <Button variant="outline-secondary" className="btn-admin-outline" onClick={() => setShowEditModal(false)}>{t('listings.modal.cancel')}</Button>
+                            <Button variant="primary" className="btn-admin-action" onClick={handleSaveListing} disabled={saving}>
+                                {saving ? <Spinner size="sm" className="me-2" /> : null}
+                                {t('listings.modal.save')}
                             </Button>
                         </>
                     }
@@ -350,10 +393,13 @@ const Listings = () => {
                             <Form.Label>{t('listings.modal.item_title')}</Form.Label>
                             <Form.Control
                                 type="text"
+                                name="title"
                                 value={formData.title}
-                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                onChange={handleInputChange}
                                 placeholder={t('listings.modal.item_title_placeholder')}
+                                isInvalid={!!errors.title}
                             />
+                            <Form.Control.Feedback type="invalid">{errors.title}</Form.Control.Feedback>
                         </Form.Group>
 
                         <div className="row mb-3">
@@ -362,18 +408,16 @@ const Listings = () => {
                                     <Form.Label>{t('listings.modal.price')}</Form.Label>
                                     <Form.Control
                                         type="number"
+                                        name="price"
                                         min="1"
                                         value={formData.price}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            if (val === '' || (parseFloat(val) >= 0)) {
-                                                setFormData({ ...formData, price: val });
-                                            }
-                                        }}
+                                        onChange={handleInputChange}
                                         placeholder="0.00"
                                         style={{ appearance: 'textfield' }}
                                         className="no-arrows"
+                                        isInvalid={!!errors.price}
                                     />
+                                    <Form.Control.Feedback type="invalid">{errors.price}</Form.Control.Feedback>
                                 </Form.Group>
                             </div>
                             <div className="col-md-6">
@@ -388,15 +432,16 @@ const Listings = () => {
                                             { value: 'satisfactory', label: 'Satisfactory' }
                                         ]}
                                         value={formData.condition}
-                                        onChange={(val) => setFormData({ ...formData, condition: val })}
+                                        onChange={(val) => handleSelectChange('condition', val)}
                                         placeholder={t('listings.modal.condition_placeholder')}
+                                        error={errors.condition}
                                     />
                                 </Form.Group>
                             </div>
                         </div>
 
                         <div className="row mb-3">
-                            <div className="col-md-6">
+                            <div className="col-md-4">
                                 <Form.Group>
                                     <Form.Label className={categoryError ? "text-danger fw-bold" : ""}>
                                         {t('listings.modal.category')} {categoryError && <span className="small ms-2"> - {t('listings.modal.category_error')}</span>}
@@ -406,16 +451,16 @@ const Listings = () => {
                                             options={categories.map(cat => ({ value: cat._id, label: cat.name }))}
                                             value={formData.category_id}
                                             onChange={(val) => {
-                                                setFormData({ ...formData, category_id: val, subcategory_id: '', item_type_id: '' });
-                                                setCategoryError(false);
+                                                handleSelectChange('category_id', val);
+                                                setFormData(prev => ({ ...prev, subcategory_id: '', item_type_id: '' }));
                                             }}
                                             placeholder={t('listings.modal.category_placeholder')}
-                                            error={categoryError}
+                                            error={errors.category_id}
                                         />
                                     </div>
                                 </Form.Group>
                             </div>
-                            <div className="col-md-6">
+                            <div className="col-md-4">
                                 <Form.Group>
                                     <div onClick={() => {
                                         if (!formData.category_id) {
@@ -436,18 +481,109 @@ const Listings = () => {
                                     </div>
                                 </Form.Group>
                             </div>
+                            <div className="col-md-4">
+                                <Form.Group>
+                                    <Form.Label>{t('listings.modal.item_type') || 'Item Type'}</Form.Label>
+                                    <AdminSearchSelect
+                                        options={itemTypes
+                                            .filter(type => type.subcategory_id === formData.subcategory_id)
+                                            .map(type => ({ value: type._id, label: type.name }))}
+                                        value={formData.item_type_id}
+                                        onChange={(val) => setFormData({ ...formData, item_type_id: val })}
+                                        placeholder={t('listings.modal.item_type_placeholder') || 'Select Item Type'}
+                                        disabled={!formData.subcategory_id}
+                                    />
+                                </Form.Group>
+                            </div>
                         </div>
 
-                        <Form.Group className="mb-4">
+                        <div className="row mb-3">
+                            <div className="col-md-4">
+                                <Form.Group>
+                                    <Form.Label>{t('listings.modal.brand') || 'Brand'}</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        value={formData.brand}
+                                        onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                                        placeholder="Enter brand"
+                                    />
+                                </Form.Group>
+                            </div>
+                            <div className="col-md-4">
+                                <Form.Group>
+                                    <Form.Label>{t('listings.modal.size') || 'Size'}</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        value={formData.size}
+                                        onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+                                        placeholder="Enter size"
+                                    />
+                                </Form.Group>
+                            </div>
+                            <div className="col-md-4">
+                                <Form.Group>
+                                    <Form.Label>{t('listings.modal.color') || 'Color'}</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        value={formData.color}
+                                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                                        placeholder="Enter color"
+                                    />
+                                </Form.Group>
+                            </div>
+                        </div>
+
+                        <Form.Group className="mb-3">
                             <Form.Label>{t('listings.modal.description')}</Form.Label>
                             <Form.Control
                                 as="textarea"
-                                rows={3}
+                                rows={2}
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 placeholder={t('listings.modal.description_placeholder')}
                             />
                         </Form.Group>
+
+                        <div className="mb-4">
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                                <Form.Label className="m-0">{t('listings.modal.specifications') || 'Specifications'}</Form.Label>
+                                <Button size="sm" variant="outline-primary" onClick={() => {
+                                    const newAttrs = [...(formData.attributes || []), { key: '', value: '' }];
+                                    setFormData({ ...formData, attributes: newAttrs });
+                                }}>
+                                    + Add Detail
+                                </Button>
+                            </div>
+                            {(formData.attributes || []).map((attr, idx) => (
+                                <div key={idx} className="d-flex gap-2 mb-2">
+                                    <Form.Control 
+                                        size="sm" 
+                                        placeholder="Label (e.g. Material)" 
+                                        value={attr.key}
+                                        onChange={(e) => {
+                                            const newAttrs = [...formData.attributes];
+                                            newAttrs[idx].key = e.target.value;
+                                            setFormData({ ...formData, attributes: newAttrs });
+                                        }}
+                                    />
+                                    <Form.Control 
+                                        size="sm" 
+                                        placeholder="Value (e.g. Cotton)" 
+                                        value={attr.value}
+                                        onChange={(e) => {
+                                            const newAttrs = [...formData.attributes];
+                                            newAttrs[idx].value = e.target.value;
+                                            setFormData({ ...formData, attributes: newAttrs });
+                                        }}
+                                    />
+                                    <Button size="sm" variant="outline-danger" onClick={() => {
+                                        setFormData({ ...formData, attributes: formData.attributes.filter((_, i) => i !== idx) });
+                                    }}>
+                                        <FaTrash size={12} />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
 
                         <Form.Group className="mb-4">
                             <Form.Label>{t('listings.modal.images')}</Form.Label>

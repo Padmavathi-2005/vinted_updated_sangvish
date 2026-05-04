@@ -6,6 +6,7 @@ import { FaEnvelope, FaPhoneAlt, FaMapMarkerAlt, FaPaperPlane, FaClock } from 'r
 import axios from '@/utils/axios';
 import { useTranslation } from 'react-i18next';
 import '@/app/styles/Contact.css';
+import { validateTextField, getTextFieldError, isValidEmail } from '@/utils/validation';
 
 const Contact = () => {
     const { t } = useTranslation();
@@ -25,6 +26,7 @@ const Contact = () => {
 
     const [status, setStatus] = useState({ type: '', message: '' });
     const [loading, setLoading] = useState(false);
+    const [validationErrors, setValidationErrors] = useState({});
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -39,11 +41,34 @@ const Contact = () => {
     }, []);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+        if (validationErrors[name]) {
+            setValidationErrors(prev => ({ ...prev, [name]: false }));
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Custom Validations
+        const newErrors = {};
+        if (!validateTextField(formData.name)) newErrors.name = true;
+        if (!isValidEmail(formData.email)) newErrors.email = true;
+        if (!validateTextField(formData.subject)) newErrors.subject = true;
+        if (!validateTextField(formData.message)) newErrors.message = true;
+
+        if (Object.keys(newErrors).length > 0) {
+            setValidationErrors(newErrors);
+            if (newErrors.email && !isValidEmail(formData.email)) {
+                setStatus({ type: 'danger', message: 'Please enter a valid email address.' });
+            } else {
+                const firstField = Object.keys(newErrors)[0];
+                setStatus({ type: 'danger', message: getTextFieldError(firstField.charAt(0).toUpperCase() + firstField.slice(1)) });
+            }
+            return;
+        }
+
         setLoading(true);
         setStatus({ type: '', message: '' });
 
@@ -150,7 +175,7 @@ const Contact = () => {
                                                     onChange={handleChange}
                                                     placeholder={t('contact.name_placeholder', 'Enter your full name')}
                                                     required
-                                                    className="custom-input"
+                                                    className={`custom-input ${validationErrors.name ? 'is-invalid' : ''}`}
                                                 />
                                             </Form.Group>
                                         </Col>
@@ -164,7 +189,7 @@ const Contact = () => {
                                                     onChange={handleChange}
                                                     placeholder="example@mail.com"
                                                     required
-                                                    className="custom-input"
+                                                    className={`custom-input ${validationErrors.email ? 'is-invalid' : ''}`}
                                                 />
                                             </Form.Group>
                                         </Col>
@@ -179,7 +204,7 @@ const Contact = () => {
                                             onChange={handleChange}
                                             placeholder={t('contact.subject_placeholder', 'How can we help?')}
                                             required
-                                            className="custom-input"
+                                            className={`custom-input ${validationErrors.subject ? 'is-invalid' : ''}`}
                                         />
                                     </Form.Group>
 
@@ -193,7 +218,7 @@ const Contact = () => {
                                             onChange={handleChange}
                                             placeholder={t('contact.message_placeholder', 'Write your message here...')}
                                             required
-                                            className="custom-input"
+                                            className={`custom-input ${validationErrors.message ? 'is-invalid' : ''}`}
                                         />
                                     </Form.Group>
 

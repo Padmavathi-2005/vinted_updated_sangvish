@@ -1142,14 +1142,6 @@ const DynamicSettings = () => {
                             <>{renderRecaptchaSettings()}</>
                         ) : (
                             <Row>
-                                {type === 'general_settings' && (
-                                    <Col md={12} className="mb-4">
-                                        <div className="ds-section-title mb-1">
-                                            SITE CONFIGURATION
-                                        </div>
-                                        <p className="ds-section-subtitle mb-3">Manage your marketplace name, URL and branding assets</p>
-                                    </Col>
-                                )}
                                 {getFieldsForType(type).map((key, index) => (
                                     <React.Fragment key={key}>
                                         {type === 'general_settings' && key === 'primary_color' && (

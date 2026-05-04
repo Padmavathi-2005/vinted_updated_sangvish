@@ -355,6 +355,7 @@
 .input-action-btn {
     width: 40px;
     height: 40px;
+    flex-shrink: 0;
     border-radius: 50%;
     border: none;
     background: transparent;
@@ -374,6 +375,8 @@
 .send-btn-primary {
     width: 44px;
     height: 44px;
+    flex-shrink: 0;
+    min-width: 44px;
     border-radius: 50%;
     border: none;
     background: var(--primary-color);
@@ -546,25 +549,94 @@
 
 /* Responsive Tweaks */
 @media (max-width: 991px) {
+    .admin-messages-container {
+        height: calc(100vh - 60px);
+        margin: 0;
+        border-radius: 0;
+    }
+
     .messages-sidebar {
-        width: 80px;
+        width: 100% !important;
+        border-right: none;
     }
 
-    .messages-sidebar-header h2,
-    .sidebar-search-input,
-    .conv-info,
-    .compose-btn-wrapper {
-        display: none;
+    .chat-main {
+        width: 100% !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        z-index: 100;
     }
 
-    .messages-sidebar-header,
+    .chat-header {
+        padding: 12px 16px;
+    }
+
+    .chat-header-info {
+        flex: 1;
+        min-width: 0;
+        gap: 8px;
+    }
+
+    .chat-header-name {
+        font-size: 0.95rem;
+        max-width: 120px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .chat-input-wrapper {
+        padding: 10px 12px;
+    }
+
+    .chat-input-form {
+        gap: 8px;
+        padding: 4px 4px 4px 12px;
+    }
+
+    .chat-input-field {
+        font-size: 0.85rem;
+    }
+
+    .input-action-btn {
+        width: 34px;
+        height: 34px;
+    }
+
+    .send-btn-primary {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+    }
+
+    .chat-item-context-mini {
+        max-width: 100px;
+    }
+
+    .chat-item-context-mini div:first-child {
+        display: none; /* Hide 'Regarding item' text on mobile */
+    }
+
+    .chat-item-context-mini .fw-bold {
+        font-size: 0.75rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+    }
+
+    .messages-sidebar-header h2 {
+        font-size: 1.3rem;
+    }
+
     .conv-item {
-        justify-content: center;
-        padding: 16px 0;
+        padding: 16px;
     }
 
-    .messages-sidebar-header {
-        padding: 20px 0;
+    .conv-name {
+        font-size: 1rem;
     }
 }
 

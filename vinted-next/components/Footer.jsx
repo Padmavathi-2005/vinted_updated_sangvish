@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 import LanguageContext from '@/context/LanguageContext';
 import axios from '@/utils/axios';
 import { getImageUrl, safeString } from '@/utils/constants';
+import { isValidEmail } from '@/utils/validation';
 
 const Footer = () => {
     const { t } = useTranslation();
@@ -80,6 +81,11 @@ const Footer = () => {
     const handleSubscribe = async (e) => {
         e.preventDefault();
         if (!email) return;
+
+        if (!isValidEmail(email)) {
+            setStatus({ type: 'error', message: 'Please enter a valid email address.' });
+            return;
+        }
 
         try {
             setSubmitting(true);
@@ -184,9 +190,13 @@ const Footer = () => {
                                     type="email"
                                     placeholder={t('footer.email_placeholder', 'Your email address')}
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        if (status.type === 'error') setStatus({ type: '', message: '' });
+                                    }}
                                     required
                                     disabled={submitting}
+                                    className={status.type === 'error' ? 'is-invalid' : ''}
                                 />
                                 <Button type="submit" className="newsletter-btn" disabled={submitting}>
                                     {submitting ? (

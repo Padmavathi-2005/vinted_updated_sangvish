@@ -236,7 +236,8 @@ const Orders = () => {
                     'paid': 'success',
                     'pending': 'warning',
                     'failed': 'danger',
-                    'refunded': 'secondary'
+                    'refunded': 'secondary',
+                    'partially_refunded': 'info'
                 };
                 return <Badge bg={config[order.payment_status] || 'secondary'} className="text-capitalize">{t(`orders.status.${order.payment_status?.toLowerCase()}`)}</Badge>;
             }
@@ -262,7 +263,7 @@ const Orders = () => {
                 };
                 return (
                     <div className="d-flex flex-column gap-1">
-                        <Badge bg={config[order.order_status] || 'secondary'} className="text-capitalize">{order.order_status?.replace(/_/g, ' ')}</Badge>
+                        <Badge bg={config[order.order_status] || 'secondary'} className="text-capitalize">{t(`orders.status.${order.order_status?.toLowerCase()}`)}</Badge>
                         {order.tracking_id && <Badge bg="light" text="dark" className="border extra-small fw-normal">Trk: {order.tracking_id}</Badge>}
                     </div>
                 );

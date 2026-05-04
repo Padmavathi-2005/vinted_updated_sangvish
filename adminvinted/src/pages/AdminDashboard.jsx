@@ -269,11 +269,11 @@ const AdminDashboard = () => {
                     <Row className="g-4 mb-4">
                         <Col lg={12}>
                             <div className="rental-light-panel">
-                                <div className="d-flex justify-content-between align-items-center mb-1">
-                                    <h5 className="fw-bold mb-0">{t('dashboard.revenue_chart')}</h5>
+                                <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3">
+                                    <h5 className="fw-bold mb-2 mb-sm-0">{t('dashboard.revenue_chart')}</h5>
                                     <Link to="/reports" className="more-info text-decoration-none d-flex align-items-center gap-1">{t('dashboard.full_analysis')} <FaArrowRight size={12} /></Link>
                                 </div>
-                                <div className="text-muted small">{t('dashboard.revenue_summary', { amount: formatPrice(stats?.revenue?.total), count: stats?.revenue?.count })}</div>
+                                <div className="text-muted small mb-4">{t('dashboard.revenue_summary', { amount: formatPrice(stats?.revenue?.total), count: stats?.revenue?.count })}</div>
 
                                 <div className="rental-static-chart light-mode">
                                     <div className="chart-grid-text" style={{ bottom: '0%' }}>0</div>
@@ -344,7 +344,7 @@ const AdminDashboard = () => {
                                         </div>
                                     )}
                                 </div>
-                                <div className="chart-months light-mode">
+                                <div className="chart-months light-mode" style={{ paddingLeft: '5%', paddingRight: '5%' }}>
                                     {stats.monthlySales?.map((m, i) => <span key={i}>{m.month}</span>)}
                                 </div>
                             </div>
@@ -407,7 +407,7 @@ const AdminDashboard = () => {
                                                     <td className="text-muted small px-4 py-3">
                                                         {new Date(item.created_at).toLocaleDateString()}
                                                     </td>
-                                                    <td className="px-4 py-3"><span className={`badge bg-${item.status === 'active' ? 'success' : item.status === 'inactive' ? 'secondary' : 'warning'} text-capitalize`}>{t(`common.status.${item.status}`)}</span></td>
+                                                    <td className="px-4 py-3"><span className={`badge bg-${item.status === 'active' || item.status === 'available' ? 'success' : item.status === 'sold' ? 'danger' : item.status === 'inactive' ? 'secondary' : 'warning'} text-capitalize`}>{t(`common.status.${item.status}`)}</span></td>
                                                 </tr>
                                             ))}
                                         </tbody>

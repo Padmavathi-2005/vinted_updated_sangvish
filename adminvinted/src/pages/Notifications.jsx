@@ -41,7 +41,12 @@ const Notifications = () => {
         if (link.includes('/profile?tab=orders')) return '/orders';
         if (link.includes('/profile?tab=messages')) return '/messages';
         if (link.includes('/profile?tab=listings')) return '/listings';
-        const adminRoutes = ['/dashboard', '/users', '/listings', '/orders', '/wallet', '/categories', '/settings', '/notifications', '/messages', '/reports'];
+        const adminRoutes = [
+            '/dashboard', '/users', '/listings', '/orders', '/wallet', 
+            '/categories', '/settings', '/notifications', '/messages', 
+            '/reports', '/product-reports', '/shipping-companies', 
+            '/newsletter', '/system', '/pages', '/contact-inquiries'
+        ];
         if (link.startsWith('/') && !adminRoutes.some(route => link.startsWith(route))) {
             return '/notifications';
         }
@@ -154,12 +159,12 @@ const Notifications = () => {
                                         </div>
                                         <div className="notif-content flex-grow-1 min-w-0">
                                             <div className="d-flex justify-content-between align-items-start gap-2">
-                                                <h6 className={`mb-1 text-truncate ${!n.is_read ? 'fw-bold text-dark' : 'text-secondary'}`} style={{ fontSize: '0.9rem' }}>
+                                                <h6 className={`mb-1 ${!n.is_read ? 'fw-bold text-dark' : 'text-secondary'}`} style={{ fontSize: '0.9rem', whiteSpace: 'normal', overflow: 'visible' }}>
                                                     {n.title}
                                                 </h6>
                                                 {!n.is_read && <div className="unread-dot-indicator"></div>}
                                             </div>
-                                            <p className="notif-summary text-secondary mb-1 text-truncate-2" style={{ fontSize: '0.8rem' }}>
+                                            <p className="notif-summary text-secondary mb-1" style={{ fontSize: '0.8rem', whiteSpace: 'normal', overflow: 'visible' }}>
                                                 {n.message}
                                             </p>
                                             <span className="notif-date text-muted" style={{ fontSize: '0.75rem' }}>

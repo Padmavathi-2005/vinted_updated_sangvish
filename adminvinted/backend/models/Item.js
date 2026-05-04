@@ -83,7 +83,7 @@ const itemSchema = mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['active', 'inactive', 'pending', 'deleted'],
+            enum: ['active', 'inactive', 'pending', 'deleted', 'available', 'sold'],
             default: 'active',
         },
         is_sold: {

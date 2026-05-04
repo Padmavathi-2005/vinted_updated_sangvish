@@ -859,35 +859,47 @@
         /* Never show "no conversation" placeholder on mobile */
     }
 
-    .pd-msg-back-btn {
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        background: #f1f5f9;
-        border: none;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        color: #1e293b;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
     .pd-msg-back-btn:hover {
         background: #e2e8f0;
+        transform: scale(1.05);
     }
 
-    .pd-user-picker-panel {
-        max-height: 100vh;
-        height: 100vh;
-        border-radius: 0;
-        max-width: 100%;
+    .pd-msg-back-btn:active {
+        transform: scale(0.95);
     }
+}
 
-    .pd-user-picker-overlay {
-        padding: 0;
-    }
+/* Back Arrow - General */
+.pd-msg-back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: #1e293b;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+.pd-msg-back-btn:hover {
+    background: #e2e8f0;
+    color: var(--primary-color, #0ea5e9);
+}
+
+.pd-user-picker-panel {
+    max-height: 100vh;
+    height: 100vh;
+    border-radius: 0;
+    max-width: 100%;
+}
+
+.pd-user-picker-overlay {
+    padding: 0;
 }
 
 @keyframes slideInRight {

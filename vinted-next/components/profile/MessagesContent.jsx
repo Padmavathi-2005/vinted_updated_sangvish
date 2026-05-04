@@ -627,15 +627,16 @@ const MessagesContent = () => {
                                             if (lm.startsWith('WITHDRAWAL_REQUEST::')) {
                                                 try {
                                                     const data = JSON.parse(lm.replace('WITHDRAWAL_REQUEST::', ''));
-                                                    return `Withdrawal Request: ${data.amount}`;
+                                                    return `💰 Withdrawal: ${formatPrice(data.amount, data.currency)}`;
                                                 } catch (e) { return 'Withdrawal Request'; }
                                             }
                                             if (lm.startsWith('ORDER_NOTIFICATION::')) {
                                                 try {
                                                     const data = JSON.parse(lm.replace('ORDER_NOTIFICATION::', ''));
-                                                    return data.type === 'order_delivered' ? `Delivered: ${data.item_title}` : `New Order: ${data.item_title}`;
+                                                    return data.type === 'order_delivered' ? `✅ Delivered: ${data.item_title}` : `🛒 New Order: ${data.item_title}`;
                                                 } catch (e) { return 'Order Notification'; }
                                             }
+                                            if (lm.includes('Report Submitted')) return '🚩 Product Report';
                                             return safeString(lm);
                                         })()}
                                         </span>
@@ -813,18 +814,40 @@ const MessagesContent = () => {
                                             // Try parsing rich order notification
                                             let msgContent = null;
                                             const isRichOrder = msg.message.startsWith('ORDER_NOTIFICATION::');
+                                            const isWithdrawal = msg.message.startsWith('WITHDRAWAL_REQUEST::');
+
                                             if (isRichOrder) {
                                                 try {
                                                     const jsonStr = msg.message.replace('ORDER_NOTIFICATION::', '');
                                                     const data = JSON.parse(jsonStr);
                                                     msgContent = (
-                                                        <div className="pd-rich-order-card">
-                                                            <div className="pd-rich-order-header">
+                                                        <div className="pd-rich-system-card order">
+                                                            <div className="pd-rich-system-header">
                                                                 {data.type === 'order_delivered' ? '✅ Delivered' : '🛒 New Order'}
                                                             </div>
-                                                            <div className="pd-rich-order-body">
-                                                                <p>{data.is_bundle ? `${data.item_count} items` : data.item_title}</p>
-                                                                <small>Order #{data.order_id}</small>
+                                                            <div className="pd-rich-system-body">
+                                                                <p className="fw-bold mb-1">{data.is_bundle ? `${data.item_count} items` : data.item_title}</p>
+                                                                <div className="d-flex justify-content-between small text-muted">
+                                                                    <span>Order #{data.order_id}</span>
+                                                                    <span className="text-primary fw-bold">{formatPrice(data.total_amount || data.item_price)}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                } catch (e) {
+                                                    msgContent = <span>{msg.message}</span>;
+                                                }
+                                            } else if (isWithdrawal) {
+                                                try {
+                                                    const jsonStr = msg.message.replace('WITHDRAWAL_REQUEST::', '');
+                                                    const data = JSON.parse(jsonStr);
+                                                    msgContent = (
+                                                        <div className="pd-rich-system-card withdrawal">
+                                                            <div className="pd-rich-system-header">💰 Withdrawal Request</div>
+                                                            <div className="pd-rich-system-body">
+                                                                <p className="mb-1"><strong>Amount:</strong> <span className="text-success fw-bold">{formatPrice(data.amount, data.currency)}</span></p>
+                                                                <p className="mb-1 small"><strong>Method:</strong> {data.method || 'Bank Transfer'}</p>
+                                                                <p className="mb-0 xsmall text-muted">ID: {data.request_id}</p>
                                                             </div>
                                                         </div>
                                                     );
@@ -832,7 +855,13 @@ const MessagesContent = () => {
                                                     msgContent = <span>{msg.message}</span>;
                                                 }
                                             } else {
-                                                msgContent = <span>{msg.message}</span>;
+                                                // Handle report submitted or other bold text messages
+                                                const formattedMsg = msg.message.split('\n').map((line, i) => {
+                                                    // Simple markdown bold replacement
+                                                    const processedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                                                    return <div key={i} dangerouslySetInnerHTML={{ __html: processedLine }} />;
+                                                });
+                                                msgContent = <div className="pd-system-formatted-text">{formattedMsg}</div>;
                                             }
 
                                             return (

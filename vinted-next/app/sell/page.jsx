@@ -10,7 +10,8 @@ import CurrencyContext from '@/context/CurrencyContext';
 import CustomSelect from '@/components/common/CustomSelect';
 import { useTranslation } from 'react-i18next';
 import { Modal, Button, Form } from 'react-bootstrap';
-import { safeString } from '@/utils/constants';
+import { getImageUrl, safeString } from '@/utils/constants';
+import { validateTextField, getTextFieldError } from '@/utils/validation';
 import '@/app/styles/SellItem.css';
 import '@/app/styles/CustomSelect.css';
 import ImageCropModal from '@/components/common/ImageCropModal';
@@ -36,6 +37,7 @@ export default function SellItem() {
     const [commissionRate, setCommissionRate] = useState(0);
     const [isSwappable, setIsSwappable] = useState(false);
     const [shippingIncluded, setShippingIncluded] = useState(false);
+    const [validationErrors, setValidationErrors] = useState({});
 
     // Category Management
     const [categories, setCategories] = useState([]);
@@ -317,7 +319,22 @@ export default function SellItem() {
         }
 
         if (!title.trim()) return alert('Please enter an item title.');
+        if (!validateTextField(title)) {
+            setValidationErrors(prev => ({ ...prev, title: true }));
+            return alert(getTextFieldError('Title'));
+        }
+        
         if (!description.trim()) return alert('Please enter an item description.');
+        if (!validateTextField(description)) {
+            setValidationErrors(prev => ({ ...prev, description: true }));
+            return alert(getTextFieldError('Description'));
+        }
+
+        if (brand && !validateTextField(brand)) {
+            setValidationErrors(prev => ({ ...prev, brand: true }));
+            return alert(getTextFieldError('Brand'));
+        }
+
         if (!condition) return alert('Please select the item condition.');
         if (!color) return alert('Please select the item color.');
         if (!price || parseFloat(price) <= 0) return alert('Please enter a valid price.');
@@ -327,6 +344,7 @@ export default function SellItem() {
             return;
         }
 
+        setValidationErrors({});
         setLoading(true);
 
         const formData = new FormData();
@@ -453,11 +471,11 @@ export default function SellItem() {
                     <div className="si-card">
                         <div className="si-field">
                             <label className="si-label">{t('sell_item.item_title')}</label>
-                            <input type="text" className="si-input" placeholder={t('sell_item.title_placeholder')} value={title} onChange={e => setTitle(e.target.value)} required />
+                            <input type="text" className={`si-input ${validationErrors.title ? 'is-invalid' : ''}`} placeholder={t('sell_item.title_placeholder')} value={title} onChange={e => { setTitle(e.target.value); if (validationErrors.title) setValidationErrors(prev => ({ ...prev, title: false })); }} required />
                         </div>
                         <div className="si-field si-field-last">
                             <label className="si-label">{t('sell_item.item_description')}</label>
-                            <textarea className="si-textarea" rows={5} placeholder={t('sell_item.desc_placeholder')} value={description} onChange={e => setDescription(e.target.value)} />
+                            <textarea className={`si-textarea ${validationErrors.description ? 'is-invalid' : ''}`} rows={5} placeholder={t('sell_item.desc_placeholder')} value={description} onChange={e => { setDescription(e.target.value); if (validationErrors.description) setValidationErrors(prev => ({ ...prev, description: false })); }} />
                         </div>
                     </div>
 
@@ -518,8 +536,8 @@ export default function SellItem() {
                             </div>
 
                             <div className="si-field">
-                                <label className="si-label">{t('sell_item.brand')} <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>(Optional)</span></label>
-                                <input type="text" className="si-input" placeholder={t('sell_item.brand_placeholder')} value={brand} onChange={e => setBrand(e.target.value)} />
+                                <label className="si-label">{t('sell_item.brand')}</label>
+                                <input type="text" className={`si-input ${validationErrors.brand ? 'is-invalid' : ''}`} placeholder={t('sell_item.brand_placeholder')} value={brand} onChange={e => { setBrand(e.target.value); if (validationErrors.brand) setValidationErrors(prev => ({ ...prev, brand: false })); }} />
                             </div>
 
                             <div className="si-field">

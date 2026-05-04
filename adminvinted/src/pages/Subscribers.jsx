@@ -202,37 +202,37 @@ const Subscribers = () => {
     ];
 
     return (
-        <Container fluid className="py-4">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2 className="fw-bold text-dark mb-1">Newsletter Subscribers</h2>
-                    <p className="text-secondary mb-0">Manage your newsletter list and subscribers</p>
-                </div>
-                <div className="d-flex gap-2">
-                    <Button variant="outline-primary" onClick={fetchSubscribers} className="d-flex align-items-center gap-2 bg-white">
-                        <FaSync /> Refresh
-                    </Button>
-                    <Dropdown>
-                        <Dropdown.Toggle variant="primary" id="dropdown-export" className="d-flex align-items-center gap-2">
-                            <FaDownload /> Export
-                        </Dropdown.Toggle>
-                        <Dropdown.Menu className="shadow border-0">
-                            <Dropdown.Item onClick={exportToCSV} className="d-flex align-items-center gap-2 py-2">
-                                <FaFileCsv className="text-success" /> Export to CSV
-                            </Dropdown.Item>
-                            <Dropdown.Item onClick={exportToPDF} className="d-flex align-items-center gap-2 py-2">
-                                <FaFilePdf className="text-danger" /> Export to PDF
-                            </Dropdown.Item>
-                        </Dropdown.Menu>
-                    </Dropdown>
-                </div>
-            </div>
+        <div className="admin-dashboard p-0">
+            <Container fluid className="px-0">
+                <Card className="main-content-card border-0 shadow-sm p-4">
+                    <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
+                        <div>
+                            <h1 className="dashboard-title h3 mb-1 text-primary">Newsletter Subscribers</h1>
+                            <p className="text-muted small mb-0">Manage your newsletter list and subscribers</p>
+                        </div>
+                        <div className="d-flex gap-2">
+                            <Button variant="outline-secondary" onClick={fetchSubscribers} className="btn-admin-outline">
+                                <FaSync /> Refresh
+                            </Button>
+                            <Dropdown>
+                                <Dropdown.Toggle variant="primary" id="dropdown-export" className="btn-admin-action">
+                                    <FaDownload /> Export
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu className="shadow border-0">
+                                    <Dropdown.Item onClick={exportToCSV} className="d-flex align-items-center gap-2 py-2">
+                                        <FaFileCsv className="text-success" /> Export to CSV
+                                    </Dropdown.Item>
+                                    <Dropdown.Item onClick={exportToPDF} className="d-flex align-items-center gap-2 py-2">
+                                        <FaFilePdf className="text-danger" /> Export to PDF
+                                    </Dropdown.Item>
+                                </Dropdown.Menu>
+                            </Dropdown>
+                        </div>
+                    </div>
 
-            <Card className="border-0 shadow-sm mb-4">
-                <Card.Body>
-                    <Form onSubmit={handleSearch}>
-                        <Row className="g-3">
-                            <Col md={6}>
+                    <div className="d-flex gap-3 flex-wrap mb-4">
+                        <div className="flex-grow-1 search-box-container">
+                            <Form onSubmit={handleSearch}>
                                 <div className="input-group">
                                     <span className="input-group-text bg-white border-end-0">
                                         <FaSearch className="text-muted" />
@@ -244,39 +244,31 @@ const Subscribers = () => {
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
                                 </div>
-                            </Col>
-                            <Col md={4}>
-                                <Form.Select
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                >
-                                    <option value="">All Statuses</option>
-                                    <option value="active">Active</option>
-                                    <option value="unsubscribed">Unsubscribed</option>
-                                </Form.Select>
-                            </Col>
-                            <Col md={2}>
-                                <Button type="submit" variant="dark" className="w-100">
-                                    Filter
-                                </Button>
-                            </Col>
-                        </Row>
-                    </Form>
-                </Card.Body>
-            </Card>
+                            </Form>
+                        </div>
+                        <div style={{ width: '220px' }}>
+                            <Form.Select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="admin-filter-select"
+                            >
+                                <option value="">All Statuses</option>
+                                <option value="active">Active</option>
+                                <option value="unsubscribed">Unsubscribed</option>
+                            </Form.Select>
+                        </div>
+                    </div>
 
-            <Table
-                columns={columns}
-                data={subscribers}
-                loading={loading}
-                pagination={{
-                    currentPage: page,
-                    totalPages,
-                    onPageChange: setPage
-                }}
-                emptyMessage="No subscribers found"
-            />
-        </Container>
+                    <Table
+                        columns={columns}
+                        data={subscribers}
+                        loading={loading}
+                        pagination={true}
+                        emptyMessage="No subscribers found."
+                    />
+                </Card>
+            </Container>
+        </div>
     );
 };
 

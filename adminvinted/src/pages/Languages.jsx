@@ -22,6 +22,28 @@ const Languages = () => {
         is_active: true
     });
     const [saving, setSaving] = useState(false);
+    const [errors, setErrors] = useState({});
+
+    const validateField = (name, value) => {
+        let error = '';
+        if (['name', 'code', 'native_name'].includes(name)) {
+            if (name === 'name' && !value) {
+                error = 'Language name is required';
+            } else if (name === 'code' && !value) {
+                error = 'Language code is required';
+            } else if (value && /\d/.test(value)) {
+                error = `${name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} should not contain numbers`;
+            }
+        }
+        setErrors(prev => ({ ...prev, [name]: error }));
+        return error;
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+        validateField(name, value);
+    };
 
     // Pagination
     const { paginationLimit } = useSettings();
@@ -56,6 +78,15 @@ const Languages = () => {
     };
 
     const handleSave = async () => {
+        const nameErr = validateField('name', formData.name);
+        const codeErr = validateField('code', formData.code);
+        const nativeErr = validateField('native_name', formData.native_name);
+
+        if (nameErr || codeErr || nativeErr) {
+            showToast('warning', 'Please fix validation errors');
+            return;
+        }
+
         setSaving(true);
         try {
             if (selectedLanguage) {
@@ -68,7 +99,8 @@ const Languages = () => {
             fetchLanguages();
         } catch (error) {
             console.error("Error saving language", error);
-            showToast('error', "Failed to save language");
+            const msg = error.response?.data?.message || "Failed to save language";
+            showToast('error', msg);
         } finally {
             setSaving(false);
         }
@@ -217,10 +249,13 @@ const Languages = () => {
                                     <Form.Label>Language Name</Form.Label>
                                     <Form.Control
                                         type="text"
+                                        name="name"
                                         value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        onChange={handleInputChange}
                                         placeholder="e.g. English"
+                                        isInvalid={!!errors.name}
                                     />
+                                    <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
@@ -228,10 +263,13 @@ const Languages = () => {
                                     <Form.Label>Code</Form.Label>
                                     <Form.Control
                                         type="text"
+                                        name="code"
                                         value={formData.code}
-                                        onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                                        onChange={handleInputChange}
                                         placeholder="e.g. en"
+                                        isInvalid={!!errors.code}
                                     />
+                                    <Form.Control.Feedback type="invalid">{errors.code}</Form.Control.Feedback>
                                 </Form.Group>
                             </Col>
                         </Row>
@@ -239,10 +277,13 @@ const Languages = () => {
                             <Form.Label>Native Name</Form.Label>
                             <Form.Control
                                 type="text"
+                                name="native_name"
                                 value={formData.native_name}
-                                onChange={(e) => setFormData({ ...formData, native_name: e.target.value })}
+                                onChange={handleInputChange}
                                 placeholder="e.g. English"
+                                isInvalid={!!errors.native_name}
                             />
+                            <Form.Control.Feedback type="invalid">{errors.native_name}</Form.Control.Feedback>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Text Direction</Form.Label>

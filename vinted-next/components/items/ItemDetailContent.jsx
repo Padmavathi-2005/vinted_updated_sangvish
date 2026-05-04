@@ -907,7 +907,15 @@ const ItemDetailContent = () => {
                                 <div className="id-share-icon twitter"><FaXTwitter /></div>
                                 <span>X / Twitter</span>
                             </div>
-                            <div className="id-share-item" onClick={() => window.open(`mailto:?subject=${encodeURIComponent(item.title)}&body=${encodeURIComponent(window.location.href)}`)}>
+                            <div 
+                                className="id-share-item"
+                                onClick={() => {
+                                    const subject = encodeURIComponent(item.title);
+                                    const body = encodeURIComponent(`${t('item_detail.check_out_this')} ${item.title}: ${window.location.href}`);
+                                    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${body}`;
+                                    window.open(gmailUrl, '_blank');
+                                }}
+                            >
                                 <div className="id-share-icon email"><FaEnvelope /></div>
                                 <span>Email</span>
                             </div>

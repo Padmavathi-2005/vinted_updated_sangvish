@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Spinner, Form, Button, Modal } from 'react-bootstrap';
-import { FaUser, FaSearch, FaPaperPlane, FaEllipsisV, FaImage, FaSmile, FaCheckDouble, FaEnvelope, FaExclamationCircle, FaPlus } from 'react-icons/fa';
+import { FaUser, FaSearch, FaPaperPlane, FaEllipsisV, FaImage, FaSmile, FaCheckDouble, FaEnvelope, FaExclamationCircle, FaPlus, FaArrowLeft } from 'react-icons/fa';
 import axios from '../utils/axios';
 import { getAdminInfo } from '../utils/auth';
 import { getImageUrl, safeString } from '../utils/constants';
@@ -30,6 +30,7 @@ const Messages = () => {
     const [showUserPicker, setShowUserPicker] = useState(false);
     const [userSearch, setUserSearch] = useState('');
     const [usersLoading, setUsersLoading] = useState(false);
+    const [showDetailMobile, setShowDetailMobile] = useState(false);
 
     const scrollToBottom = (behavior = "smooth") => {
         messagesEndRef.current?.scrollIntoView({ behavior });
@@ -48,7 +49,10 @@ const Messages = () => {
     };
 
     const fetchMessages = async (convId, silent = false) => {
-        if (!silent) setMsgLoading(true);
+        if (!silent) {
+            setMsgLoading(true);
+            setShowDetailMobile(true);
+        }
         try {
             const res = await axios.get(`/api/admin-messages/${convId}`);
             setSelectedConv(res.data.conversation);
@@ -218,6 +222,7 @@ const Messages = () => {
                 status: 'accepted'
             });
             setMessages([]);
+            setShowDetailMobile(true);
         }
         setShowUserPicker(false);
     };
@@ -231,7 +236,7 @@ const Messages = () => {
     return (
         <div className="admin-messages-container">
             {/* Sidebar */}
-            <aside className="messages-sidebar">
+            <aside className={`messages-sidebar ${showDetailMobile ? 'd-none d-lg-flex' : 'd-flex'}`}>
                 <div className="messages-sidebar-header">
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h2>Messages</h2>
@@ -318,10 +323,16 @@ const Messages = () => {
             </aside>
 
             {/* Chat Main Area */}
-            <main className="chat-main">
+            <main className={`chat-main ${!showDetailMobile ? 'd-none d-lg-flex' : 'd-flex'}`}>
                 {selectedConv ? (
                     <>
                         <header className="chat-header">
+                            <button 
+                                className="d-lg-none input-action-btn me-2" 
+                                onClick={() => setShowDetailMobile(false)}
+                            >
+                                <FaArrowLeft />
+                            </button>
                             {(() => {
                                 const otherData = getOtherParticipant(selectedConv);
                                 const other = otherData?.user || {};

@@ -41,17 +41,24 @@ body {
 .admin-content {
     flex: 1;
     margin-left: 260px;
-    transition: margin-left 0.3s ease;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
     min-width: 0;
-    max-width: calc(100% - 260px);
+    max-width: 100%;
     overflow-x: hidden;
 }
 
-.admin-sidebar.collapsed~.admin-content {
+.sidebar-collapsed .admin-content {
     margin-left: 80px;
-    max-width: calc(100% - 80px);
+}
+
+@media (max-width: 991px) {
+    .admin-content,
+    .sidebar-collapsed .admin-content {
+        margin-left: 0 !important;
+        max-width: 100% !important;
+    }
 }
 
 /* Admin Login Page */
@@ -603,7 +610,16 @@ body {
     }
 
     .admin-main-content {
-        padding: 15px;
+        padding: 24px 16px;
+    }
+
+    .dashboard-header {
+        margin-bottom: 24px;
+        padding-bottom: 8px;
+    }
+
+    .dashboard-title {
+        margin-bottom: 4px !important;
     }
 }
 
@@ -620,6 +636,20 @@ body {
         width: 100%;
         justify-content: center;
         padding: 10px;
+    }
+
+    .modal-footer .btn-admin-action,
+    .modal-footer .btn-admin-outline {
+        width: auto;
+        flex: 1;
+        padding: 10px 12px;
+        font-size: 0.85rem;
+    }
+
+    .modal-footer {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
     }
 
     .main-content-card {

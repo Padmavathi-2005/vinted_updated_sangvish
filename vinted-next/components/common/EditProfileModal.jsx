@@ -4,6 +4,7 @@ import { FaTimes, FaUser, FaLock, FaPen, FaCamera, FaMapMarkerAlt, FaCity, FaGlo
 import '@/app/styles/EditProfileModal.css';
 import { getImageUrl } from '../../utils/constants';
 import { useTranslation } from 'react-i18next';
+import { validateTextField, getTextFieldError } from '../../utils/validation';
 import ImageCropModal from './ImageCropModal';
 
 const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
@@ -111,6 +112,16 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
             setError("Passwords do not match");
             return;
         }
+
+        // Custom Validation
+        if (!validateTextField(formData.first_name)) return setError(getTextFieldError('First Name'));
+        if (!validateTextField(formData.last_name)) return setError(getTextFieldError('Last Name'));
+        if (!validateTextField(formData.username)) return setError(getTextFieldError('Display Name'));
+        if (formData.bio && !validateTextField(formData.bio)) return setError(getTextFieldError('Bio'));
+        if (formData.address.full_name && !validateTextField(formData.address.full_name)) return setError(getTextFieldError('Full Name on Address'));
+        if (formData.address.address_line && !validateTextField(formData.address.address_line)) return setError(getTextFieldError('Street Address'));
+        if (formData.address.city && !validateTextField(formData.address.city)) return setError(getTextFieldError('City'));
+        if (formData.address.state && !validateTextField(formData.address.state)) return setError(getTextFieldError('State'));
 
         setLoading(true);
         try {

@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import Meta from '@/components/common/Meta';
 import CustomSelect from '@/components/common/CustomSelect';
 import { getImageUrl, getItemImageUrl, safeString } from '@/utils/constants';
+import { validateTextField, getTextFieldError } from '@/utils/validation';
 
 const ProfileContent = () => {
     const { user, loading, updateUser, logout, mode, toggleMode, setMode } = useContext(AuthContext);
@@ -209,6 +210,19 @@ const ProfileContent = () => {
         }
     }, [user, loading, router]);
 
+    if (loading || !user) {
+        return (
+            <div className="d-flex align-items-center justify-content-center vh-100 bg-white">
+                <div className="text-center">
+                    <div className="spinner-border text-primary mb-3" role="status" style={{ width: '3rem', height: '3rem' }}>
+                        <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <div className="text-muted fw-500">Syncing your profile...</div>
+                </div>
+            </div>
+        );
+    }
+
     // Body scroll lock
     useEffect(() => {
         if (showOrderModal) {
@@ -340,6 +354,7 @@ const ProfileContent = () => {
             inputValue: '',
             onConfirm: async (reason) => {
                 if (!reason.trim()) return alert('Reason is required for cancellation');
+                if (!validateTextField(reason)) return alert(getTextFieldError('Reason'));
                 try {
                     await axios.post(`/api/orders/${selectedOrder._id}/cancel`, { reason });
                     fetchMyOrders();
@@ -374,6 +389,7 @@ const ProfileContent = () => {
             inputValue: '',
             onConfirm: async (reason) => {
                 if (!reason.trim()) return alert('Please provide a reason for the return');
+                if (!validateTextField(reason)) return alert(getTextFieldError('Reason'));
                 setReturningOrderId(selectedOrder._id);
                 try {
                     const res = await axios.post(`/api/orders/${selectedOrder._id}/return`, { reason });
@@ -415,6 +431,7 @@ const ProfileContent = () => {
                         return alert("Please enter a valid refund amount");
                     }
                     if (!reason.trim()) return alert("Please provide a reason for the partial refund");
+                    if (!validateTextField(reason)) return alert(getTextFieldError('Reason'));
 
                     try {
                         const res = await axios.post(`/api/orders/${selectedOrder._id}/process-return`, { refundType, amount, reason });
@@ -479,6 +496,7 @@ const ProfileContent = () => {
                 inputValue: '',
                 onConfirm: async (cancel_reason) => {
                     if (!cancel_reason.trim()) return alert("Cancel reason is required");
+                    if (!validateTextField(cancel_reason)) return alert(getTextFieldError('Reason'));
                     try {
                         const res = await axios.put(`/api/orders/${selectedOrder._id}/status`, {
                             status: newStatus,
@@ -566,7 +584,7 @@ const ProfileContent = () => {
 
     // Trigger Orders Fetch
     useEffect(() => {
-        if (activeTab === 'orders') {
+        if (activeTab === 'orders' || activeTab === 'dashboard') {
             fetchMyOrders();
         }
     }, [activeTab, fetchMyOrders]);
@@ -638,6 +656,7 @@ const ProfileContent = () => {
 
     const handleSubmitReview = async () => {
         if (reviewRating === 0) return alert('Please select a rating');
+        if (reviewComment && !validateTextField(reviewComment)) return alert(getTextFieldError('Comment'));
         setReviewSubmitting(true);
         try {
             await axios.post('/api/reviews', {
@@ -655,12 +674,12 @@ const ProfileContent = () => {
     };
 
     const handleDeleteAccount = () => {
-        if (user.balance > 0) {
+        if (user?.balance > 0) {
             setActionModal({
                 show: true,
                 type: 'error',
                 title: t('profile.cannot_delete_account', 'Account Deletion Blocked'),
-                message: t('profile.balance_remaining_error', 'You have a remaining balance of {{balance}} in your wallet. Please withdraw all funds before deleting your account.', { balance: formatPrice(user.balance) }),
+                message: t('profile.balance_remaining_error', 'You have a remaining balance of {{balance}} in your wallet. Please withdraw all funds before deleting your account.', { balance: formatPrice(user?.balance) }),
                 confirmLabel: t('common.ok', 'OK')
             });
             return;
@@ -674,6 +693,7 @@ const ProfileContent = () => {
             confirmLabel: t('profile.delete_my_account', 'Delete My Account'),
             onConfirm: async (reason) => {
                 if (!reason.trim()) return alert('Please tell us why you are leaving (reason is required)');
+                if (!validateTextField(reason)) return alert(getTextFieldError('Reason'));
                 try {
                     await axios.delete('/api/users/delete', { data: { reason } });
                     alert('Your account has been deleted successfully.');
@@ -801,7 +821,7 @@ const ProfileContent = () => {
                         <div className="pd-avatar-outer-container">
                             <div className="pd-avatar-wrapper">
                                 <div className="pd-avatar-placeholder">
-                                    {safeString(user.username || user.name || user.email || 'U').charAt(0).toUpperCase()}
+                                    {safeString(user?.username || user?.name || user?.email || 'U').charAt(0).toUpperCase()}
                                 </div>
                                 {user.profile_image && (
                                     <img
@@ -865,7 +885,7 @@ const ProfileContent = () => {
                                     </div>
                                     <div className="small d-flex justify-content-between">
                                         <span>Sold Items</span>
-                                        <span className="fw-bold text-success">{user.sold_count || 0}</span>
+                                        <span className="fw-bold text-success">{soldOrders.length || user.sold_count || 0}</span>
                                     </div>
                                 </div>
                             </div>
@@ -921,12 +941,12 @@ const ProfileContent = () => {
                                         </div>
                                         <div className="pd-stat-card clickable" onClick={() => handleTabChange('orders')}>
                                             <div className="pd-stat-icon orange"><FaBoxOpen /></div>
-                                            <div className="pd-stat-value">{user.sold_count || 0}</div>
+                                            <div className="pd-stat-value">{soldOrders.length || user?.sold_count || 0}</div>
                                             <div className="pd-stat-label">{t('profile.orders_received', 'Orders Received')}</div>
                                         </div>
                                         <div className="pd-stat-card clickable" onClick={() => handleTabChange('payments')}>
                                             <div className="pd-stat-icon yellow"><FaWallet /></div>
-                                            <div className="pd-stat-value">{formatPrice(user.balance || 0)}</div>
+                                            <div className="pd-stat-value">{formatPrice(user?.balance || 0)}</div>
                                             <div className="pd-stat-label">{t('profile.available_balance')}</div>
                                         </div>
                                     </>
@@ -934,17 +954,17 @@ const ProfileContent = () => {
                                     <>
                                         <div className="pd-stat-card clickable" onClick={() => handleTabChange('orders')}>
                                             <div className="pd-stat-icon blue"><FaBoxOpen /></div>
-                                            <div className="pd-stat-value">{user.orders_count || 0}</div>
+                                            <div className="pd-stat-value">{boughtOrders.length || user?.orders_count || 0}</div>
                                             <div className="pd-stat-label">{t('user_menu.my_orders')}</div>
                                         </div>
                                         <div className="pd-stat-card clickable" onClick={() => handleTabChange('favorites')}>
                                             <div className="pd-stat-icon purple"><FaHeart /></div>
-                                            <div className="pd-stat-value">{favoritesTotalCount}</div>
+                                            <div className="pd-stat-value">{(user?.favorites_count !== undefined ? user.favorites_count : favoritesTotalCount) || 0}</div>
                                             <div className="pd-stat-label">{t('profile.favorites')}</div>
                                         </div>
                                         <div className="pd-stat-card clickable" onClick={() => handleTabChange('payments')}>
                                             <div className="pd-stat-icon yellow"><FaWallet /></div>
-                                            <div className="pd-stat-value">{formatPrice(user.balance || 0)}</div>
+                                            <div className="pd-stat-value">{formatPrice(user?.balance || 0)}</div>
                                             <div className="pd-stat-label">{t('profile.available_balance')}</div>
                                         </div>
                                     </>
@@ -953,7 +973,7 @@ const ProfileContent = () => {
 
                             <div className="pd-section-card">
                                 <h3 className="pd-section-title">{t('profile.bio', 'Bio')}</h3>
-                                <p className="text-muted mb-0" style={{ fontSize: '0.9rem' }}>{safeString(user.bio) || t('profile.no_bio', 'No bio added yet.')}</p>
+                                <p className="text-muted mb-0" style={{ fontSize: '0.9rem' }}>{safeString(user?.bio) || t('profile.no_bio', 'No bio added yet.')}</p>
                             </div>
                         </>
                     )}

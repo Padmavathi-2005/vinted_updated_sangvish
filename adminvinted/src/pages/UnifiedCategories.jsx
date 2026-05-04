@@ -36,7 +36,27 @@ const UnifiedCategories = () => {
     const [modalType, setModalType] = useState('category');
     const [modalMode, setModalMode] = useState('add');
     const [formData, setFormData] = useState({});
+    const [errors, setErrors] = useState({});
     const fileInputRef = useRef(null);
+
+    const validateField = (name, value) => {
+        let error = '';
+        if (['name', 'slug', 'description'].includes(name)) {
+            if (name === 'name' && !value) {
+                error = 'Name is required';
+            } else if (value && /\d/.test(value)) {
+                error = `${name.charAt(0).toUpperCase() + name.slice(1)} should not contain numbers`;
+            }
+        }
+        setErrors(prev => ({ ...prev, [name]: error }));
+        return error;
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+        validateField(name, value);
+    };
 
     useEffect(() => { fetchAllData(); }, []);
 
@@ -61,6 +81,7 @@ const UnifiedCategories = () => {
     const openModal = (type, mode, data = null) => {
         setModalType(type);
         setModalMode(mode);
+        setErrors({});
         if (mode === 'edit' && data) {
             // Populate ID strings from objects
             const cleaned = { ...data };
@@ -74,7 +95,14 @@ const UnifiedCategories = () => {
     };
 
     const handleSave = async () => {
-        if (!formData.name) { showToast('warning', 'Name is required'); return; }
+        const nameErr = validateField('name', formData.name);
+        const slugErr = validateField('slug', formData.slug);
+        const descErr = validateField('description', formData.description);
+
+        if (nameErr || slugErr || descErr) { 
+            showToast('warning', 'Please fix validation errors'); 
+            return; 
+        }
         setSaving(true);
         const apiPath = modalType === 'category' ? 'categories' : (modalType === 'subcategory' ? 'subcategories' : 'item-types');
         try {
@@ -249,13 +277,13 @@ const UnifiedCategories = () => {
                 <Card className="main-content-card border-0 shadow-sm p-4">
 
                     {/* Header */}
-                    <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                    <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                         <div>
-                            <h1 className="dashboard-title h3 mb-1">Categories</h1>
+                            <h1 className="dashboard-title h3 mb-1 text-primary">Categories</h1>
                             <p className="text-muted small mb-0">Manage categories, subcategories, and item types</p>
                         </div>
                         <Button variant="primary" className="btn-admin-action" onClick={() => openModal(modalTypes[activeTab], 'add')}>
-                            <FaPlus className="me-2" />{addLabels[activeTab]}
+                            <FaPlus className="me-2" size={12} />{addLabels[activeTab]}
                         </Button>
                     </div>
 
@@ -289,7 +317,7 @@ const UnifiedCategories = () => {
 
                     {/* Filters Row — same as Users page */}
                     <div className="d-flex gap-3 flex-wrap mb-4 align-items-center">
-                        <div style={{ maxWidth: '350px', flex: 1 }}>
+                        <div className="search-box-container">
                             <InputGroup>
                                 <InputGroup.Text className="bg-white border-end-0">
                                     <FaSearch className="text-muted" />
@@ -356,7 +384,7 @@ const UnifiedCategories = () => {
                     size="md"
                     footer={
                         <>
-                            <Button variant="outline-secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+                            <Button variant="outline-secondary" className="btn-admin-outline" onClick={() => setShowModal(false)}>Cancel</Button>
                             <Button variant="primary" onClick={handleSave} disabled={saving} className="btn-admin-action">
                                 {saving ? <Spinner size="sm" className="me-2" /> : null}
                                 Save Changes
@@ -367,12 +395,28 @@ const UnifiedCategories = () => {
                     <Form className="admin-form">
                         <Form.Group className="mb-3">
                             <Form.Label>Name *</Form.Label>
-                            <Form.Control type="text" value={safeString(formData.name) || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder={`Enter ${modalType} name`} />
+                            <Form.Control 
+                                type="text" 
+                                name="name"
+                                value={safeString(formData.name) || ''} 
+                                onChange={handleInputChange} 
+                                placeholder={`Enter ${modalType} name`} 
+                                isInvalid={!!errors.name}
+                            />
+                            <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
                         </Form.Group>
 
                         <Form.Group className="mb-3">
                             <Form.Label>Slug</Form.Label>
-                            <Form.Control type="text" value={formData.slug || ''} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} placeholder={formData.name?.toLowerCase().replace(/ /g, '-') || 'auto-generated'} />
+                            <Form.Control 
+                                type="text" 
+                                name="slug"
+                                value={formData.slug || ''} 
+                                onChange={handleInputChange} 
+                                placeholder={formData.name?.toLowerCase().replace(/ /g, '-') || 'auto-generated'} 
+                                isInvalid={!!errors.slug}
+                            />
+                            <Form.Control.Feedback type="invalid">{errors.slug}</Form.Control.Feedback>
                         </Form.Group>
 
                         {modalType === 'subcategory' && (
@@ -420,7 +464,16 @@ const UnifiedCategories = () => {
 
                                 <Form.Group className="mb-3">
                                     <Form.Label>Description</Form.Label>
-                                    <Form.Control as="textarea" rows={2} value={safeString(formData.description) || ''} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Brief description..." />
+                                    <Form.Control 
+                                        as="textarea" 
+                                        name="description"
+                                        rows={2} 
+                                        value={safeString(formData.description) || ''} 
+                                        onChange={handleInputChange} 
+                                        placeholder="Brief description..." 
+                                        isInvalid={!!errors.description}
+                                    />
+                                    <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
                                 </Form.Group>
                             </>
                         )}

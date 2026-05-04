@@ -7,6 +7,7 @@ import CustomSelect from '@/components/common/CustomSelect';
 import CurrencyContext from '@/context/CurrencyContext';
 import '@/app/styles/SellItem.css';
 import { getImageUrl, safeString } from '@/utils/constants';
+import { validateTextField, getTextFieldError } from '@/utils/validation';
 import ImageCropModal from '@/components/common/ImageCropModal';
 
 const MAX_PHOTOS = 20;
@@ -38,6 +39,7 @@ const ListingEditForm = ({ item, onCancel, onUpdate }) => {
     // Images State
     const [photos, setPhotos] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [validationErrors, setValidationErrors] = useState({});
     
     // Crop State
     const [showCropModal, setShowCropModal] = useState(false);
@@ -170,6 +172,25 @@ const ListingEditForm = ({ item, onCancel, onUpdate }) => {
 
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
+
+        if (!title.trim()) return alert('Please enter an item title.');
+        if (!validateTextField(title)) {
+            setValidationErrors(prev => ({ ...prev, title: true }));
+            return alert(getTextFieldError('Title'));
+        }
+        
+        if (!description.trim()) return alert('Please enter an item description.');
+        if (!validateTextField(description)) {
+            setValidationErrors(prev => ({ ...prev, description: true }));
+            return alert(getTextFieldError('Description'));
+        }
+
+        if (brand && !validateTextField(brand)) {
+            setValidationErrors(prev => ({ ...prev, brand: true }));
+            return alert(getTextFieldError('Brand'));
+        }
+
+        setValidationErrors({});
         setLoading(true);
 
         const formData = new FormData();
@@ -248,11 +269,11 @@ const ListingEditForm = ({ item, onCancel, onUpdate }) => {
                     <div className="si-card">
                         <div className="si-field">
                             <label className="si-label">Title</label>
-                            <input type="text" className="si-input" value={title} onChange={e => setTitle(e.target.value)} required />
+                            <input type="text" className={`si-input ${validationErrors.title ? 'is-invalid' : ''}`} value={title} onChange={e => { setTitle(e.target.value); if (validationErrors.title) setValidationErrors(prev => ({ ...prev, title: false })); }} required />
                         </div>
                         <div className="si-field si-field-last">
                             <label className="si-label">Description</label>
-                            <textarea className="si-textarea" rows={4} value={description} onChange={e => setDescription(e.target.value)} required />
+                            <textarea className={`si-textarea ${validationErrors.description ? 'is-invalid' : ''}`} rows={4} value={description} onChange={e => { setDescription(e.target.value); if (validationErrors.description) setValidationErrors(prev => ({ ...prev, description: false })); }} required />
                         </div>
                     </div>
 
@@ -282,7 +303,7 @@ const ListingEditForm = ({ item, onCancel, onUpdate }) => {
                             </div>
                             <div className="si-field">
                                 <label className="si-label">Brand</label>
-                                <input type="text" className="si-input" value={brand} onChange={e => setBrand(e.target.value)} />
+                                <input type="text" className={`si-input ${validationErrors.brand ? 'is-invalid' : ''}`} value={brand} onChange={e => { setBrand(e.target.value); if (validationErrors.brand) setValidationErrors(prev => ({ ...prev, brand: false })); }} />
                             </div>
                             <div className="si-field">
                                 <label className="si-label">Price ({currentCurrency ? currentCurrency.symbol : '€'})</label>

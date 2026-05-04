@@ -24,6 +24,27 @@ const ShippingCompanies = () => {
         tracking_url: '',
         status: 'active'
     });
+    const [errors, setErrors] = useState({});
+
+    const validateField = (name, value) => {
+        let error = '';
+        if (name === 'company_name') {
+            if (!value) error = 'Company name is required';
+            else if (/\d/.test(value)) error = 'Company name should not contain numbers';
+        } else if (name === 'tracking_url') {
+            if (!value) error = 'Tracking URL is required';
+            else if (!value.includes('%tracking_id%')) error = 'URL must contain the %tracking_id% placeholder';
+            else if (!/^https?:\/\//i.test(value)) error = 'URL must start with http:// or https://';
+        }
+        setErrors(prev => ({ ...prev, [name]: error }));
+        return error;
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+        validateField(name, value);
+    };
 
     useEffect(() => {
         fetchCompanies();
@@ -57,6 +78,7 @@ const ShippingCompanies = () => {
             tracking_url: '',
             status: 'active'
         });
+        setErrors({});
         setShowModal(true);
     };
 
@@ -68,6 +90,7 @@ const ShippingCompanies = () => {
             tracking_url: company.tracking_url,
             status: company.status
         });
+        setErrors({});
         setShowModal(true);
     };
 
@@ -103,8 +126,12 @@ const ShippingCompanies = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.company_name || !formData.tracking_url) {
-            return showToast('warning', 'Please fill all fields');
+        
+        const nameErr = validateField('company_name', formData.company_name);
+        const urlErr = validateField('tracking_url', formData.tracking_url);
+
+        if (nameErr || urlErr) {
+            return showToast('warning', 'Please fix validation errors');
         }
 
         setSaving(true);
@@ -172,9 +199,9 @@ const ShippingCompanies = () => {
         <div className="admin-dashboard p-0">
             <Container fluid className="px-0">
                 <Card className="main-content-card border-0 shadow-sm p-4">
-                    <div className="d-flex justify-content-between align-items-center mb-4">
+                    <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                         <div>
-                            <h1 className="dashboard-title h3 mb-1">Shipping Companies</h1>
+                            <h1 className="dashboard-title h3 mb-1 text-primary">Shipping Companies</h1>
                             <p className="text-muted small mb-0">Manage marketplace delivery partners</p>
                         </div>
                         <Button variant="primary" onClick={handleAdd} className="btn-admin-action">
@@ -182,7 +209,7 @@ const ShippingCompanies = () => {
                         </Button>
                     </div>
 
-                    <div className="mb-4" style={{ maxWidth: '400px' }}>
+                    <div className="mb-4 search-box-container">
                         <InputGroup>
                             <InputGroup.Text className="bg-white border-end-0">
                                 <FaSearch className="text-muted" />
@@ -219,9 +246,10 @@ const ShippingCompanies = () => {
                     title={editMode ? 'Edit Shipping Company' : 'Add New Shipping Company'}
                     footer={
                         <>
-                            <Button variant="outline-secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-                            <Button variant="primary" onClick={handleSubmit} disabled={saving}>
-                                {saving ? <Spinner size="sm" /> : (editMode ? 'Update' : 'Save')}
+                            <Button variant="outline-secondary" className="btn-admin-outline" onClick={() => setShowModal(false)}>Cancel</Button>
+                            <Button variant="primary" className="btn-admin-action" onClick={handleSubmit} disabled={saving}>
+                                {saving ? <Spinner size="sm" className="me-2" /> : null}
+                                {editMode ? 'Update' : 'Save'}
                             </Button>
                         </>
                     }
@@ -231,19 +259,25 @@ const ShippingCompanies = () => {
                             <Form.Label>Company Name</Form.Label>
                             <Form.Control 
                                 type="text"
+                                name="company_name"
                                 placeholder="e.g. DHL Express, FedEx"
                                 value={formData.company_name}
-                                onChange={(e) => setFormData({...formData, company_name: e.target.value})}
+                                onChange={handleInputChange}
+                                isInvalid={!!errors.company_name}
                             />
+                            <Form.Control.Feedback type="invalid">{errors.company_name}</Form.Control.Feedback>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Tracking URL Structure</Form.Label>
                             <Form.Control 
                                 type="text"
+                                name="tracking_url"
                                 placeholder="e.g. https://www.dhl.com/track?id=%tracking_id%"
                                 value={formData.tracking_url}
-                                onChange={(e) => setFormData({...formData, tracking_url: e.target.value})}
+                                onChange={handleInputChange}
+                                isInvalid={!!errors.tracking_url}
                             />
+                            <Form.Control.Feedback type="invalid">{errors.tracking_url}</Form.Control.Feedback>
                             <Form.Text className="text-muted extra-small">
                                 Use <strong>%tracking_id%</strong> where the actual tracking number should be inserted.
                             </Form.Text>

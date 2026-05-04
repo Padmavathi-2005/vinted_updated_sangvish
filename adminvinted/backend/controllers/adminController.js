@@ -918,7 +918,10 @@ const getItemOptions = asyncHandler(async (req, res) => {
 // @route   POST /api/admin/items
 // @access  Private (Admin)
 const createItem = asyncHandler(async (req, res) => {
-    const { title, price, status, seller_id, category_id, subcategory_id, item_type_id, condition, description, brand, currency_id } = req.body;
+    const { 
+        title, price, status, seller_id, category_id, subcategory_id, item_type_id, 
+        condition, description, brand, size, color, currency_id, negotiable, shipping_included, attributes 
+    } = req.body;
 
     let images = [];
     if (req.files && req.files.length > 0) {
@@ -943,9 +946,14 @@ const createItem = asyncHandler(async (req, res) => {
         condition: condition || 'New',
         description: description || 'No description provided.',
         brand: brand || '',
+        size: size || '',
+        color: color || '',
         currency_id: finalCurrencyId,
         images,
-        is_sold: req.body.is_sold === 'true' || req.body.is_sold === true
+        is_sold: req.body.is_sold === 'true' || req.body.is_sold === true,
+        negotiable: negotiable === 'true' || negotiable === true,
+        shipping_included: shipping_included === 'true' || shipping_included === true,
+        attributes: attributes ? (typeof attributes === 'string' ? JSON.parse(attributes) : attributes) : []
     });
     res.status(201).json(item);
 });
@@ -977,11 +985,25 @@ const updateItem = asyncHandler(async (req, res) => {
     item.price = req.body.price !== undefined ? parseFloat(req.body.price) || 0 : item.price;
     item.description = (req.body.description && req.body.description !== '') ? req.body.description : item.description || 'No description provided.';
     item.brand = req.body.brand !== undefined ? req.body.brand : item.brand;
+    item.size = req.body.size !== undefined ? req.body.size : item.size;
+    item.color = req.body.color !== undefined ? req.body.color : item.color;
     item.condition = req.body.condition !== undefined ? req.body.condition : item.condition;
     item.images = updatedImages;
 
     if (req.body.is_sold !== undefined) {
         item.is_sold = req.body.is_sold === 'true' || req.body.is_sold === true;
+    }
+
+    if (req.body.negotiable !== undefined) {
+        item.negotiable = req.body.negotiable === 'true' || req.body.negotiable === true;
+    }
+
+    if (req.body.shipping_included !== undefined) {
+        item.shipping_included = req.body.shipping_included === 'true' || req.body.shipping_included === true;
+    }
+
+    if (req.body.attributes !== undefined) {
+        item.attributes = typeof req.body.attributes === 'string' ? JSON.parse(req.body.attributes) : req.body.attributes;
     }
 
     if (req.body.status) {

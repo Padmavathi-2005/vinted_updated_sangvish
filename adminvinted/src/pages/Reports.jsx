@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Row, Col, Spinner, Table as BootstrapTable, Alert, Form, Button } from 'react-bootstrap';
+import { Card, Row, Col, Spinner, Table as BootstrapTable, Alert, Form, Button, Container } from 'react-bootstrap';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -86,71 +86,82 @@ const Reports = () => {
         return [lat, lon];
     };
 
+    // Geocode string into Lat/Lon using native fetch to avoid CORS/Interceptor issues
+    const geocodeAddress = async (addressStr) => {
+        if (!addressStr || addressStr === "Unknown Address" || addressStr === "Unknown Location") return null;
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressStr)}&limit=1`);
+            const data = await response.json();
+            if (data && data.length > 0) {
+                return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+            }
+        } catch (e) {
+            console.warn("Geocoding failed for:", addressStr);
+        }
+        return null;
+    };
+
+    const isGeocoding = useRef(false);
+
     // Auto Geocode Map Locations incrementally
     useEffect(() => {
         let isMounted = true;
         const geocodeLocations = async () => {
-            if (!data.bookingLocations || data.bookingLocations.length === 0) return;
-
-            // Collect locations not yet locally cached
+            if (!data.bookingLocations || data.bookingLocations.length === 0 || isGeocoding.current) return;
+            
             const missingLocs = data.bookingLocations.filter(loc =>
-                loc.locationString && loc.locationString !== "Unknown Address" && !geoCache[loc.locationString]
+                loc.locationString && 
+                loc.locationString !== "Unknown Address" && 
+                loc.locationString !== "Unknown Location" &&
+                !geoCache[loc.locationString]
             );
+
+            if (missingLocs.length === 0) return;
+            
+            isGeocoding.current = true;
 
             for (let i = 0; i < missingLocs.length; i++) {
                 if (!isMounted) break;
                 const locStr = missingLocs[i].locationString;
-                try {
-                    const resp = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locStr)}&limit=1`);
-                    if (resp.data && resp.data.length > 0) {
-                        setGeoCache(prev => ({ ...prev, [locStr]: [parseFloat(resp.data[0].lat), parseFloat(resp.data[0].lon)] }));
-                    } else {
-                        // Fallback searching just by state/country
-                        const parts = locStr.split(',');
-                        if (parts.length > 1) {
-                            const broader = parts.slice(1).join(',').trim();
-                            const respB = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(broader)}&limit=1`);
-                            if (respB.data && respB.data.length > 0) {
-                                setGeoCache(prev => ({ ...prev, [locStr]: [parseFloat(respB.data[0].lat), parseFloat(respB.data[0].lon)] }));
-                            }
-                        }
+                
+                // Skip obviously fake or numeric-only addresses to save rate-limit
+                if (/^[0-9, ]+$/.test(locStr) || locStr.length < 3) continue;
+
+                const coords = await geocodeAddress(locStr);
+                
+                if (coords) {
+                    setGeoCache(prev => ({ ...prev, [locStr]: coords }));
+                } else {
+                    // Fallback to broader search
+                    const parts = locStr.split(',');
+                    if (parts.length > 1) {
+                        const broader = parts.slice(1).join(',').trim();
+                        const coordsB = await geocodeAddress(broader);
+                        if (coordsB) setGeoCache(prev => ({ ...prev, [locStr]: coordsB }));
                     }
-                } catch (e) {
-                    console.error("Geocode error", e);
                 }
-                // Rate Limiting required by OpenStreetMap
-                await new Promise(r => setTimeout(r, 1100));
+                // Strictly respect Nominatim 1req/sec (using 2s for safety)
+                await new Promise(r => setTimeout(r, 2000));
             }
+            isGeocoding.current = false;
         };
         geocodeLocations();
-
-        return () => { isMounted = false; };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        return () => { isMounted = false; isGeocoding.current = false; };
     }, [data.bookingLocations]);
 
-    // Geocode string into Lat/Lon to center Map automatically
     const handleOrderHover = async (addressStr) => {
         if (!addressStr || addressStr === "Unknown Location") return;
-
-        // Try Cache first
         if (geoCache[addressStr]) {
             setMapCenter(geoCache[addressStr]);
             setMapZoom(6);
             return;
         }
 
-        try {
-            // Free Nominatim lookup (Limited to 1 req / sec)
-            const resp = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressStr)}&limit=1`);
-            if (resp.data && resp.data.length > 0) {
-                const lat = parseFloat(resp.data[0].lat);
-                const lon = parseFloat(resp.data[0].lon);
-                setGeoCache(prev => ({ ...prev, [addressStr]: [lat, lon] }));
-                setMapCenter([lat, lon]);
-                setMapZoom(6);
-            }
-        } catch (e) {
-            console.log("Geocoding failed for string:", addressStr);
+        const coords = await geocodeAddress(addressStr);
+        if (coords) {
+            setGeoCache(prev => ({ ...prev, [addressStr]: coords }));
+            setMapCenter(coords);
+            setMapZoom(6);
         }
     };
 
@@ -167,22 +178,23 @@ const Reports = () => {
     }
 
     return (
-        <div className="admin-main-content">
-            <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <>
+            {/* Header */}
+            <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                 <div>
-                    <h1 className="h3 mb-1 fw-bold text-dark">Business Reports & Analysis</h1>
+                    <h1 className="dashboard-title h3 mb-1 text-primary">Business Reports</h1>
                     <p className="text-muted small mb-0">Comprehensive platform performance insights</p>
                 </div>
-                <Form onSubmit={handleFilterSubmit} className="d-flex align-items-end gap-2 bg-white p-2 rounded shadow-sm border border-light">
-                    <div>
-                        <Form.Label className="small text-muted mb-1 px-1">From Date</Form.Label>
-                        <Form.Control type="date" value={startDate} onChange={e => setStartDate(e.target.value)} size="sm" />
+                <Form onSubmit={handleFilterSubmit} className="d-flex flex-wrap align-items-end gap-2 bg-white p-3 rounded-4 shadow-sm border border-light w-100 w-sm-auto">
+                    <div className="flex-grow-1 flex-sm-grow-0">
+                        <Form.Label className="small text-muted mb-1 px-1">From</Form.Label>
+                        <Form.Control type="date" value={startDate} onChange={e => setStartDate(e.target.value)} size="sm" className="rounded-3" />
                     </div>
-                    <div>
-                        <Form.Label className="small text-muted mb-1 px-1">To Date</Form.Label>
-                        <Form.Control type="date" value={endDate} onChange={e => setEndDate(e.target.value)} size="sm" />
+                    <div className="flex-grow-1 flex-sm-grow-0">
+                        <Form.Label className="small text-muted mb-1 px-1">To</Form.Label>
+                        <Form.Control type="date" value={endDate} onChange={e => setEndDate(e.target.value)} size="sm" className="rounded-3" />
                     </div>
-                    <Button type="submit" variant="primary" size="sm" className="px-3" style={{ height: 'fit-content' }}>
+                    <Button type="submit" variant="primary" size="sm" className="btn-admin-action px-3 py-2" style={{ height: 'fit-content' }}>
                         Filter
                     </Button>
                 </Form>
@@ -191,11 +203,11 @@ const Reports = () => {
             <Row className="mb-4 g-4">
                 {/* Revenue Overview */}
                 <Col lg={12}>
-                    <Card className="border-0 shadow-sm rounded-4 h-100 p-4 bg-white">
+                    <Card className="border-0 shadow-sm rounded-4 h-100 p-3 p-md-4 bg-white overflow-hidden">
                         <h5 className="fw-bold mb-4">Revenue & Commission Trends</h5>
-                        <div style={{ width: '100%', height: 350 }}>
-                            <ResponsiveContainer>
-                                <AreaChart data={data.chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <div style={{ width: '100%', height: 350, marginLeft: -10, position: 'relative', minWidth: '1px' }}>
+                            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+                                <AreaChart data={data.chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8} />
@@ -207,10 +219,10 @@ const Reports = () => {
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                                    <XAxis dataKey="dateLabel" axisLine={false} tickLine={false} />
-                                    <YAxis width={85} axisLine={false} tickLine={false} tickFormatter={(value) => formatPrice(value)} />
+                                    <XAxis dataKey="dateLabel" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
+                                    <YAxis width={65} axisLine={false} tickLine={false} tick={{ fontSize: 11 }} tickFormatter={(value) => formatPrice(value)} />
                                     <RechartsTooltip formatter={(value) => `${formatPrice(value)}`} />
-                                    <Legend />
+                                    <Legend wrapperStyle={{ fontSize: '12px' }} />
                                     <Area type="monotone" dataKey="sales" name="Total Sales" stroke="#0ea5e9" fillOpacity={1} fill="url(#colorSales)" />
                                     <Area type="monotone" dataKey="commission" name="Admin Commission" stroke="#22c55e" fillOpacity={1} fill="url(#colorCommission)" />
                                 </AreaChart>
@@ -223,10 +235,10 @@ const Reports = () => {
             <Row className="mb-4 g-4" style={{ minHeight: '400px' }}>
                 {/* Geographic Map Tracker */}
                 <Col lg={6}>
-                    <Card className="border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <Card className="border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white mb-4 overflow-hidden" style={{ minHeight: '480px' }}>
                         <h5 className="fw-bold mb-4">Delivery Map Tracking</h5>
                         <p className="text-muted small">Heatmap of booking addresses globally</p>
-                        <div style={{ height: '350px', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', zIndex: 1, flex: 1 }}>
+                        <div style={{ height: '380px', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', zIndex: 1 }}>
                             {/* Force re-render of map on coordinates change with a react key trick */}
                             <MapContainer key={`${mapCenter[0]}-${mapCenter[1]}-${mapZoom}`} center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%', zIndex: 1 }}>
                                 <TileLayer
@@ -332,7 +344,10 @@ const Reports = () => {
                                                                 alt={safeString(seller.username)} 
                                                                 className="rounded-circle w-100 h-100" 
                                                                 style={{ objectFit: 'cover', position: 'absolute', top: 0, left: 0 }} 
-                                                                onError={(e) => { e.target.style.display = 'none'; }} 
+                                                                onError={(e) => { 
+                                                                    e.target.onerror = null; 
+                                                                    e.target.src = getImageUrl('images/site/not_found.png');
+                                                                }} 
                                                             />
                                                         )}
                                                     </div>
@@ -351,7 +366,7 @@ const Reports = () => {
                     </Card>
                 </Col>
             </Row>
-        </div>
+        </>
     );
 };
 

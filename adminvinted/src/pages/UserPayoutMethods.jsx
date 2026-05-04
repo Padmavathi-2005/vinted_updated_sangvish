@@ -255,7 +255,7 @@ const UserPayoutMethods = () => {
                 {/* Controls */}
                 <div className="wallet-controls">
                     <div className="wallet-controls-left">
-                        <div className="wallet-search-wrap">
+                        <div className="wallet-search-wrap search-box-container">
                             <FaSearch style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '0.85rem', pointerEvents: 'none' }} />
                             <input
                                 className="wallet-search-input"

@@ -24,6 +24,30 @@ const Currencies = () => {
         is_active: true
     });
     const [saving, setSaving] = useState(false);
+    const [errors, setErrors] = useState({});
+
+    const validateField = (name, value) => {
+        let error = '';
+        if (['name', 'code'].includes(name)) {
+            if (name === 'name' && !value) {
+                error = 'Currency name is required';
+            } else if (name === 'code' && !value) {
+                error = 'ISO code is required';
+            } else if (value && /\d/.test(value)) {
+                error = `${name.charAt(0).toUpperCase() + name.slice(1)} should not contain numbers`;
+            }
+        } else if (name === 'exchange_rate') {
+            if (value <= 0) error = 'Exchange rate must be greater than 0';
+        }
+        setErrors(prev => ({ ...prev, [name]: error }));
+        return error;
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+        validateField(name, value);
+    };
 
     // Pagination
     const { paginationLimit } = useSettings();
@@ -60,6 +84,15 @@ const Currencies = () => {
     };
 
     const handleSave = async () => {
+        const nameErr = validateField('name', formData.name);
+        const codeErr = validateField('code', formData.code);
+        const rateErr = validateField('exchange_rate', formData.exchange_rate);
+
+        if (nameErr || codeErr || rateErr) {
+            showToast('warning', 'Please fix validation errors');
+            return;
+        }
+
         setSaving(true);
         try {
             if (selectedCurrency) {
@@ -72,7 +105,8 @@ const Currencies = () => {
             fetchCurrencies();
         } catch (error) {
             console.error("Error saving currency", error);
-            showToast('error', "Failed to save currency");
+            const msg = error.response?.data?.message || "Failed to save currency";
+            showToast('error', msg);
         } finally {
             setSaving(false);
         }
@@ -226,10 +260,13 @@ const Currencies = () => {
                                     <Form.Label>Currency Name</Form.Label>
                                     <Form.Control
                                         type="text"
+                                        name="name"
                                         value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        onChange={handleInputChange}
                                         placeholder="e.g. US Dollar"
+                                        isInvalid={!!errors.name}
                                     />
+                                    <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
@@ -237,10 +274,13 @@ const Currencies = () => {
                                     <Form.Label>ISO Code</Form.Label>
                                     <Form.Control
                                         type="text"
+                                        name="code"
                                         value={formData.code}
-                                        onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                                        onChange={handleInputChange}
                                         placeholder="e.g. USD"
+                                        isInvalid={!!errors.code}
                                     />
+                                    <Form.Control.Feedback type="invalid">{errors.code}</Form.Control.Feedback>
                                 </Form.Group>
                             </Col>
                         </Row>
@@ -250,8 +290,9 @@ const Currencies = () => {
                                     <Form.Label>Symbol</Form.Label>
                                     <Form.Control
                                         type="text"
+                                        name="symbol"
                                         value={formData.symbol}
-                                        onChange={(e) => setFormData({ ...formData, symbol: e.target.value })}
+                                        onChange={handleInputChange}
                                     />
                                 </Form.Group>
                             </Col>
@@ -261,9 +302,12 @@ const Currencies = () => {
                                     <Form.Control
                                         type="number"
                                         step="0.0001"
+                                        name="exchange_rate"
                                         value={formData.exchange_rate}
-                                        onChange={(e) => setFormData({ ...formData, exchange_rate: e.target.value })}
+                                        onChange={handleInputChange}
+                                        isInvalid={!!errors.exchange_rate}
                                     />
+                                    <Form.Control.Feedback type="invalid">{errors.exchange_rate}</Form.Control.Feedback>
                                 </Form.Group>
                             </Col>
                         </Row>

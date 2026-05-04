@@ -46,6 +46,29 @@ const Users = () => {
         profile_image: null
     });
 
+    const [errors, setErrors] = useState({});
+
+    const validateField = (name, value) => {
+        let error = '';
+        if (name === 'username') {
+            if (!value) error = 'Username is required';
+            else if (value.length < 3) error = 'Username must be at least 3 characters';
+        } else if (name === 'email') {
+            if (!value) error = 'Email is required';
+            else if (!/\S+@\S+\.\S+/.test(value)) error = 'Invalid email format';
+        } else if (name === 'password') {
+            if (showAddModal && !value) error = 'Password is required';
+            else if (value && value.length < 6) error = 'Password must be at least 6 characters';
+        }
+        setErrors(prev => ({ ...prev, [name]: error }));
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+        validateField(name, value);
+    };
+
     const handleImageError = (e) => {
         e.target.onerror = null;
         e.target.src = getImageUrl('images/site/not_found.png');
@@ -104,6 +127,7 @@ const Users = () => {
             password: '',
             profile_image: null
         });
+        setErrors({});
         setShowEditModal(true);
     };
 
@@ -165,8 +189,15 @@ const Users = () => {
     };
 
     const handleSaveUser = async () => {
-        if (!formData.username || !formData.email || (showAddModal && !formData.password)) {
-            showToast('warning', "Please fill in all required fields");
+        // Final validation
+        const newErrors = {};
+        if (!formData.username) newErrors.username = 'Username is required';
+        if (!formData.email) newErrors.email = 'Email is required';
+        if (showAddModal && !formData.password) newErrors.password = 'Password is required';
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            showToast('warning', "Please fix validation errors");
             return;
         }
 
@@ -340,6 +371,7 @@ const Users = () => {
                             variant="primary"
                             onClick={() => {
                                 setFormData({ username: '', email: '', password: '', status: 'Active', profile_image: null });
+                                setErrors({});
                                 setShowAddModal(true);
                             }}
                             className="btn-admin-action"
@@ -349,7 +381,7 @@ const Users = () => {
                     </div>
 
                     <div className="d-flex gap-3 flex-wrap mb-4">
-                        <div className="flex-grow-1" style={{ maxWidth: '350px' }}>
+                        <div className="flex-grow-1 search-box-container">
                             <InputGroup>
                                 <InputGroup.Text className="bg-white border-end-0">
                                     <FaSearch className="text-muted" />
@@ -446,10 +478,13 @@ const Users = () => {
                                     <Form.Label>Username</Form.Label>
                                     <Form.Control
                                         type="text"
+                                        name="username"
                                         value={formData.username}
-                                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                        onChange={handleInputChange}
                                         placeholder="e.g. john_doe"
+                                        isInvalid={!!errors.username}
                                     />
+                                    <Form.Control.Feedback type="invalid">{errors.username}</Form.Control.Feedback>
                                 </Form.Group>
                             </div>
                             <div className="col-md-12">
@@ -457,23 +492,29 @@ const Users = () => {
                                     <Form.Label>Email Address</Form.Label>
                                     <Form.Control
                                         type="email"
+                                        name="email"
                                         value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        onChange={handleInputChange}
                                         placeholder="e.g. john@example.com"
                                         disabled={showEditModal}
+                                        isInvalid={!!errors.email}
                                     />
+                                    <Form.Control.Feedback type="invalid">{errors.email}</Form.Control.Feedback>
                                 </Form.Group>
                             </div>
                         </div>
-
+ 
                         <Form.Group className="mb-3">
                             <Form.Label>{showEditModal ? "New Password (Optional)" : "Password"}</Form.Label>
                             <Form.Control
                                 type="password"
+                                name="password"
                                 value={formData.password || ''}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                onChange={handleInputChange}
                                 placeholder={showEditModal ? "Leave blank to keep current" : "Enter secure password"}
+                                isInvalid={!!errors.password}
                             />
+                            <Form.Control.Feedback type="invalid">{errors.password}</Form.Control.Feedback>
                         </Form.Group>
 
                         <Form.Group className="mb-3">

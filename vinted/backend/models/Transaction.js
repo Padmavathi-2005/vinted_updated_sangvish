@@ -28,7 +28,7 @@ const transactionSchema = mongoose.Schema(
         },
         purpose: {
             type: String,
-            enum: ['sale_earning', 'commission', 'withdrawal', 'refund', 'payment', 'delivery_fee', 'order_refund', 'return_refund_deduction', 'return_refund'],
+            enum: ['sale_earning', 'commission', 'withdrawal', 'refund', 'payment', 'delivery_fee', 'order_refund', 'return_refund_deduction', 'return_refund', 'withdrawal_refund'],
             required: true,
         },
         reference_id: {

@@ -65,7 +65,15 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+}
+
+@media (max-width: 600px) {
+    .wallet-header-actions {
+        width: 100%;
+        justify-content: flex-start;
+        margin-top: 8px;
+    }
 }
 
 /* ── Summary Stats Row ───────────────────────────────────── */
@@ -196,10 +204,24 @@
 
 .wallet-table-wrapper {
     border-top: 1px solid #f1f5f9;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.wallet-table-wrapper table {
+    min-width: 800px;
 }
 
 [data-admin-theme="dark"] .wallet-table-wrapper {
     border-top-color: rgba(255, 255, 255, 0.05);
+}
+
+.wallet-table-wrapper table td {
+    vertical-align: middle !important;
+}
+
+.wallet-user-cell, .wallet-pm-icon {
+    align-self: center;
 }
 
 /* ── Controls Bar ────────────────────────────────────────── */
@@ -1101,7 +1123,13 @@
 
     .wallet-controls-right {
         flex-direction: row;
-        justify-content: flex-end;
+        justify-content: flex-start;
+        margin-top: 4px;
+    }
+
+    .wallet-filter-select {
+        width: 100%;
+        margin-top: 8px;
     }
 
     .wallet-form-row {
@@ -1136,14 +1164,12 @@
     }
 
     .wallet-header-actions .wallet-btn span {
-        display: none;
+        display: inline-block;
     }
 
     .wallet-header-actions .wallet-btn {
-        width: 36px;
-        height: 36px;
-        padding: 0;
-        border-radius: 10px;
+        width: auto;
+        padding: 8px 14px;
     }
 }
 

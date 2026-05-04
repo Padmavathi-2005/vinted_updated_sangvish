@@ -8,6 +8,7 @@ import '@/app/styles/EditItemModal.css';
 import '@/app/styles/SellItem.css'; // Reuse SellItem styles for consistency
 import '../../components/common/CustomSelect.css';
 import { getImageUrl, getItemImageUrl, safeString } from '../../utils/constants';
+import { validateTextField, getTextFieldError } from '../../utils/validation';
 import { useTranslation } from 'react-i18next';
 import AuthContext from '../../context/AuthContext';
 import CurrencyContext from '../../context/CurrencyContext';
@@ -61,6 +62,7 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
     const [discountPercent, setDiscountPercent] = useState('');
     const [discountLoading, setDiscountLoading] = useState(false);
     const [commissionRate, setCommissionRate] = useState(0);
+    const [validationErrors, setValidationErrors] = useState({});
     
     // Crop State
     const [showCropModal, setShowCropModal] = useState(false);
@@ -309,6 +311,25 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
     // Submit Update
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!title.trim()) return setError('Please enter an item title.');
+        if (!validateTextField(title)) {
+            setValidationErrors(prev => ({ ...prev, title: true }));
+            return setError(getTextFieldError('Title'));
+        }
+        
+        if (!description.trim()) return setError('Please enter an item description.');
+        if (!validateTextField(description)) {
+            setValidationErrors(prev => ({ ...prev, description: true }));
+            return setError(getTextFieldError('Description'));
+        }
+
+        if (brand && !validateTextField(brand)) {
+            setValidationErrors(prev => ({ ...prev, brand: true }));
+            return setError(getTextFieldError('Brand'));
+        }
+
+        setValidationErrors({});
         setLoading(true);
         setError('');
         setSuccess('');
@@ -469,11 +490,11 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
                             <h4 className="eim-form-subtitle mb-3">Item Info</h4>
                             <div className="si-field">
                                 <label className="si-label">Item Title</label>
-                                <input type="text" className="si-input" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Nike Air Max 90" required />
+                                <input type="text" className={`si-input ${validationErrors.title ? 'is-invalid' : ''}`} value={title} onChange={e => { setTitle(e.target.value); if (validationErrors.title) setValidationErrors(prev => ({ ...prev, title: false })); }} placeholder="e.g. Nike Air Max 90" required />
                             </div>
                             <div className="si-field mt-3">
                                 <label className="si-label">Description</label>
-                                <textarea className="si-textarea" rows={4} value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe the item condition, fit, etc." required />
+                                <textarea className={`si-textarea ${validationErrors.description ? 'is-invalid' : ''}`} rows={4} value={description} onChange={e => { setDescription(e.target.value); if (validationErrors.description) setValidationErrors(prev => ({ ...prev, description: false })); }} placeholder="Describe the item condition, fit, etc." required />
                             </div>
                         </div>
 
@@ -495,15 +516,12 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
                                 </div>
                                 <div className="col-md-6">
                                     <label className="si-label">Brand</label>
-                                    <CustomSelect 
-                                        placeholder="Select or Search Brand"
-                                        options={[
-                                            { value: 'Nike', label: 'Nike' }, { value: 'Adidas', label: 'Adidas' },
-                                            { value: 'Zara', label: 'Zara' }, { value: 'Gucci', label: 'Gucci' }
-                                        ]} 
+                                    <input 
+                                        type="text" 
+                                        className={`si-input ${validationErrors.brand ? 'is-invalid' : ''}`} 
+                                        placeholder="e.g. Nike" 
                                         value={brand} 
-                                        onChange={setBrand} 
-                                        searchable={true} 
+                                        onChange={e => { setBrand(e.target.value); if (validationErrors.brand) setValidationErrors(prev => ({ ...prev, brand: false })); }} 
                                     />
                                 </div>
                                 <div className="col-md-4">

@@ -11,6 +11,16 @@ const AdminLayout = ({ children }) => {
     const location = useLocation();
     const [loading, setLoading] = useState(true);
     const [verified, setVerified] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+        return window.innerWidth < 992 ? true : (localStorage.getItem('sidebarCollapsed') === 'true');
+    });
+
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+        if (window.innerWidth >= 992) {
+            localStorage.setItem('sidebarCollapsed', (!isSidebarCollapsed).toString());
+        }
+    };
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -70,10 +80,10 @@ const AdminLayout = ({ children }) => {
     }
 
     return (
-        <div className="admin-layout">
-            <AdminSidebar />
+        <div className={`admin-layout ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+            <AdminSidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
             <div className="admin-content">
-                <AdminHeader />
+                <AdminHeader toggleSidebar={toggleSidebar} />
                 <main className="admin-main-content">
                     {children}
                 </main>

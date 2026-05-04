@@ -345,3 +345,30 @@
     border-color: #334155;
     color: #e2e8f0;
 }
+
+@media (max-width: 768px) {
+    .table-footer {
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px;
+        align-items: center;
+        text-align: center;
+    }
+
+    .table-footer .d-flex {
+        flex-direction: column;
+        gap: 12px !important;
+    }
+
+    .rows-per-page {
+        justify-content: center;
+    }
+
+    .search-box-container {
+        max-width: 100% !important;
+    }
+}
+
+.search-box-container {
+    max-width: 350px;
+}

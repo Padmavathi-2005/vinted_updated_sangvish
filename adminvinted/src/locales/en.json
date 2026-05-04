@@ -28,7 +28,9 @@
             "active": "Active",
             "inactive": "Inactive",
             "pending": "Pending",
-            "blocked": "Blocked"
+            "blocked": "Blocked",
+            "available": "Available",
+            "sold": "Sold"
         },
         "refresh": "Refresh",
         "export": "Export",
@@ -219,7 +221,14 @@
             "pending": "Pending",
             "paid": "Paid",
             "failed": "Failed",
-            "refunded": "Refunded"
+            "refunded": "Refunded",
+            "partially_refunded": "Partially Refunded",
+            "confirmed": "Confirmed",
+            "packed": "Packed",
+            "shipped": "Shipped",
+            "out_for_delivery": "Out for Delivery",
+            "return_requested": "Return Requested",
+            "returned": "Returned"
         },
         "modal": {
             "edit_title": "Edit Order",
