@@ -171,18 +171,22 @@ const getSettingsByType = asyncHandler(async (req, res) => {
 
         // Ensure general_settings has site fields if they were merged
         if (type === 'general_settings') {
-            if (!responseData.site_name) responseData.site_name = { en: 'My Marketplace' };
+            if (!responseData.site_name) responseData.site_name = { en: 'Marketplace' };
             if (!responseData.site_logo) responseData.site_logo = 'images/site/logo.png';
             if (!responseData.site_favicon) responseData.site_favicon = 'images/site/favicon.png';
-            if (responseData.site_url === undefined) responseData.site_url = '';
+            if (!responseData.site_og_image) responseData.site_og_image = responseData.site_logo;
+            if (responseData.site_url === undefined || responseData.site_url === null) responseData.site_url = '';
+            if (!responseData.site_description) responseData.site_description = { en: 'Buy and sell pre-loved fashion.' };
+            if (!responseData.site_keywords) responseData.site_keywords = { en: 'marketplace, resale, fashion' };
         }
 
         // Type-aware normalization for localized fields
         if (type === 'general_settings' || type === 'site_settings') {
-            const field = 'site_name';
-            if (!responseData[field] || typeof responseData[field] === 'string') {
-                responseData[field] = { en: responseData[field] || '' };
-            }
+            ['site_name', 'site_description', 'site_keywords'].forEach(field => {
+                if (!responseData[field] || typeof responseData[field] === 'string') {
+                    responseData[field] = { en: responseData[field] || '' };
+                }
+            });
         } else if (type === 'cookie_settings') {
             ['cookie_heading', 'cookie_message', 'cookie_button_text'].forEach(field => {
                 if (!responseData[field] || typeof responseData[field] === 'string') {
