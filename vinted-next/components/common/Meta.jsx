@@ -32,15 +32,17 @@ const Meta = ({
     }, [metaTitle]);
     const siteFavicon = settings.site_favicon ? getImageUrl(settings.site_favicon) : "/favicon.ico";
     const siteLogo = settings.site_logo ? getImageUrl(settings.site_logo) : "";
+    const siteOgImage = settings.site_og_image ? getImageUrl(settings.site_og_image) : siteLogo;
     
     // Default values if props are missing
     const defaultDesc = "Join our community to buy and sell pre-loved fashion. Sustainable, affordable, and easy.";
-    const metaDesc = safeString(description) || defaultDesc;
+    const metaDesc = safeString(description || settings?.site_description) || defaultDesc;
+    const metaKeywords = safeString(settings?.site_keywords) || "marketplace, resale, fashion";
     
     // IMAGE HANDLING: Ensure it's absolute for social crawlers
     let metaImage = image;
-    if (!metaImage && siteLogo) {
-        metaImage = siteLogo;
+    if (!metaImage && siteOgImage) {
+        metaImage = siteOgImage;
     }
     
     const metaUrl = currentUrl;
@@ -56,7 +58,7 @@ const Meta = ({
             <title>{metaTitle}</title>
             <meta name="title" content={metaTitle} />
             <meta name="description" content={metaDesc} />
-            <meta name="keywords" content={settings?.site_keywords || "marketplace, resale, fashion"} />
+            <meta name="keywords" content={metaKeywords} />
             <meta name="robots" content="index, follow" />
             
             {/* Open Graph / Facebook */}

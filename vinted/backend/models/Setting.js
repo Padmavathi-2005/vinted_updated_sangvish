@@ -24,6 +24,15 @@ const settingSchema = mongoose.Schema(
         site_favicon: {
             type: String,
         },
+        site_og_image: {
+            type: String,
+        },
+        site_description: {
+            type: mongoose.Schema.Types.Mixed,
+        },
+        site_keywords: {
+            type: mongoose.Schema.Types.Mixed,
+        },
         primary_color: {
             type: String,
         },
@@ -163,7 +172,7 @@ const settingSchema = mongoose.Schema(
         },
         toJSON: {
             transform: function (doc, ret) {
-                ['site_logo', 'site_favicon', 'image_not_found', 'empty_table_image', 'stripe_logo', 'paypal_logo'].forEach(field => {
+                ['site_logo', 'site_favicon', 'site_og_image', 'image_not_found', 'empty_table_image', 'stripe_logo', 'paypal_logo'].forEach(field => {
                     if (ret[field] && !ret[field].startsWith('http')) {
                         let clean = ret[field].replace(/^\/+/, '');
                         clean = clean.replace(/^images\/site\//, '');
@@ -175,7 +184,7 @@ const settingSchema = mongoose.Schema(
         },
         toObject: {
             transform: function (doc, ret) {
-                ['site_logo', 'site_favicon', 'image_not_found', 'empty_table_image', 'stripe_logo', 'paypal_logo'].forEach(field => {
+                ['site_logo', 'site_favicon', 'site_og_image', 'image_not_found', 'empty_table_image', 'stripe_logo', 'paypal_logo'].forEach(field => {
                     if (ret[field] && !ret[field].startsWith('http')) {
                         let clean = ret[field].replace(/^\/+/, '');
                         clean = clean.replace(/^images\/site\//, '');

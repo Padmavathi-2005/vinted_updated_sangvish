@@ -12,6 +12,7 @@ export async function generateMetadata() {
 
     const siteName = safeString(settings?.site_name, 'Resale');
     const siteLogo = settings?.site_logo ? getImageUrl(settings.site_logo) : `${BASE_URL}/images/site/logo.png`;
+    const siteOgImage = settings?.site_og_image ? getImageUrl(settings.site_og_image) : siteLogo;
     const siteFavicon = settings?.site_favicon ? getImageUrl(settings.site_favicon) : '/favicon.ico';
 
     return {
@@ -19,12 +20,8 @@ export async function generateMetadata() {
         default: siteName,
         template: `%s | ${siteName}`,
       },
-      description: settings?.site_description || 'Buy and sell pre-loved fashion.',
-      keywords: settings?.site_keywords || 'marketplace, resale, fashion, pre-loved, sustainable',
-      robots: {
-        index: true,
-        follow: true,
-      },
+      description: safeString(settings?.site_description) || 'Buy and sell pre-loved fashion.',
+      keywords: safeString(settings?.site_keywords) || 'marketplace, resale, fashion, pre-loved, sustainable',
       icons: {
         icon: [
           { url: siteFavicon },
@@ -36,12 +33,12 @@ export async function generateMetadata() {
       },
       openGraph: {
         title: siteName,
-        description: settings?.site_description || 'Buy and sell pre-loved fashion.',
+        description: safeString(settings?.site_description) || 'Buy and sell pre-loved fashion.',
         url: BASE_URL,
         siteName: siteName,
         images: [
           {
-            url: siteLogo,
+            url: siteOgImage,
             width: 1200,
             height: 630,
             alt: siteName,
@@ -52,8 +49,8 @@ export async function generateMetadata() {
       twitter: {
         card: 'summary_large_image',
         title: siteName,
-        description: settings?.site_description || 'Buy and sell pre-loved fashion.',
-        images: [siteLogo],
+        description: safeString(settings?.site_description) || 'Buy and sell pre-loved fashion.',
+        images: [siteOgImage],
       },
     };
   } catch (error) {

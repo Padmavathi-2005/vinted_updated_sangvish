@@ -58,7 +58,7 @@ const DynamicSettings = () => {
             if (settingsData) {
                 setFormData(settingsData);
                 // Initialize previews
-                const previewFields = ['site_logo', 'site_favicon', 'stripe_logo', 'paypal_logo'];
+                const previewFields = ['site_logo', 'site_favicon', 'site_og_image', 'stripe_logo', 'paypal_logo'];
                 previewFields.forEach(field => {
                     if (settingsData[field]) {
                         setPreviews(prev => ({ ...prev, [field]: `${imageBaseURL.endsWith('/') ? imageBaseURL.slice(0, -1) : imageBaseURL}/${settingsData[field].startsWith('/') ? settingsData[field].substring(1) : settingsData[field]}` }));
@@ -1131,7 +1131,7 @@ const DynamicSettings = () => {
     const getFieldsForType = (type) => {
         const fieldMap = {
             general_settings: [
-                'site_name', 'site_url', 'site_logo', 'site_favicon',
+                'site_name', 'site_description', 'site_keywords', 'site_url', 'site_logo', 'site_favicon', 'site_og_image',
                 'primary_color', 'pagination_limit', 'pagination_mode',
                 'maintenance_mode',
                 'support_email', 'support_phone', 'support_address',
@@ -1190,7 +1190,7 @@ const DynamicSettings = () => {
 
         const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-        if (['site_logo', 'site_favicon'].includes(key)) {
+        if (['site_logo', 'site_favicon', 'site_og_image'].includes(key)) {
             return (
                 <Col key={key} md={12} className="mb-4">
                     <Form.Label className="fw-bold">{label}</Form.Label>
@@ -1353,7 +1353,7 @@ const DynamicSettings = () => {
             );
         }
 
-        if (['cookie_message', 'footer_tagline', 'footer_copyright'].includes(key)) {
+        if (['site_description', 'cookie_message', 'footer_tagline', 'footer_copyright'].includes(key)) {
             return (
                 <Col key={key} md={12} className="mb-3">
                     <Form.Group>
