@@ -56,6 +56,8 @@ const Meta = ({
             <title>{metaTitle}</title>
             <meta name="title" content={metaTitle} />
             <meta name="description" content={metaDesc} />
+            <meta name="keywords" content={settings?.site_keywords || "marketplace, resale, fashion"} />
+            <meta name="robots" content="index, follow" />
             
             {/* Open Graph / Facebook */}
             <meta property="og:url" content={metaUrl} />
@@ -63,6 +65,8 @@ const Meta = ({
             <meta property="og:title" content={metaTitle} />
             <meta property="og:description" content={metaDesc} />
             <meta property="og:image" content={metaImage} />
+            <meta property="og:image:width" content="1200" />
+            <meta property="og:image:height" content="630" />
             <meta property="og:site_name" content={siteName} />
 
             {/* Twitter */}

@@ -9,7 +9,7 @@ export async function generateMetadata() {
   try {
     const res = await fetch(`${BASE_URL}/api/settings`, { cache: 'no-store' });
     const settings = await res.json();
-    
+
     const siteName = safeString(settings?.site_name, 'Resale');
     const siteLogo = settings?.site_logo ? getImageUrl(settings.site_logo) : `${BASE_URL}/images/site/logo.png`;
     const siteFavicon = settings?.site_favicon ? getImageUrl(settings.site_favicon) : '/favicon.ico';
@@ -20,6 +20,11 @@ export async function generateMetadata() {
         template: `%s | ${siteName}`,
       },
       description: settings?.site_description || 'Buy and sell pre-loved fashion.',
+      keywords: settings?.site_keywords || 'marketplace, resale, fashion, pre-loved, sustainable',
+      robots: {
+        index: true,
+        follow: true,
+      },
       icons: {
         icon: [
           { url: siteFavicon },
@@ -37,6 +42,8 @@ export async function generateMetadata() {
         images: [
           {
             url: siteLogo,
+            width: 1200,
+            height: 630,
             alt: siteName,
           },
         ],

@@ -10,11 +10,11 @@ export async function generateMetadata({ params }) {
     const res = await fetch(`${BASE_URL}/api/items/${id}`, { cache: 'no-store' });
     if (!res.ok) throw new Error('Item not found');
     const item = await res.json();
-    
+
     // 2. Fetch site settings for name
     const setRes = await fetch(`${BASE_URL}/api/settings`, { cache: 'no-store' });
     const settings = await setRes.json().catch(() => ({}));
-    
+
     if (!item || !item.title) return { title: 'Item Not Found' };
 
     const siteName = safeString(settings?.site_name, 'Marketplace');
@@ -26,19 +26,34 @@ export async function generateMetadata({ params }) {
     return {
       title: title,
       description,
+      keywords: `${title}, ${siteName}, buy ${title}, second hand ${title}`,
+      alternates: {
+        canonical: `${BASE_URL}/items/${item.slug || id}`,
+      },
       openGraph: {
-        title: `${title} | ${siteName}`,
+        title: title,
         description,
         url: `${BASE_URL}/items/${item.slug || id}`,
         siteName: siteName,
-        images: image ? [{ url: image, width: 1200, height: 630, alt: title }] : [],
+        images: image ? [
+          {
+            url: image,
+            width: 1200,
+            height: 630,
+            alt: title,
+          }
+        ] : [],
         type: 'website',
       },
       twitter: {
         card: 'summary_large_image',
-        title: `${title} | ${siteName}`,
+        title: title,
         description,
         images: image ? [image] : [],
+      },
+      robots: {
+        index: true,
+        follow: true,
       },
     };
   } catch (error) {
@@ -51,6 +66,8 @@ export async function generateMetadata({ params }) {
 
 export default function ItemPage() {
   return (
+
+
     <Suspense fallback={<div className="container mt-5 pt-5 text-center">Loading item details...</div>}>
       <ItemDetailContent />
     </Suspense>
