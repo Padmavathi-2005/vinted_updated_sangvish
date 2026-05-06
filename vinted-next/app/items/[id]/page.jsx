@@ -31,7 +31,7 @@ export async function generateMetadata({ params }) {
         description,
         url: `${BASE_URL}/items/${item.slug || id}`,
         siteName: siteName,
-        images: image ? [{ url: image, width: 800, height: 600, alt: title }] : [],
+        images: image ? [{ url: image, width: 1200, height: 630, alt: title }] : [],
         type: 'website',
       },
       twitter: {
