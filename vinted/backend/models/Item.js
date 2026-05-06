@@ -11,9 +11,17 @@ const itemSchema = mongoose.Schema(
             type: String,
             required: [true, 'Please add a title'],
         },
+        slug: {
+            type: String,
+            unique: true,
+        },
         description: {
             type: String,
             required: [true, 'Please add a description'],
+        },
+        short_description: {
+            type: String,
+            default: '',
         },
         brand: {
             type: String,
@@ -45,7 +53,7 @@ const itemSchema = mongoose.Schema(
         condition: {
             type: String,
             required: [true, 'Please add item condition'],
-            enum: ['New', 'Very Good', 'Good', 'Normal', 'Bad', 'Very Bad', 'new-with-tags', 'new-without-tags', 'very-good', 'good', 'satisfactory', 'poor'],
+            enum: ['New', 'Very Good', 'Good', 'Normal', 'Bad', 'Very Bad'],
         },
         price: {
             type: Number,
@@ -68,6 +76,34 @@ const itemSchema = mongoose.Schema(
             type: String,
             default: '',
         },
+        location_label: {
+            type: String,
+            default: '',
+        },
+        lat: {
+            type: Number,
+            default: null,
+        },
+        lng: {
+            type: Number,
+            default: null,
+        },
+        country: {
+            type: String,
+            default: '',
+        },
+        state: {
+            type: String,
+            default: '',
+        },
+        city: {
+            type: String,
+            default: '',
+        },
+        pincode: {
+            type: String,
+            default: '',
+        },
         images: [
             {
                 type: String,
@@ -87,6 +123,10 @@ const itemSchema = mongoose.Schema(
             default: 'active',
         },
         is_sold: {
+            type: Boolean,
+            default: false,
+        },
+        is_ordered: {
             type: Boolean,
             default: false,
         },
@@ -163,5 +203,33 @@ const itemSchema = mongoose.Schema(
         }
     }
 );
+
+function slugify(text) {
+    return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w-]+/g, '')
+        .replace(/--+/g, '-');
+}
+
+itemSchema.pre('save', async function () {
+    if (this.isModified('title') || !this.slug) {
+        this.slug = `${slugify(this.title)}-${this._id.toString().substring(18)}`;
+    }
+    if (this.isModified('description') && this.description) {
+        let short = this.description;
+        if (short.length > 120) {
+            short = short.substring(0, 117);
+            const lastSpace = short.lastIndexOf(' ');
+            if (lastSpace > 80) {
+                short = short.substring(0, lastSpace);
+            }
+            short += '...';
+        }
+        this.short_description = short;
+    }
+});
 
 export default mongoose.model('Item', itemSchema);

@@ -50,6 +50,10 @@ const conversationSchema = mongoose.Schema(
                 ref: 'User',
             }
         ],
+        accepted_offer_amount: {
+            type: Number,
+            default: null,
+        },
     },
     {
         timestamps: {

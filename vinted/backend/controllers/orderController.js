@@ -1,4 +1,5 @@
 import asyncHandler from 'express-async-handler';
+import mongoose from 'mongoose';
 import Order from '../models/Order.js';
 import Item from '../models/Item.js';
 import Notification from '../models/Notification.js';
@@ -6,6 +7,8 @@ import Conversation from '../models/Conversation.js';
 import Message from '../models/Message.js';
 import Admin from '../models/Admin.js';
 import sendEmail from '../utils/sendEmail.js';
+import Currency from '../models/Currency.js';
+import Negotiation from '../models/Negotiation.js';
 import { processOrderPaymentSplit, reverseOrderPayment, processRefundSplit, deductBuyerWallet } from './walletController.js';
 
 // @desc    Create new order
@@ -25,14 +28,50 @@ const createOrder = asyncHandler(async (req, res) => {
 
     // Group items by seller_id to handle bundles
     const sellerGroups = {};
-    for (const cartItem of items) {
-        const item = await Item.findById(cartItem._id).populate('seller_id');
-        if (!item) continue;
+    const unavailableItems = [];
 
-        if (item.is_sold || item.status === 'sold') {
-            console.warn(`Attempted purchase of sold item: ${item._id}`);
+    for (const cartItem of items) {
+        const item = await Item.findById(cartItem._id).populate('seller_id').populate('currency_id');
+        if (!item) {
+            unavailableItems.push(cartItem.title || 'Unknown Item');
             continue;
         }
+
+        if (item.is_sold || item.status === 'sold') {
+            unavailableItems.push(item.title);
+            continue;
+        }
+
+        // --- NEGOTIATION ENGINE OVERRIDE ---
+        // Check if the current user has a negotiated price for this item
+        try {
+            const userIdStr = req.user._id.toString();
+            const userObjectId = new mongoose.Types.ObjectId(userIdStr);
+            
+            const [negRecord, convRecord] = await Promise.all([
+                Negotiation.findOne({
+                    item_id: item._id,
+                    $or: [ { buyer_id: userObjectId }, { buyer_id: userIdStr } ],
+                    status: 'active'
+                }),
+                Conversation.findOne({
+                    item_id: item._id,
+                    'participants.user': { $in: [userObjectId, userIdStr] },
+                    accepted_offer_amount: { $ne: null }
+                }).sort({ updated_at: -1 })
+            ]);
+
+            if (negRecord) {
+                item.price = negRecord.agreed_price; // Override memory price
+                console.log(`[Order] Applied Negotiation Price: ${item.price} for ${item.title}`);
+            } else if (convRecord) {
+                item.price = convRecord.accepted_offer_amount; // Override memory price
+                console.log(`[Order] Applied Conversation Price: ${item.price} for ${item.title}`);
+            }
+        } catch (negErr) {
+            console.error('Error overriding negotiated price in order:', negErr);
+        }
+        // -----------------------------------
 
         const sellerId = item.seller_id?._id?.toString() || item.seller_id?.toString();
         if (!sellerGroups[sellerId]) {
@@ -44,9 +83,23 @@ const createOrder = asyncHandler(async (req, res) => {
         sellerGroups[sellerId].items.push(item);
     }
 
+    if (unavailableItems.length > 0) {
+        res.status(400);
+        throw new Error(`The following items are no longer available: ${unavailableItems.join(', ')}. Please remove them from your cart and try again.`);
+    }
+
+    if (Object.keys(sellerGroups).length === 0) {
+        res.status(400);
+        throw new Error('No available items found in your order request.');
+    }
+
     // 1. Calculate Grand Total and Create Order Plans
     let grandTotal = 0;
     const orderPlans = [];
+
+    // Get INR currency for rate reference (Shipping fee is 200 INR)
+    const inrCurrency = await Currency.findOne({ code: 'INR' });
+    const inrRate = inrCurrency?.exchange_rate || 1;
 
     for (const sellerId in sellerGroups) {
         const group = sellerGroups[sellerId];
@@ -71,13 +124,19 @@ const createOrder = asyncHandler(async (req, res) => {
         }
 
         // Calculate Combined Shipping (200 INR per seller if not free)
+        // Convert 200 INR to item's currency
+        const itemCurrencyRate = groupItems[0].currency_id?.exchange_rate || 1;
+        const shippingInItemCurrency = (200 * itemCurrencyRate) / inrRate;
+
         const anyFreeShipping = groupItems.some(i => i.shipping_included);
-        const shippingFee = anyFreeShipping ? 0 : 200;
+        const shippingFee = anyFreeShipping ? 0 : shippingInItemCurrency;
 
         const discountedItemPrice = itemPriceSum - discountAmount;
-        const totalAmount = discountedItemPrice + shippingFee;
+        const totalAmount = parseFloat((discountedItemPrice + shippingFee).toFixed(2));
 
-        grandTotal += totalAmount;
+        // Add to grand total (Converting to INR since wallet deduction expects consistent units)
+        const totalAmountInINR = (totalAmount / itemCurrencyRate) * inrRate;
+        grandTotal += totalAmountInINR;
         orderPlans.push({
             sellerId,
             groupItems,
@@ -113,6 +172,7 @@ const createOrder = asyncHandler(async (req, res) => {
             bundle_discount_amount: discountAmount,
             shipping_fee: shippingFee,
             total_amount: totalAmount,
+            currency_id: groupItems[0].currency_id?._id || groupItems[0].currency_id,
             payment_method: actualPaymentMethod,
             payment_status: 'paid', // Wallet was already debited or Stripe was successful
             order_status: 'confirmed',
@@ -136,11 +196,12 @@ const createOrder = asyncHandler(async (req, res) => {
         for (const item of groupItems) {
             item.status = 'sold';
             item.is_sold = true;
+            item.is_ordered = true;
             await item.save();
         }
 
         // 4. Notifications
-        await Notification.create({
+        const notification = await Notification.create({
             user_id: sellerId,
             on_model: 'User',
             title: groupItems.length > 1 ? 'New Bundle Order!' : 'New Order Received!',
@@ -148,8 +209,20 @@ const createOrder = asyncHandler(async (req, res) => {
                 ? `You sold a bundle of ${groupItems.length} items. Order ID: #${orderNumber}`
                 : `Your item "${groupItems[0].title}" has been booked. Order ID: #${orderNumber}`,
             type: 'order',
-            link: `/profile?tab=orders`
+            link: `/profile?tab=orders&orderId=${order._id}`
         });
+
+        // Emit real-time notification to seller
+        if (req.io) {
+            req.io.to(sellerId.toString()).emit('new_notification', {
+                _id: notification._id,
+                title: notification.title,
+                message: notification.message,
+                type: notification.type,
+                link: notification.link,
+                created_at: notification.created_at
+            });
+        }
 
         // Send Order Confirmation to Buyer
         try {
@@ -235,20 +308,47 @@ const createOrder = asyncHandler(async (req, res) => {
 // @route   GET /api/orders
 // @access  Private
 const getMyOrders = asyncHandler(async (req, res) => {
-    const bought = await Order.find({ buyer_id: req.user._id })
-        .populate('item_id', 'title images')
-        .populate('seller_id', 'username')
-        .populate('shipping_company_id')
-        .sort({ created_at: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-    const sold = await Order.find({ seller_id: req.user._id })
-        .populate('item_id', 'title images')
-        .populate('buyer_id', 'username')
-        .populate('shipping_company_id')
-        .sort({ created_at: -1 });
+    const boughtQuery = { buyer_id: req.user._id };
+    const soldQuery = { seller_id: req.user._id };
 
-    console.log(`FETCH ORDERS FOR USER: ${req.user._id}, Bought: ${bought.length}, Sold: ${sold.length}`);
-    res.json({ bought, sold });
+    const [bought, sold, boughtCount, soldCount] = await Promise.all([
+        Order.find(boughtQuery)
+            .populate('item_id', 'title images currency_id')
+            .populate('seller_id', 'username')
+            .populate('currency_id')
+            .populate('shipping_company_id')
+            .sort({ created_at: -1 })
+            .skip(skip)
+            .limit(limit),
+        Order.find(soldQuery)
+            .populate('item_id', 'title images currency_id')
+            .populate('buyer_id', 'username')
+            .populate('currency_id')
+            .populate('shipping_company_id')
+            .sort({ created_at: -1 })
+            .skip(skip)
+            .limit(limit),
+        Order.countDocuments(boughtQuery),
+        Order.countDocuments(soldQuery)
+    ]);
+
+    console.log(`FETCH ORDERS FOR USER: ${req.user._id}, Page: ${page}, Bought: ${bought.length}, Sold: ${sold.length}`);
+    res.json({ 
+        bought, 
+        sold,
+        pagination: {
+            page,
+            limit,
+            boughtTotal: boughtCount,
+            soldTotal: soldCount,
+            boughtPages: Math.ceil(boughtCount / limit),
+            soldPages: Math.ceil(soldCount / limit)
+        }
+    });
 });
 
 // @desc    Update order shipping address
@@ -324,7 +424,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             title: 'Order Shipped!',
             message: `Your order "${populatedOrder.item_id?.title}" (#${order.order_number}) has been shipped.`,
             type: 'order',
-            link: '/profile?tab=orders'
+            link: `/profile?tab=orders&orderId=${order._id}`
         });
 
         try {
@@ -342,7 +442,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             title: 'Order Out for Delivery!',
             message: `Your order "${populatedOrder.item_id?.title}" (#${order.order_number}) is out for delivery.`,
             type: 'order',
-            link: '/profile?tab=orders'
+            link: `/profile?tab=orders&orderId=${order._id}`
         });
     } else if (status === 'delivered') {
         const title = 'Order Delivered! ⭐';
@@ -354,7 +454,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             title,
             message,
             type: 'order',
-            link: '/profile?tab=orders'
+            link: `/profile?tab=orders&orderId=${order._id}`
         });
 
         try {
@@ -431,7 +531,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 
         // Also mark item as available again
         for (const item of (order.is_bundle ? order.items : [{ item_id: order.item_id }])) {
-            await Item.findByIdAndUpdate(item.item_id, { status: 'available', is_sold: false });
+            await Item.findByIdAndUpdate(item.item_id, { status: 'available', is_sold: false, is_ordered: false });
         }
 
         // Notify Buyer
@@ -441,7 +541,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             title: 'Order Cancelled by Seller',
             message: `Your order "${populatedOrder.item_id?.title}" (#${order.order_number}) has been cancelled by the seller. Reason: ${order.cancel_reason || 'N/A'}. A full refund has been processed.`,
             type: 'alert',
-            link: '/profile?tab=orders'
+            link: `/profile?tab=orders&orderId=${order._id}`
         });
 
         try {
@@ -489,7 +589,7 @@ const cancelOrder = asyncHandler(async (req, res) => {
 
     // Mark items as available again
     for (const item of (order.is_bundle ? order.items : [{ item_id: order.item_id }])) {
-        await Item.findByIdAndUpdate(item.item_id, { status: 'available', is_sold: false });
+        await Item.findByIdAndUpdate(item.item_id, { status: 'available', is_sold: false, is_ordered: false });
     }
 
     // Notify Seller
@@ -499,7 +599,7 @@ const cancelOrder = asyncHandler(async (req, res) => {
         title: 'Order Cancelled by Buyer',
         message: `Order #${order.order_number} has been cancelled by the buyer. Reason: ${order.cancel_reason}`,
         type: 'info',
-        link: `/profile?tab=orders`
+        link: `/profile?tab=orders&orderId=${order._id}`
     });
 
     try {
@@ -581,7 +681,7 @@ const requestReturn = asyncHandler(async (req, res) => {
         title: 'Return Requested',
         message: `Buyer requested a return for order #${order.order_number}. Reason: ${reason}`,
         type: 'alert',
-        link: `/profile?tab=orders`
+        link: `/profile?tab=orders&orderId=${order._id}`
     });
 
     // Notify Admin
@@ -632,9 +732,12 @@ const processReturn = asyncHandler(async (req, res) => {
     order.refund_amount = refundType === 'full' ? order.total_amount : amount;
     await order.save();
 
-    // Mark item as available again if full refund
+    // Mark items as available again if full refund
     if (refundType === 'full') {
-        await Item.findByIdAndUpdate(order.item_id, { status: 'available', is_sold: false });
+        const itemsToRelist = order.is_bundle ? order.items : [{ item_id: order.item_id }];
+        for (const itm of itemsToRelist) {
+            await Item.findByIdAndUpdate(itm.item_id, { status: 'available', is_sold: false, is_ordered: false });
+        }
     }
 
     // Notify Buyer
@@ -644,7 +747,7 @@ const processReturn = asyncHandler(async (req, res) => {
         title: `Return Processed (${refundType === 'full' ? 'Full' : 'Partial'} Refund)`,
         message: `Your return for order #${order.order_number} has been processed.`,
         type: 'info',
-        link: `/profile?tab=orders`
+        link: `/profile?tab=orders&orderId=${order._id}`
     });
 
     res.json({ message: 'Return processed successfully', order });

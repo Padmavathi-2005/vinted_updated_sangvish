@@ -50,6 +50,15 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
     (response) => response,
     (error) => {
+        // Handle Network Errors (Server down, DNS, etc.)
+        if (!error.response) {
+            console.error('Network Error: Could not connect to backend', error);
+            window.dispatchEvent(new CustomEvent('network-error', { 
+                detail: { message: 'The server is currently unreachable. Please check your connection or try again later.' } 
+            }));
+            return Promise.reject(error);
+        }
+
         // Handle 401 errors for admin and settings routes
         if (error.response && error.response.status === 401) {
             const isLoginRequest = error.config.url.includes('/api/admin/login');

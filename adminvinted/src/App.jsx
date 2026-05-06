@@ -28,10 +28,12 @@ import ContactInquiries from './pages/ContactInquiries';
 import NotFound from './pages/NotFound';
 
 import { getAdminInfo } from './utils/auth';
+import NetworkErrorModal from './components/NetworkErrorModal';
 
 function App() {
     return (
         <Router>
+            <NetworkErrorModal />
             <AdminLayout>
                 <Routes>
                     <Route path="/" element={<Navigate to={getAdminInfo() ? "/dashboard" : "/login"} replace />} />

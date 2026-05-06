@@ -1106,12 +1106,24 @@ const updateOrderAdmin = asyncHandler(async (req, res) => {
 
     if (req.body.order_status) {
         order.order_status = req.body.order_status;
+        
+        // Sync Timestamps
+        const now = new Date();
+        const status = req.body.order_status;
+        if (status === 'confirmed' && !order.confirmed_at) order.confirmed_at = now;
+        if (status === 'packed' && !order.packed_at) order.packed_at = now;
+        if (status === 'shipped' && !order.shipped_at) order.shipped_at = now;
+        if (status === 'out_for_delivery' && !order.out_for_delivery_at) order.out_for_delivery_at = now;
+        if (status === 'delivered' && !order.delivered_at) order.delivered_at = now;
     }
     if (req.body.payment_status) {
         order.payment_status = req.body.payment_status;
     }
-    if (req.body.tracking_number !== undefined) {
-        order.tracking_number = req.body.tracking_number;
+    if (req.body.tracking_id !== undefined) {
+        order.tracking_id = req.body.tracking_id;
+    }
+    if (req.body.shipping_company_id !== undefined) {
+        order.shipping_company_id = req.body.shipping_company_id === '' ? null : req.body.shipping_company_id;
     }
 
     const updatedOrder = await order.save();

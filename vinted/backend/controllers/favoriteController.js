@@ -63,6 +63,11 @@ const addToFavorites = asyncHandler(async (req, res) => {
         throw new Error('Item not found');
     }
 
+    if (item.is_sold || item.is_ordered || item.status === 'sold') {
+        res.status(400);
+        throw new Error('This item has already been ordered and cannot be added to your wishlist.');
+    }
+
     // Check if already favorited
     const existingFavorite = await Favorite.findOne({
         user_id: req.user.id,

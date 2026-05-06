@@ -9,9 +9,12 @@ const LanguageContext = createContext();
 
 export const LanguageProvider = ({ children }) => {
     const [languages, setLanguages] = useState([
-        { _id: 'en', name: 'English', code: 'en', native_name: 'English' }
+        { _id: 'en', name: 'English', code: 'en', native_name: 'English', direction: 'ltr' },
+        { _id: 'ar', name: 'Arabic', code: 'ar', native_name: 'العربية', direction: 'rtl' },
+        { _id: 'de', name: 'German', code: 'de', native_name: 'Deutsch', direction: 'ltr' },
+        { _id: 'fr', name: 'French', code: 'fr', native_name: 'Français', direction: 'ltr' }
     ]);
-    const [currentLanguage, setCurrentLanguage] = useState({ _id: 'en', name: 'English', code: 'en', native_name: 'English' });
+    const [currentLanguage, setCurrentLanguage] = useState({ _id: 'en', name: 'English', code: 'en', native_name: 'English', direction: 'ltr' });
     const [defaultLanguage, setDefaultLanguage] = useState(null);
     const [dynamicContent, setDynamicContent] = useState({});
     const [contentLoading, setContentLoading] = useState(true);
@@ -26,27 +29,33 @@ export const LanguageProvider = ({ children }) => {
                     axios.get('/api/languages').catch(() => ({ data: [] }))
                 ]);
 
-                // Fetch dynamic content for current active language (will be refined after setup)
-                const storedLangCode = localStorage.getItem('user_language') || 'en';
-                const contentRes = await axios.get(`/api/frontend-content/${storedLangCode}`).catch(() => ({ data: {} }));
-                setDynamicContent(contentRes.data);
-                setContentLoading(false);
+                // Filter to only include our supported 4 languages
+                const supportedCodes = ['en', 'ar', 'de', 'fr'];
+                let filteredLangs = [
+                    { _id: 'en', name: 'English', code: 'en', native_name: 'English', direction: 'ltr' },
+                    { _id: 'ar', name: 'Arabic', code: 'ar', native_name: 'العربية', direction: 'rtl' },
+                    { _id: 'de', name: 'German', code: 'de', native_name: 'Deutsch', direction: 'ltr' },
+                    { _id: 'fr', name: 'French', code: 'fr', native_name: 'Français', direction: 'ltr' }
+                ];
 
-                let defLanguage = null;
-                if (settingsRes.data && settingsRes.data.default_language_id) {
-                    defLanguage = settingsRes.data.default_language_id;
-                    setDefaultLanguage(defLanguage);
+                if (Array.isArray(languagesRes.data) && languagesRes.data.length > 0) {
+                    // Update metadata if backend has more accurate data, but keep only the 4 codes
+                    const fromBackend = languagesRes.data.filter(l => supportedCodes.includes(l.code));
+                    if (fromBackend.length > 0) {
+                        filteredLangs = fromBackend;
+                    }
                 }
+                setLanguages(filteredLangs);
 
-                if (Array.isArray(languagesRes.data)) {
-                    setLanguages(languagesRes.data);
-                }
+                // Determine default language from settings or fallback to English
+                const defLanguage = filteredLangs.find(l => l.code === (settingsRes.data?.default_language || 'en')) || filteredLangs[0];
+                setDefaultLanguage(defLanguage);
 
                 // Check local storage for user's preferred language
-                const storedLanguageCode = localStorage.getItem('user_language');
+                const storedLanguageCode = typeof window !== 'undefined' ? localStorage.getItem('user_language') : null;
 
-                if (storedLanguageCode && Array.isArray(languagesRes.data)) {
-                    const found = languagesRes.data.find(l => l.code === storedLanguageCode);
+                if (storedLanguageCode) {
+                    const found = filteredLangs.find(l => l.code === storedLanguageCode);
                     if (found) {
                         setCurrentLanguage(found);
                     } else if (defLanguage) {
@@ -54,8 +63,8 @@ export const LanguageProvider = ({ children }) => {
                     }
                 } else if (defLanguage) {
                     setCurrentLanguage(defLanguage);
-                } else if (Array.isArray(languagesRes.data) && languagesRes.data.length > 0) {
-                    setCurrentLanguage(languagesRes.data[0]); // Fallback to first available
+                } else if (filteredLangs.length > 0) {
+                    setCurrentLanguage(filteredLangs[0]); // Fallback to first available
                 }
 
             } catch (error) {

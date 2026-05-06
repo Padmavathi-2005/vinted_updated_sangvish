@@ -2,7 +2,7 @@ export const BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBL
 export const IMAGE_BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_IMAGE_BASE_URL) || 'https://vinted.sangvish.com';
 
 export const getImageUrl = (path) => {
-    if (!path) return '';
+    if (!path) return null;
     const pathStr = String(path);
     if (pathStr.startsWith('http')) return pathStr;
 
@@ -38,10 +38,11 @@ export const getItemImageUrl = (path) => {
 
 export const safeString = (val, fallback = '') => {
     if (!val) return fallback;
-    if (typeof val === 'object') {
+    if (typeof val === 'object' && val !== null) {
         // Try getting from localStorage, default to 'en'
         const langCode = typeof window !== 'undefined' ? (localStorage.getItem('i18nextLng') || 'en').split('-')[0] : 'en';
-        return val[langCode] || val.en || val[Object.keys(val)[0]] || fallback;
+        const result = val[langCode] || val.en || val[Object.keys(val)[0]] || fallback;
+        return String(result || fallback);
     }
-    return String(val);
+    return String(val || fallback);
 };

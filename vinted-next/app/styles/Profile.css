@@ -1126,6 +1126,29 @@ body {
     font-weight: 700;
 }
 
+.pd-badge-count.clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.pd-badge-count.clickable:hover {
+    background: #e2e8f0;
+    color: #334155;
+    transform: scale(1.05);
+}
+
+.pd-badge-count.clickable.active {
+    background: var(--primary-color, #0ea5e9);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.2);
+}
+
+.pd-badge-count.clickable.sold.active {
+    background: #10b981;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+}
+
 .pd-orders-header-actions .btn-refresh {
     background: white;
     border: 1px solid #e2e8f0;
@@ -1307,11 +1330,13 @@ body.modal-open {
     font-size: 1rem;
     font-weight: 700;
     color: #1e293b;
-    margin: 0 0 6px 0;
+    margin: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.2;
+    flex: 1;
+    min-width: 0;
 }
 
 .pd-oic-participant-mini {
@@ -1408,6 +1433,52 @@ body.modal-open {
     color: white;
     border-color: var(--primary-color, #0ea5e9);
     box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+}
+
+.pd-orders-filter-wrap {
+    min-width: 200px;
+}
+
+.pd-oic-mobile-status {
+    display: none;
+    font-size: 0.55rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    background: #f1f5f9;
+    color: #64748b;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+@media (max-width: 900px) {
+    .pd-oic-mobile-status {
+        display: block;
+    }
+}
+
+.pd-oic-mobile-status.placed,
+.pd-oic-mobile-status.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.pd-oic-mobile-status.shipped,
+.pd-oic-mobile-status.dispatched {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.pd-oic-mobile-status.delivered {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.pd-oic-mobile-status.cancelled {
+    background: #fee2e2;
+    color: #991b1b;
 }
 
 @media (max-width: 480px) {
@@ -1852,6 +1923,18 @@ body.modal-open {
 .pd-sidemenu-item.active {
     background-color: #e0f2fe;
     color: var(--primary-color, #0ea5e9);
+}
+
+.clickable-sidebar-stat {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.clickable-sidebar-stat:hover {
+    background-color: #f1f5f9;
+    transform: translateX(2px);
 }
 
 /* ═══ Review Section in Order Detail Modal ═══ */
@@ -2568,6 +2651,7 @@ body.modal-open {
         grid-template-columns: 1fr;
         grid-template-rows: auto auto;
         gap: 12px;
+        padding-bottom: 100px;
     }
 
     .pd-main {

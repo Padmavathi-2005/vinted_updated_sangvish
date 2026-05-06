@@ -45,7 +45,7 @@ const itemSchema = mongoose.Schema(
         condition: {
             type: String,
             required: [true, 'Please add item condition'],
-            enum: ['New', 'Very Good', 'Good', 'Normal', 'Bad', 'Very Bad', 'new-with-tags', 'new-without-tags', 'very-good', 'good', 'satisfactory', 'poor'],
+            enum: ['New', 'Very Good', 'Good', 'Normal', 'Bad', 'Very Bad'],
         },
         price: {
             type: Number,

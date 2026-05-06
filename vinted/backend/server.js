@@ -41,6 +41,7 @@ import contactRoutes from './routes/contactRoutes.js';
 import { protect, adminProtect } from './middleware/authMiddleware.js';
 import { getReportsAdmin, updateReportStatus, handleReportAction } from './controllers/reportController.js';
 import startDiscountReminderJob from './jobs/discountReminderJob.js';
+import startAutoCompleteOrderJob from './jobs/autoCompleteOrderJob.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -90,6 +91,12 @@ const startServer = async () => {
             socket.on('join_conversation', (conversationId) => {
                 socket.join(conversationId);
                 console.log(`User joined conversation: ${conversationId}`);
+            });
+            socket.on('join_user', (userId) => {
+                if (userId) {
+                    socket.join(userId.toString());
+                    console.log(`User joined personal room: ${userId}`);
+                }
             });
             socket.on('disconnect', () => {
                 console.log('User disconnected:', socket.id);
@@ -150,6 +157,7 @@ const startServer = async () => {
 
         // Start scheduled jobs
         startDiscountReminderJob();
+        startAutoCompleteOrderJob();
 
         app.use(errorHandler);
 

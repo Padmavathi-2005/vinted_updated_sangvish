@@ -246,15 +246,17 @@ const Cart = () => {
                                         <div className="cart-items-list">
                                             {group.items.map(item => {
                                                 const imgUrl = getItemImageUrl(item.images?.[0]);
+                                                const isSold = item.is_sold || item.status === 'sold' || item.is_ordered;
                                                 return (
                                                     <div
                                                         key={item._id}
-                                                        className={`cart-item-row ${item.selected ? 'selected' : ''}`}
+                                                        className={`cart-item-row ${item.selected ? 'selected' : ''} ${isSold ? 'sold' : ''}`}
                                                     >
                                                         {/* Checkbox */}
                                                         <button
                                                             className="cart-item-check"
-                                                            onClick={() => toggleSelect(item._id)}
+                                                            onClick={() => isSold ? null : toggleSelect(item._id)}
+                                                            disabled={isSold}
                                                             aria-label={item.selected ? 'Deselect' : 'Select'}
                                                         >
                                                             {item.selected
@@ -264,19 +266,24 @@ const Cart = () => {
                                                         </button>
 
                                                         {/* Image */}
-                                                        <Link href={`/items/${item._id}`} className="cart-item-img-link">
-                                                            <img src={imgUrl} alt={safeString(item.title)} className="cart-item-img" />
+                                                        <Link href={`/items/${item.slug || item._id}`} className="cart-item-img-link">
+                                                            <img src={imgUrl} alt={safeString(item.title)} className="cart-item-img" style={isSold ? { filter: 'grayscale(100%)' } : {}} />
                                                         </Link>
 
                                                         {/* Info */}
                                                         <div className="cart-item-info">
-                                                            <Link href={`/items/${item._id}`} className="cart-item-title">
+                                                            <Link href={`/items/${item.slug || item._id}`} className="cart-item-title">
                                                                 {safeString(item.title)}
                                                             </Link>
                                                             <div className="cart-item-meta">
                                                                 {item.condition && <span className="cart-meta-chip">{item.condition}</span>}
                                                                 {item.size && <span className="cart-meta-chip">Size: {item.size}</span>}
                                                             </div>
+                                                            {isSold && (
+                                                                <div className="cart-item-sold-tag">
+                                                                    ORDERED
+                                                                </div>
+                                                            )}
                                                             <div className="cart-item-shipping-note">
                                                                 {item.shipping_included && <span className="ship-free">Free shipping</span>}
                                                             </div>

@@ -24,9 +24,11 @@
     overflow: hidden;
     margin-bottom: 12px;
     width: 100%;
-    aspect-ratio: 3 / 4; /* Force strict 3:4 ratio */
+    aspect-ratio: 3 / 4;
+    /* Force strict 3:4 ratio */
     background-color: #f1f5f9;
-    display: block; /* Ensure it's a block for aspect-ratio to lead */
+    display: block;
+    /* Ensure it's a block for aspect-ratio to lead */
 }
 
 .listing-image {
@@ -266,7 +268,7 @@
     align-items: center;
     justify-content: center;
     z-index: 10;
-    backdrop-filter: blur(2px);
+    /* backdrop-filter: blur(2px); */
 }
 
 .sold-overlay span {
@@ -291,7 +293,7 @@
     align-items: center;
     justify-content: center;
     z-index: 10;
-    backdrop-filter: blur(2px);
+    /* backdrop-filter: blur(2px); */
 }
 
 .inactive-overlay span {
@@ -312,7 +314,7 @@
     bottom: 12px;
     right: 12px;
     display: flex;
-    gap: 8px; 
+    gap: 8px;
     align-items: center;
     z-index: 30;
     pointer-events: auto;
@@ -332,8 +334,8 @@
     cursor: pointer;
     transition: all 0.2s ease;
     font-size: 0.9rem;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    /* backdrop-filter: blur(8px); */
+    /* -webkit-backdrop-filter: blur(8px); */
 }
 
 .seller-action-btn:hover {
@@ -351,7 +353,8 @@
 }
 
 .seller-action-btn.delete {
-    color: #ef4444; /* Default red as requested */
+    color: #ef4444;
+    /* Default red as requested */
 }
 
 .seller-action-btn.delete:hover {
@@ -360,17 +363,23 @@
 }
 
 .seller-action-btn svg {
-    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.05));
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.05));
 }
 
 /* Redefine edit-overlay if needed elsewhere, but we're moving away from it */
 .edit-overlay {
-    display: none; /* Hidden as per user request to show normally */
+    display: none;
+    /* Hidden as per user request to show normally */
 }
 
 @keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
 }
 
 /* Responsive Adjustments */
@@ -382,7 +391,8 @@
         aspect-ratio: 3 / 4;
         border-radius: 10px;
         margin-bottom: 8px;
-        height: auto; /* Ensure aspect-ratio takes over */
+        height: auto;
+        /* Ensure aspect-ratio takes over */
     }
 
     .listing-card {
@@ -394,8 +404,10 @@
     .listing-title {
         font-size: 0.82rem;
         line-height: 1.2;
-        min-height: 2.4em; /* Force 2 lines of space */
-        white-space: normal !important; /* Allow wrapping */
+        min-height: 2.4em;
+        /* Force 2 lines of space */
+        white-space: normal !important;
+        /* Allow wrapping */
         display: -webkit-box;
         -webkit-line-clamp: 2;
         line-clamp: 2;

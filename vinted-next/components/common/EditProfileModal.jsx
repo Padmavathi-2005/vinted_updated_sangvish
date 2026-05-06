@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import AuthContext from '../../context/AuthContext';
 import axios from '../../utils/axios';
-import { FaTimes, FaUser, FaLock, FaPen, FaCamera, FaMapMarkerAlt, FaCity, FaGlobe, FaMapPin } from 'react-icons/fa';
+import { FaTimes, FaUser, FaLock, FaPen, FaCamera, FaMapMarkerAlt, FaCity, FaGlobe, FaMapPin, FaSpinner } from 'react-icons/fa';
 import '@/app/styles/EditProfileModal.css';
 import { getImageUrl } from '../../utils/constants';
 import { useTranslation } from 'react-i18next';
-import { validateTextField, getTextFieldError } from '../../utils/validation';
+import { 
+    validateTextField, 
+    getTextFieldError, 
+    validateAlphaField, 
+    getAlphaError 
+} from '../../utils/validation';
 import ImageCropModal from './ImageCropModal';
 
 const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
     const { t } = useTranslation();
+    const { logout } = useContext(AuthContext);
     const [formData, setFormData] = useState({
         username: user.username || '',
         first_name: user.first_name || '',
@@ -23,7 +30,22 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
             state: user.address?.state || '',
             country: user.address?.country || '',
             pincode: user.address?.pincode || '',
+            lat: user.address?.lat || null,
+            lng: user.address?.lng || null,
         }
+    });
+
+    const [suggestions, setSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+    const suggestionsRef = React.useRef(null);
+    const debounceRef = React.useRef(null);
+    const usernameDebounceRef = React.useRef(null);
+    const [usernameStatus, setUsernameStatus] = useState({ 
+        checked: false, 
+        available: true, 
+        suggestions: [],
+        error: '' 
     });
     const [profileImage, setProfileImage] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(getImageUrl(user.profile_image));
@@ -49,6 +71,8 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
                 state: user.address?.state || '',
                 country: user.address?.country || '',
                 pincode: user.address?.pincode || '',
+                lat: user.address?.lat || null,
+                lng: user.address?.lng || null,
             }
         });
         setPreviewUrl(getImageUrl(user.profile_image));
@@ -56,16 +80,130 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+        let finalValue = value;
+
+        // Sanitization
+        if (name === 'address.pincode' || name === 'pincode') {
+            finalValue = value.replace(/\D/g, '').slice(0, 8);
+        }
+
         if (name.startsWith('address.')) {
             const field = name.split('.')[1];
             setFormData(prev => ({
                 ...prev,
-                address: { ...prev.address, [field]: value }
+                address: { ...prev.address, [field]: finalValue }
             }));
+
+            // Handle suggestions for address_line
+            if (field === 'address_line') {
+                handleAddressSearch(finalValue);
+            }
+        } else if (name === 'username') {
+            // Lowercase and remove spaces/special chars for username
+            const cleanUsername = finalValue.replace(/\s+/g, '_').toLowerCase();
+            setFormData({ ...formData, username: cleanUsername });
+            
+            clearTimeout(usernameDebounceRef.current);
+            usernameDebounceRef.current = setTimeout(() => {
+                checkUsernameAvailability(cleanUsername);
+            }, 500);
         } else {
-            setFormData({ ...formData, [name]: value });
+            setFormData({ ...formData, [name]: finalValue });
         }
     };
+
+    const handleAddressSearch = (query) => {
+        if (!query || query.length < 3) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+        }
+        
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(async () => {
+            setLoadingSuggestions(true);
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`,
+                    {
+                        headers: {
+                            'User-Agent': 'VintedClone/1.0'
+                        }
+                    }
+                );
+                const data = await res.json();
+                setSuggestions(data || []);
+                setShowSuggestions(true);
+            } catch {
+                setSuggestions([]);
+            } finally {
+                setLoadingSuggestions(false);
+            }
+        }, 500);
+    };
+
+    const checkUsernameAvailability = async (username) => {
+        if (!username || username.length < 3) {
+            setUsernameStatus({ checked: false, available: true, suggestions: [], error: '' });
+            return;
+        }
+
+        // If it's the same as original username, it's available
+        if (username.toLowerCase() === user.username.toLowerCase()) {
+            setUsernameStatus({ checked: true, available: true, suggestions: [], error: '' });
+            return;
+        }
+
+        try {
+            const { data } = await axios.get(`/api/users/check-username/${username}?currentUserId=${user.id}`);
+            setUsernameStatus({
+                checked: true,
+                available: data.available,
+                suggestions: data.suggestions || [],
+                error: data.available ? '' : t('profile.username_taken', 'This name is already taken.')
+            });
+        } catch (err) {
+            console.error('Username check failed:', err);
+        }
+    };
+
+    const handleSuggestionClick = (suggestion) => {
+        const lat = parseFloat(suggestion.lat);
+        const lng = parseFloat(suggestion.lon);
+        const label = suggestion.display_name;
+        
+        let addrComp = {
+            city: suggestion.address?.city || suggestion.address?.town || suggestion.address?.village || '',
+            state: suggestion.address?.state || '',
+            country: suggestion.address?.country || '',
+            pincode: suggestion.address?.postcode || ''
+        };
+
+        setFormData(prev => ({
+            ...prev,
+            address: {
+                ...prev.address,
+                address_line: label,
+                ...addrComp,
+                lat,
+                lng
+            }
+        }));
+        
+        setSuggestions([]);
+        setShowSuggestions(false);
+    };
+
+    // Close suggestions on outside click
+    React.useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -114,14 +252,28 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
         }
 
         // Custom Validation
-        if (!validateTextField(formData.first_name)) return setError(getTextFieldError('First Name'));
-        if (!validateTextField(formData.last_name)) return setError(getTextFieldError('Last Name'));
+        if (formData.first_name && !validateAlphaField(formData.first_name)) return setError(getAlphaError('First Name'));
+        if (formData.last_name && !validateAlphaField(formData.last_name)) return setError(getAlphaError('Last Name'));
+        
+        if (!formData.username) return setError(t('profile.username_required', 'Display name is required'));
         if (!validateTextField(formData.username)) return setError(getTextFieldError('Display Name'));
+        if (!usernameStatus.available) return setError(t('profile.username_taken_error', 'Please choose a different display name.'));
         if (formData.bio && !validateTextField(formData.bio)) return setError(getTextFieldError('Bio'));
-        if (formData.address.full_name && !validateTextField(formData.address.full_name)) return setError(getTextFieldError('Full Name on Address'));
-        if (formData.address.address_line && !validateTextField(formData.address.address_line)) return setError(getTextFieldError('Street Address'));
-        if (formData.address.city && !validateTextField(formData.address.city)) return setError(getTextFieldError('City'));
-        if (formData.address.state && !validateTextField(formData.address.state)) return setError(getTextFieldError('State'));
+        
+        if (formData.address.full_name && !validateAlphaField(formData.address.full_name)) 
+            return setError(getAlphaError('Full Name on Address'));
+            
+        if (formData.address.city && !validateAlphaField(formData.address.city)) 
+            return setError(getAlphaError('City'));
+            
+        if (formData.address.state && !validateAlphaField(formData.address.state)) 
+            return setError(getAlphaError('State'));
+            
+        if (formData.address.country && !validateAlphaField(formData.address.country)) 
+            return setError(getAlphaError('Country'));
+
+        if (formData.address.pincode && formData.address.pincode.length < 4)
+            return setError('Pincode should be at least 4 digits');
 
         setLoading(true);
         try {
@@ -157,6 +309,27 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
         }
     };
 
+    const handleDeleteAccount = async () => {
+        const confirmDelete = window.confirm(t('profile.delete_account_confirm', 'Are you sure you want to delete your account? This action is permanent and cannot be undone. All your data, listings, and wallet balance will be lost.'));
+        
+        if (!confirmDelete) return;
+
+        const secondConfirm = window.confirm(t('profile.delete_account_final_confirm', 'THIS IS THE FINAL WARNING: Click OK to PERMANENTLY delete your account.'));
+        if (!secondConfirm) return;
+
+        setLoading(true);
+        try {
+            await axios.delete('/api/users/delete', {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            alert(t('profile.account_deleted', 'Your account has been successfully deleted. We are sorry to see you go.'));
+            logout(); // Log out and redirect
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to delete account');
+            setLoading(false);
+        }
+    };
+
     const content = (
         <React.Fragment>
             <div className={inline ? "inline-header" : "modal-header"}>
@@ -175,8 +348,8 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
                                 alt="Profile Preview"
                                 style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '2px solid #e2e8f0' }}
                                 onError={(e) => {
-                                    console.error("Preview failed to load at:", e.target.src);
-                                    setPreviewUrl(null); // Fallback to initial display
+                                    console.warn(`[Profile] Image failed to load at: ${e.target.src}. Falling back to initials.`);
+                                    setPreviewUrl(null); // Fallback to initial display (initials)
                                 }}
                             />
                         ) : (
@@ -257,7 +430,7 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
 
                 <div className="form-group">
                     <label>{t('profile.display_name', 'Display Name')}</label>
-                    <div className="input-with-icon">
+                    <div className={`input-with-icon ${!usernameStatus.available ? 'input-error' : ''}`}>
                         <FaUser className="input-icon" />
                         <input
                             type="text"
@@ -265,8 +438,32 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
                             value={formData.username}
                             onChange={handleChange}
                             placeholder={t('profile.enter_username', 'Enter display name')}
+                            className={!usernameStatus.available ? 'error' : ''}
                         />
                     </div>
+                    {usernameStatus.error && (
+                        <div className="username-error-text">{usernameStatus.error}</div>
+                    )}
+                    {!usernameStatus.available && usernameStatus.suggestions.length > 0 && (
+                        <div className="username-suggestions">
+                            <span>{t('profile.suggestions', 'Try these instead:')}</span>
+                            <div className="suggestion-chips">
+                                {usernameStatus.suggestions.map((s, i) => (
+                                    <button 
+                                        key={i} 
+                                        type="button" 
+                                        className="suggestion-chip"
+                                        onClick={() => {
+                                            setFormData(prev => ({ ...prev, username: s }));
+                                            setUsernameStatus({ checked: true, available: true, suggestions: [], error: '' });
+                                        }}
+                                    >
+                                        {s}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     <small className="text-muted" style={{ fontSize: '10px', marginTop: '4px', display: 'block' }}>
                         {t('profile.display_name_hint', 'Display name must be unique and will be shown across the platform.')}
                     </small>
@@ -304,7 +501,7 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
 
                 <div className="form-group">
                     <label>{t('profile.street_address', 'Street Address')}</label>
-                    <div className="input-with-icon">
+                    <div className="input-with-icon" ref={suggestionsRef} style={{ position: 'relative' }}>
                         <FaMapMarkerAlt className="input-icon" />
                         <input
                             type="text"
@@ -312,7 +509,23 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
                             value={formData.address.address_line}
                             onChange={handleChange}
                             placeholder="House No, Street, Landmark"
+                            autoComplete="off"
                         />
+                        {loadingSuggestions && (
+                            <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
+                                <FaSpinner className="fa-spin" />
+                            </div>
+                        )}
+                        {showSuggestions && suggestions.length > 0 && (
+                            <ul className="address-suggestions-dropdown">
+                                {suggestions.map((s, i) => (
+                                    <li key={i} onClick={() => handleSuggestionClick(s)}>
+                                        <FaMapMarkerAlt style={{ marginRight: '8px', color: '#64748b' }} />
+                                        <span>{s.display_name}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
                 </div>
 
@@ -412,6 +625,21 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
                     {!inline && <button type="button" onClick={onClose} className="btn-cancel">{t('common.cancel', 'Cancel')}</button>}
                     <button type="submit" className="btn-save" disabled={loading} style={inline ? { width: 'auto', padding: '10px 30px' } : {}}>
                         {loading ? t('common.saving', 'Saving...') : t('common.save_changes', 'Save Changes')}
+                    </button>
+                </div>
+
+                <div className="account-closure-section">
+                    <h4 className="account-closure-title">{t('profile.account_closure', 'Account Closure & Privacy')}</h4>
+                    <p className="account-closure-text">
+                        {t('profile.account_deletion_warning', 'Once you close your account, your data will be permanently removed. Please be certain.')}
+                    </p>
+                    <button 
+                        type="button" 
+                        className="btn-close-account" 
+                        onClick={handleDeleteAccount}
+                        disabled={loading}
+                    >
+                        {t('profile.delete_my_account', 'Delete My Account')}
                     </button>
                 </div>
             </form>

@@ -166,13 +166,13 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    /* box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); */
 }
 
 .pd-msg-new-btn:hover {
-    transform: scale(1.12) rotate(90deg);
+    transform: scale(1.05) rotate(90deg);
     background: #0284c7;
-    box-shadow: 0 6px 16px rgba(14, 165, 233, 0.45);
+    /* box-shadow: 0 6px 16px rgba(14, 165, 233, 0.45); */
 }
 
 
@@ -254,12 +254,11 @@
 }
 
 .pd-msg-user-avatar {
-    width: 52px;
-    height: 52px;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
     object-fit: cover;
     background: #f8fafc;
-    border: 1px solid #f1f5f9;
 }
 
 .pd-avatar-wrapper-mini {
@@ -268,8 +267,8 @@
 }
 
 .pd-avatar-placeholder-mini {
-    width: 52px;
-    height: 52px;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--primary-color, #0ea5e9), #3b82f6);
     color: white;
@@ -277,8 +276,7 @@
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 1.25rem;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    font-size: 1.1rem;
 }
 
 .pd-msg-user-info {
@@ -524,12 +522,18 @@
 .pd-msg-offer-header {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     font-size: 0.75rem;
     font-weight: 800;
     color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+.pd-msg-offer-header strong {
+    color: #1e293b;
+    font-weight: 900;
 }
 
 .pd-msg-offer-amount {
@@ -795,23 +799,94 @@
 }
 
 /* Enhanced Offer Card */
-.pd-msg-offer-amount {
+.pd-msg-offer-item-context {
     display: flex;
-    align-items: baseline;
-    gap: 8px;
+    gap: 12px;
+    padding-bottom: 12px;
     margin-bottom: 12px;
+    border-bottom: 1px dashed #e2e8f0;
 }
 
-.pd-msg-offer-amount .price-new {
+.pd-msg-offer-item-thumb {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f8fafc;
+    flex-shrink: 0;
+    border: 1px solid #f1f5f9;
+}
+
+.pd-msg-offer-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pd-msg-offer-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.pd-msg-offer-item-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.pd-msg-offer-item-price {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.pd-msg-offer-amount-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 8px 0;
+}
+
+.pd-msg-offer-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pd-msg-offer-value {
     font-size: 1.5rem;
     font-weight: 800;
-    color: #1e293b;
+    color: #0ea5e9;
 }
 
-.pd-msg-offer-amount .price-old {
-    font-size: 0.9rem;
-    color: #94a3b8;
-    text-decoration: line-through;
+.pd-msg-offer-savings {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #059669;
+    background: #ecfdf5;
+    padding: 4px 10px;
+    border-radius: 20px;
+    align-self: flex-start;
+    margin-top: 2px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.pd-msg-offer-text {
+    font-size: 0.88rem;
+    color: #475569;
+    padding: 10px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 3px solid #cbd5e1;
+    font-style: italic;
+    margin: 4px 0;
 }
 
 @media (max-width: 768px) {
@@ -867,6 +942,18 @@
     .pd-msg-back-btn:active {
         transform: scale(0.95);
     }
+
+    /* Mobile-only Full Screen User Picker */
+    .pd-user-picker-panel {
+        max-height: 100vh;
+        height: 100vh;
+        border-radius: 0;
+        max-width: 100%;
+    }
+
+    .pd-user-picker-overlay {
+        padding: 0;
+    }
 }
 
 /* Back Arrow - General */
@@ -891,16 +978,6 @@
     color: var(--primary-color, #0ea5e9);
 }
 
-.pd-user-picker-panel {
-    max-height: 100vh;
-    height: 100vh;
-    border-radius: 0;
-    max-width: 100%;
-}
-
-.pd-user-picker-overlay {
-    padding: 0;
-}
 
 @keyframes slideInRight {
     from {
@@ -932,4 +1009,92 @@
     to {
         opacity: 1;
     }
+}
+
+/* Rich System Cards */
+.pd-rich-system-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    margin: 8px 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+}
+
+.pd-rich-system-card.order {
+    border-left: 4px solid #f97316;
+}
+
+.pd-rich-system-card.withdrawal {
+    border-left: 4px solid #22c55e;
+}
+
+.pd-rich-system-header {
+    background: #f8fafc;
+    padding: 10px 16px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pd-rich-system-body {
+    padding: 16px;
+}
+
+.pd-rich-system-footer {
+    padding: 10px 16px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+}
+
+.pd-rich-system-btn {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.pd-rich-system-btn.primary {
+    background: var(--primary-color, #3b82f6);
+    color: white;
+}
+
+.pd-rich-system-btn.primary:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.pd-rich-system-btn.secondary {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.pd-rich-system-btn.secondary:hover {
+    background: #e2e8f0;
+}
+
+.pd-system-formatted-text {
+    font-size: 0.9rem;
+    color: #334155;
+    line-height: 1.5;
+}
+
+.pd-system-formatted-text strong {
+    color: #1e293b;
+    font-weight: 700;
 }

@@ -69,33 +69,55 @@ export const CurrencyProvider = ({ children }) => {
         }
     };
 
+    const convertPrice = useCallback((priceAmount, sourceCurrency = null, targetOverride = null) => {
+        if (!priceAmount && priceAmount !== 0) return 0;
+        
+        const targetCurrency = targetOverride || currentCurrency || defaultCurrency;
+        const source = sourceCurrency || defaultCurrency;
+
+        // Optimization: If source and target are the same, no math needed
+        const sourceId = typeof source === 'object' ? (source.code || source._id || source.id) : source;
+        const targetId = typeof targetCurrency === 'object' ? (targetCurrency.code || targetCurrency._id || targetCurrency.id) : targetCurrency;
+        
+        if (sourceId && targetId && String(sourceId).toLowerCase() === String(targetId).toLowerCase()) {
+            return Number(priceAmount);
+        }
+
+        const getRate = (cur) => {
+            if (!cur) return 1;
+            
+            // If it's a number/string, it's an ID or code
+            const identifier = typeof cur === 'object' ? (cur.code || cur._id || cur.id) : cur;
+            if (!identifier) return cur.exchange_rate || 1;
+
+            // Try to find in our full currencies list for the most up-to-date rate
+            const found = currencies.find(c => 
+                (c.code && identifier && c.code.toLowerCase() === String(identifier).toLowerCase()) ||
+                String(c._id) === String(identifier) || 
+                String(c.id) === String(identifier)
+            );
+
+            if (found) return found.exchange_rate;
+            if (typeof cur === 'object' && cur.exchange_rate) return cur.exchange_rate;
+            return 1;
+        };
+
+        const targetRate = getRate(targetCurrency);
+        const sourceRate = getRate(source);
+
+        return (Number(priceAmount) / sourceRate) * targetRate;
+    }, [currentCurrency, defaultCurrency, currencies]);
+
     const formatPrice = useCallback((priceAmount, itemCurrency = null, targetOverride = null) => {
-        if (!priceAmount) return '0.00';
+        if (!priceAmount && priceAmount !== 0) return '';
 
         let targetCurrency = targetOverride || currentCurrency || defaultCurrency;
         if (!targetCurrency) return `€${Number(priceAmount).toFixed(2)}`;
 
-        let rate = targetCurrency.exchange_rate || 1;
+        // Use the robust convertPrice for the actual math
+        const converted = convertPrice(priceAmount, itemCurrency, targetCurrency);
 
-        // Determine the base rate from the item's currency, falling back to defaultCurrency
-        let baseRate = defaultCurrency ? (defaultCurrency.exchange_rate || 1) : 1;
-
-        if (itemCurrency) {
-            const itemCurrencyId = typeof itemCurrency === 'object' ? itemCurrency._id : itemCurrency;
-            const found = currencies.find(c =>
-                c._id === itemCurrencyId ||
-                c.code?.toLowerCase() === (itemCurrencyId || '').toString().toLowerCase()
-            );
-            if (found) {
-                baseRate = found.exchange_rate || 1;
-            } else if (typeof itemCurrency === 'object' && itemCurrency.exchange_rate) {
-                baseRate = itemCurrency.exchange_rate;
-            }
-        }
-
-        let converted = (Number(priceAmount) / baseRate) * rate;
-
-        let formatted = converted.toFixed(targetCurrency.decimal_places || 2);
+        let formatted = Number(converted).toFixed(targetCurrency.decimal_places || 2);
 
         if (targetCurrency.thousand_separator) {
             formatted = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, targetCurrency.thousand_separator);
@@ -109,7 +131,7 @@ export const CurrencyProvider = ({ children }) => {
             return `${formatted}${targetCurrency.symbol || '€'}`;
         }
         return `${targetCurrency.symbol || '€'}${formatted}`;
-    }, [currentCurrency, defaultCurrency, currencies]);
+    }, [currentCurrency, defaultCurrency, convertPrice]);
 
     return (
         <CurrencyContext.Provider value={{
@@ -117,6 +139,7 @@ export const CurrencyProvider = ({ children }) => {
             currentCurrency,
             setCurrency,
             formatPrice,
+            convertPrice,
             defaultCurrency
         }}>
             {children}

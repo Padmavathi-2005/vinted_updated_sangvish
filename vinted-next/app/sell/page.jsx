@@ -15,6 +15,9 @@ import { validateTextField, getTextFieldError } from '@/utils/validation';
 import '@/app/styles/SellItem.css';
 import '@/app/styles/CustomSelect.css';
 import ImageCropModal from '@/components/common/ImageCropModal';
+import dynamic from 'next/dynamic';
+
+const LocationPickerMap = dynamic(() => import('@/components/common/LocationPickerMap'), { ssr: false });
 
 const MAX_PHOTOS = 20;
 const VISIBLE_PHOTOS = 3;
@@ -62,6 +65,9 @@ export default function SellItem() {
     const [tempImage, setTempImage] = useState(null);
     const [pendingPhotos, setPendingPhotos] = useState([]);
 
+    // Location State
+    const [itemLocation, setItemLocation] = useState({ lat: null, lng: null, label: '' });
+
     const openAddModal = (type) => {
         setAddModalType(type);
         setAddModalValue('');
@@ -101,23 +107,44 @@ export default function SellItem() {
     };
     const handleRemoveSpec = (index) => setSpecifications(specifications.filter((_, i) => i !== index));
 
-    // Fetch Categories
+    // Fetch Categories and Profile
     useEffect(() => {
-        const fetchCategories = async () => {
+        const fetchData = async () => {
             try {
-                const res = await axios.get('/api/categories/full');
-                setCategories(res.data);
-
-                const settingsRes = await axios.get('/api/settings');
-                if (settingsRes.data && settingsRes.data.admin_commission) {
+                const [catRes, settingsRes, userRes] = await Promise.all([
+                    axios.get('/api/categories/full'),
+                    axios.get('/api/settings'),
+                    user?.token ? axios.get('/api/users/profile', {
+                        headers: { Authorization: `Bearer ${user.token}` }
+                    }) : Promise.resolve({ data: null })
+                ]);
+                
+                setCategories(catRes.data);
+                if (settingsRes.data?.admin_commission) {
                     setCommissionRate(settingsRes.data.admin_commission);
+                }
+
+                // Pre-fill location from profile
+                if (userRes.data?.address && !itemLocation.lat) {
+                    const addr = userRes.data.address;
+                    if (addr.lat && addr.lng) {
+                        setItemLocation({
+                            lat: addr.lat,
+                            lng: addr.lng,
+                            label: addr.address_line || '',
+                            city: addr.city || '',
+                            state: addr.state || '',
+                            country: addr.country || '',
+                            pincode: addr.pincode || ''
+                        });
+                    }
                 }
             } catch (err) {
                 console.error("Error fetching data:", err);
             }
         };
-        fetchCategories();
-    }, []);
+        fetchData();
+    }, [user]);
 
     // Handle Category Selection
     const handleCategoryChange = (val) => {
@@ -365,6 +392,18 @@ export default function SellItem() {
         formData.append('shipping_included', shippingIncluded ? 'true' : 'false');
         formData.append('attributes', JSON.stringify(specifications.filter(s => s.key && s.value)));
 
+        // Append location data if selected
+        if (itemLocation.lat && itemLocation.lng) {
+            formData.append('lat', itemLocation.lat);
+            formData.append('lng', itemLocation.lng);
+            formData.append('location_label', itemLocation.label || '');
+            formData.append('location', itemLocation.label || '');
+            formData.append('country', itemLocation.country || '');
+            formData.append('state', itemLocation.state || '');
+            formData.append('city', itemLocation.city || '');
+            formData.append('pincode', itemLocation.pincode || '');
+        }
+
         photos.forEach((photo) => {
             formData.append('images', photo.file);
         });
@@ -378,8 +417,40 @@ export default function SellItem() {
             };
 
             const res = await axios.post('/api/items', formData, config);
-            setLoading(false);
             
+            // Sync location back to profile if profile address is empty
+            try {
+                if (itemLocation.lat && itemLocation.lng) {
+                    // Fetch profile again to check if address is empty
+                    const profRes = await axios.get('/api/users/profile', {
+                        headers: { Authorization: `Bearer ${user.token}` }
+                    });
+                    const currentAddress = profRes.data?.address;
+                    
+                    // If no address line exists, update profile with this product's location
+                    if (!currentAddress?.address_line) {
+                        const profilePayload = new FormData();
+                        profilePayload.append('address', JSON.stringify({
+                            full_name: user.first_name + ' ' + user.last_name,
+                            address_line: itemLocation.label,
+                            city: itemLocation.city,
+                            state: itemLocation.state,
+                            country: itemLocation.country,
+                            pincode: itemLocation.pincode,
+                            lat: itemLocation.lat,
+                            lng: itemLocation.lng
+                        }));
+                        await axios.put('/api/users/profile', profilePayload, {
+                            headers: { Authorization: `Bearer ${user.token}` }
+                        });
+                        console.log('User profile address updated from listing location');
+                    }
+                }
+            } catch (syncErr) {
+                console.warn('Failed to sync location to profile:', syncErr);
+            }
+
+            setLoading(false);
             alert('Item successfully listed!');
 
             // Redirect to manage listings
@@ -471,11 +542,30 @@ export default function SellItem() {
                     <div className="si-card">
                         <div className="si-field">
                             <label className="si-label">{t('sell_item.item_title')}</label>
-                            <input type="text" className={`si-input ${validationErrors.title ? 'is-invalid' : ''}`} placeholder={t('sell_item.title_placeholder')} value={title} onChange={e => { setTitle(e.target.value); if (validationErrors.title) setValidationErrors(prev => ({ ...prev, title: false })); }} required />
+                            <input 
+                                type="text" 
+                                className={`si-input ${validationErrors.title || (title && !validateTextField(title)) ? 'is-invalid' : ''}`} 
+                                placeholder={t('sell_item.title_placeholder')} 
+                                value={title} 
+                                onChange={e => { setTitle(e.target.value); if (validationErrors.title) setValidationErrors(prev => ({ ...prev, title: false })); }} 
+                                required 
+                            />
+                            {title && !validateTextField(title) && (
+                                <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{getTextFieldError('Title')}</p>
+                            )}
                         </div>
                         <div className="si-field si-field-last">
                             <label className="si-label">{t('sell_item.item_description')}</label>
-                            <textarea className={`si-textarea ${validationErrors.description ? 'is-invalid' : ''}`} rows={5} placeholder={t('sell_item.desc_placeholder')} value={description} onChange={e => { setDescription(e.target.value); if (validationErrors.description) setValidationErrors(prev => ({ ...prev, description: false })); }} />
+                            <textarea 
+                                className={`si-textarea ${validationErrors.description || (description && !validateTextField(description)) ? 'is-invalid' : ''}`} 
+                                rows={5} 
+                                placeholder={t('sell_item.desc_placeholder')} 
+                                value={description} 
+                                onChange={e => { setDescription(e.target.value); if (validationErrors.description) setValidationErrors(prev => ({ ...prev, description: false })); }} 
+                            />
+                            {description && !validateTextField(description) && (
+                                <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{getTextFieldError('Description')}</p>
+                            )}
                         </div>
                     </div>
 
@@ -537,7 +627,16 @@ export default function SellItem() {
 
                             <div className="si-field">
                                 <label className="si-label">{t('sell_item.brand')}</label>
-                                <input type="text" className={`si-input ${validationErrors.brand ? 'is-invalid' : ''}`} placeholder={t('sell_item.brand_placeholder')} value={brand} onChange={e => { setBrand(e.target.value); if (validationErrors.brand) setValidationErrors(prev => ({ ...prev, brand: false })); }} />
+                                <input 
+                                    type="text" 
+                                    className={`si-input ${validationErrors.brand || (brand && !validateTextField(brand)) ? 'is-invalid' : ''}`} 
+                                    placeholder={t('sell_item.brand_placeholder')} 
+                                    value={brand} 
+                                    onChange={e => { setBrand(e.target.value); if (validationErrors.brand) setValidationErrors(prev => ({ ...prev, brand: false })); }} 
+                                />
+                                {brand && !validateTextField(brand) && (
+                                    <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{getTextFieldError('Brand')}</p>
+                                )}
                             </div>
 
                             <div className="si-field">
@@ -647,6 +746,20 @@ export default function SellItem() {
                         </div>
                     </div>
 
+    {/* Location Picker */}
+                    <div className="si-card">
+                        <div className="si-card-header">
+                            <h2 className="si-section-title">{t('sell_item.location_title')} <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>{t('sell_item.optional')}</span></h2>
+                            <span className="si-section-hint">{t('sell_item.location_desc')}</span>
+                        </div>
+                        <LocationPickerMap
+                            onLocationSelect={(loc) => setItemLocation(loc)}
+                            initialLat={itemLocation.lat}
+                            initialLng={itemLocation.lng}
+                            initialLabel={itemLocation.label}
+                        />
+                    </div>
+
                     {/* Dynamic Specifications */}
                     <div className="si-card">
                         <div className="d-flex justify-content-between align-items-center mb-3">
@@ -661,24 +774,31 @@ export default function SellItem() {
                         </div>
 
                         {specifications.map((spec, index) => (
-                            <div key={index} className="si-spec-row">
-                                <input
-                                    type="text"
-                                    className="si-input"
-                                    placeholder={t('sell_item.spec_label_placeholder')}
-                                    value={spec.key}
-                                    onChange={(e) => handleSpecChange(index, 'key', e.target.value)}
-                                />
-                                <input
-                                    type="text"
-                                    className="si-input"
-                                    placeholder={t('sell_item.spec_value_placeholder')}
-                                    value={spec.value}
-                                    onChange={(e) => handleSpecChange(index, 'value', e.target.value)}
-                                />
-                                <button type="button" className="si-spec-remove-btn" onClick={() => handleRemoveSpec(index)} title="Remove">
-                                    <FaTimes />
-                                </button>
+                            <div key={index} className="si-spec-group">
+                                <div className="si-spec-row">
+                                    <input
+                                        type="text"
+                                        className={`si-input ${spec.key && !validateTextField(spec.key) ? 'is-invalid' : ''}`}
+                                        placeholder={t('sell_item.spec_label_placeholder')}
+                                        value={spec.key}
+                                        onChange={(e) => handleSpecChange(index, 'key', e.target.value)}
+                                    />
+                                    <input
+                                        type="text"
+                                        className={`si-input ${spec.value && !validateTextField(spec.value) ? 'is-invalid' : ''}`}
+                                        placeholder={t('sell_item.spec_value_placeholder')}
+                                        value={spec.value}
+                                        onChange={(e) => handleSpecChange(index, 'value', e.target.value)}
+                                    />
+                                    <button type="button" className="si-spec-remove-btn" onClick={() => handleRemoveSpec(index)} title="Remove">
+                                        <FaTimes />
+                                    </button>
+                                </div>
+                                {((spec.key && !validateTextField(spec.key)) || (spec.value && !validateTextField(spec.value))) && (
+                                    <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '2px', marginLeft: '4px' }}>
+                                        {getTextFieldError('Specification')}
+                                    </p>
+                                )}
                             </div>
                         ))}
                         {specifications.length === 0 && (
@@ -689,7 +809,7 @@ export default function SellItem() {
                     </div>
 
                     <div className="si-actions">
-                        <button type="button" className="si-btn-draft">{t('sell_item.cancel')}</button>
+                        <button type="button" className="si-btn-draft" onClick={() => router.back()}>{t('sell_item.cancel')}</button>
                         <button type="submit" className="si-btn-upload" disabled={loading}>{loading ? t('sell_item.uploading') : t('sell_item.post_listing')}</button>
                     </div>
                 </form>

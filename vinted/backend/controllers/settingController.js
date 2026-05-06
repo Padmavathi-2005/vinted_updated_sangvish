@@ -6,7 +6,7 @@ import Setting from '../models/Setting.js';
 // @access  Private (Admin)
 const getSettingTypes = asyncHandler(async (req, res) => {
     const types = await Setting.distinct('type');
-    const merged = [...new Set(['general_settings', 'footer_settings', 'cookie_settings', 'payment_settings', 'email_settings', 'api_settings', 'recaptcha_settings', ...types.filter(t => t !== 'site_settings' && t !== 'social_settings')])];
+    const merged = [...new Set(['general_settings', 'footer_settings', 'cookie_settings', 'payment_settings', 'email_settings', 'api_settings', 'map_settings', 'recaptcha_settings', 'shipping_settings', ...types.filter(t => t !== 'site_settings' && t !== 'social_settings')])];
     res.json(merged);
 });
 
@@ -144,6 +144,28 @@ const getSettingsByType = asyncHandler(async (req, res) => {
         });
     }
 
+    if (!setting && type === 'map_settings') {
+        setting = await Setting.create({
+            type: 'map_settings',
+            map_provider: 'openstreetmap',
+            google_maps_api_key: ''
+        });
+    }
+
+    if (!setting && type === 'shipping_settings') {
+        setting = await Setting.create({
+            type: 'shipping_settings',
+            shipping_provider: 'manual',
+            shiprocket_email: '',
+            shiprocket_password: '',
+            easypost_api_key: '',
+            dhl_api_key: '',
+            dhl_api_secret: '',
+            dhl_account_number: '',
+            flat_shipping_rate: 200
+        });
+    }
+
     if (setting) {
         let responseData = setting.toObject();
 
@@ -194,7 +216,10 @@ const getSettingsByType = asyncHandler(async (req, res) => {
             'paypal_test_client_secret',
             'paypal_live_client_secret',
             'gemini_api_key',
-            'huggingface_api_key'
+            'huggingface_api_key',
+            'shiprocket_password',
+            'easypost_api_key',
+            'dhl_api_secret'
         ];
 
         // Only filter for non-admin requests or if we want to be safe
@@ -314,7 +339,7 @@ const updateSettingsByType = asyncHandler(async (req, res) => {
                 }
 
                 // Explicit casting for known numeric fields
-                if (['pagination_limit', 'admin_commission'].includes(key)) {
+                if (['pagination_limit', 'admin_commission', 'flat_shipping_rate'].includes(key)) {
                     const numVal = parseFloat(val);
                     console.log(`[Settings] Field ${key} is numeric. Cast to:`, numVal);
                     setting.set(key, isNaN(numVal) ? null : numVal);

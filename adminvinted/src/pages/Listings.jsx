@@ -425,11 +425,12 @@ const Listings = () => {
                                     <Form.Label>{t('listings.modal.condition')}</Form.Label>
                                     <AdminSearchSelect
                                         options={[
-                                            { value: 'new-with-tags', label: 'New with tags' },
-                                            { value: 'new-without-tags', label: 'New without tags' },
-                                            { value: 'very-good', label: 'Very good' },
-                                            { value: 'good', label: 'Good' },
-                                            { value: 'satisfactory', label: 'Satisfactory' }
+                                            { value: 'New', label: 'New' },
+                                            { value: 'Very Good', label: 'Very Good' },
+                                            { value: 'Good', label: 'Good' },
+                                            { value: 'Normal', label: 'Normal' },
+                                            { value: 'Bad', label: 'Bad' },
+                                            { value: 'Very Bad', label: 'Very Bad' },
                                         ]}
                                         value={formData.condition}
                                         onChange={(val) => handleSelectChange('condition', val)}

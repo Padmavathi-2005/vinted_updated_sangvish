@@ -31,6 +31,8 @@ export const CartProvider = ({ children }) => {
 
     const addToCart = (item) => {
         if (!isInCart(item._id)) {
+            const isSold = item.is_sold || item.status === 'sold' || item.is_ordered;
+            if (isSold) return;
             setCartItems(prev => [...prev, { ...item, selected: true }]);
         }
     };

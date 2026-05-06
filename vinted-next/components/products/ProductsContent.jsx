@@ -378,7 +378,7 @@ const ProductsContent = () => {
 
             {/* CONDITION */}
             <FilterGroup title={t('products.condition', 'Condition')} icon={<FaHistory size={13} />} defaultOpen={false}>
-                {['New', 'Very Good', 'Good', 'Fair'].map(c => (
+                {['New', 'Very Good', 'Good', 'Normal', 'Bad', 'Very Bad'].map(c => (
                     <div
                         key={c}
                         className={`filter-option ${condition === c ? 'active' : ''}`}

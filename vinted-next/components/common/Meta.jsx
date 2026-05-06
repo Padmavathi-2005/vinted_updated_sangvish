@@ -16,19 +16,26 @@ const Meta = ({
     const [currentUrl, setCurrentUrl] = useState(url);
     
     useEffect(() => {
-        if (!url) {
+        if (!url && typeof window !== 'undefined') {
             setCurrentUrl(window.location.href);
         }
     }, [url]);
 
     const siteName = safeString(settings.site_name, "Resale");
+    const metaTitle = title ? `${safeString(title)} | ${siteName}` : siteName;
+
+    // App Router compatibility: manually update title for Client-side navigation
+    useEffect(() => {
+        if (typeof document !== 'undefined' && metaTitle) {
+            document.title = metaTitle;
+        }
+    }, [metaTitle]);
     const siteFavicon = settings.site_favicon ? getImageUrl(settings.site_favicon) : "/favicon.ico";
     const siteLogo = settings.site_logo ? getImageUrl(settings.site_logo) : "";
     
     // Default values if props are missing
-    const metaTitle = title ? `${title} | ${siteName}` : siteName;
     const defaultDesc = "Join our community to buy and sell pre-loved fashion. Sustainable, affordable, and easy.";
-    const metaDesc = description || defaultDesc;
+    const metaDesc = safeString(description) || defaultDesc;
     
     // IMAGE HANDLING: Ensure it's absolute for social crawlers
     let metaImage = image;

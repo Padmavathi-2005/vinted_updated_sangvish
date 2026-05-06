@@ -143,6 +143,18 @@ const settingSchema = mongoose.Schema(
         apple_key_id: { type: String }, // Key ID
         apple_private_key: { type: String }, // Content of .p8 file
         apple_client_secret: { type: String }, // Not used by passport-apple but kept for compatibility
+        // Map Settings
+        map_provider: { type: String, enum: ['openstreetmap', 'google'], default: 'openstreetmap' },
+        google_maps_api_key: { type: String, default: '' },
+        // Shipping Settings
+        shipping_provider: { type: String, enum: ['manual', 'shiprocket', 'easypost', 'dhl'], default: 'manual' },
+        shiprocket_email: { type: String, default: '' },
+        shiprocket_password: { type: String, default: '' },
+        easypost_api_key: { type: String, default: '' },
+        dhl_api_key: { type: String, default: '' },
+        dhl_api_secret: { type: String, default: '' },
+        dhl_account_number: { type: String, default: '' },
+        flat_shipping_rate: { type: Number, default: 200 },
     },
     {
         timestamps: {

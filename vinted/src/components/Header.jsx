@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from '../utils/axios';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaSearch, FaBell, FaShoppingCart, FaBars, FaTimes, FaChevronRight, FaChevronLeft, FaPlus, FaHeart, FaCoins, FaCheck, FaGlobe, FaUser, FaExchangeAlt, FaSignOutAlt, FaThLarge, FaCamera, FaRegHeart, FaRegBell, FaListAlt } from 'react-icons/fa';
+import { FaSearch, FaBell, FaShoppingCart, FaBars, FaTimes, FaChevronRight, FaChevronLeft, FaPlus, FaHeart, FaCoins, FaCheck, FaGlobe, FaUser, FaExchangeAlt, FaSignOutAlt, FaThLarge, FaCamera, FaRegHeart, FaRegBell, FaListAlt, FaTachometerAlt } from 'react-icons/fa';
 import { FiShoppingCart, FiGlobe, FiChevronDown } from 'react-icons/fi';
 import { HiSparkles } from 'react-icons/hi';
 import ReactMarkdown from 'react-markdown';
@@ -1092,7 +1092,7 @@ const Header = () => {
                                                 </div>
 
                                                 <Link to={`/profile?tab=dashboard&mode=${mode}`} className="dropdown-item-custom" style={{ display: 'flex', alignItems: 'center', gap: '12px' }} onClick={() => setIsUserDropdownOpen(false)}>
-                                                    <div style={{ width: '20px', display: 'flex', justifyContent: 'center' }}><FaUser style={{ color: '#adb5bd', fontSize: '1rem' }} /></div>
+                                                    <div style={{ width: '20px', display: 'flex', justifyContent: 'center' }}><FaTachometerAlt style={{ color: '#adb5bd', fontSize: '1rem' }} /></div>
                                                     {t('profile.dashboard', 'Dashboard')}
                                                 </Link>
                                                 <Link to={`/profile?tab=profile_settings&mode=${mode}`} className="dropdown-item-custom" style={{ display: 'flex', alignItems: 'center', gap: '12px' }} onClick={() => setIsUserDropdownOpen(false)}>
@@ -1431,7 +1431,10 @@ const Header = () => {
                                 {user ? (
                                     <>
                                         <div style={{ padding: '0 0 10px 0', fontSize: '0.8rem', fontWeight: '700', color: '#868e96', textTransform: 'uppercase' }}>Account</div>
-                                        <Link to="/profile" className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <Link to="/profile?tab=dashboard" className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <FaTachometerAlt size={16} /> Dashboard
+                                        </Link>
+                                        <Link to="/profile?tab=profile_settings" className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                             <FaUser size={16} /> My Profile
                                         </Link>
                                         <Link to={mode === 'seller' ? "/profile?tab=listings" : "/profile?tab=orders"} className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1695,10 +1698,10 @@ const Header = () => {
                     </div>
                 )
             }
-            <Popup 
-                popup={popup} 
-                onClose={closePopup} 
-                onConfirm={popup?.onConfirm} 
+            <Popup
+                popup={popup}
+                onClose={closePopup}
+                onConfirm={popup?.onConfirm}
             />
         </header>
     );

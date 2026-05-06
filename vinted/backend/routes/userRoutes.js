@@ -16,7 +16,8 @@ import {
     forgotPassword,
     sendSignupOTP,
     verifyOTP,
-    resetPassword
+    resetPassword,
+    checkUsername
 } from '../controllers/userController.js';
 
 router.post('/', registerUser);
@@ -27,6 +28,7 @@ router.post('/verify-otp', verifyOTP);
 router.put('/resetpassword/:resettoken', resetPassword);
 router.get('/me', protect, getMe);
 router.get('/', protect, getAllUsers);
+router.get('/check-username/:username', checkUsername);
 router.get('/:id/public', getPublicUser);
 
 router.put('/profile', protect, upload.single('profile_image'), optimizeImages, updateUserProfile);

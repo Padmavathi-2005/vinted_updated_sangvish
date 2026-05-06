@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { FaHome, FaSearch, FaPlus, FaTachometerAlt, FaUser, FaRegCommentDots, FaShoppingBag } from 'react-icons/fa';
@@ -9,6 +10,7 @@ import '@/app/styles/MobileNavbar.css';
 
 const MobileNavbar = () => {
     const { user, mode, setShowLoginModal } = useContext(AuthContext);
+    const { t } = useTranslation();
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -28,12 +30,12 @@ const MobileNavbar = () => {
         <div className="mobile-navbar">
             <Link href="/" className={`nav-item ${pathname === '/' ? 'active' : ''}`}>
                 <FaHome className="nav-icon" />
-                <span>Home</span>
+                <span>{t('header.home_tab')}</span>
             </Link>
 
             <Link href="/profile?tab=messages" className={`nav-item ${pathname.startsWith('/profile') && currentTab === 'messages' ? 'active' : ''}`}>
                 <FaRegCommentDots className="nav-icon" />
-                <span>Chat</span>
+                <span>{t('header.chat')}</span>
             </Link>
 
             <div className="nav-item sell-item" onClick={handleSellClick}>
@@ -44,12 +46,12 @@ const MobileNavbar = () => {
 
             <Link href={mode === 'seller' ? '/profile?tab=listings' : '/profile?tab=orders'} className={`nav-item ${pathname.startsWith('/profile') && (currentTab === 'listings' || currentTab === 'orders') ? 'active' : ''}`}>
                 <FaShoppingBag className="nav-icon" />
-                <span>{mode === 'seller' ? 'Manage listings' : 'My orders'}</span>
+                <span>{mode === 'seller' ? t('user_menu.manage_listings') : t('user_menu.my_orders')}</span>
             </Link>
 
             <Link href="/profile?tab=profile_settings" className={`nav-item ${pathname.startsWith('/profile') && currentTab === 'profile_settings' ? 'active' : ''}`}>
                 <FaUser className="nav-icon" />
-                <span>Profile</span>
+                <span>{t('header.profile_tab')}</span>
             </Link>
         </div>
     );

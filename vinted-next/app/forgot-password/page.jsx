@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { FaEnvelope, FaLock, FaKey, FaChevronLeft, FaCheckCircle } from 'react-icons/fa';
 import axios from '@/utils/axios';
 import useRecaptcha from '@/hooks/useRecaptcha';
+import Meta from '@/components/common/Meta';
 import '@/app/styles/Auth.css';
 
 export default function ForgotPassword() {
@@ -110,8 +111,7 @@ export default function ForgotPassword() {
 
     return (
         <>
-            <title>Reset Password | Resale Marketplace</title>
-            <meta name="description" content="Securely reset your Vinted account password." />
+            <Meta title="Reset Password" description="Securely reset your account password." />
             <div className="auth-page">
                 <div className="auth-card">
                     <div className="auth-back mb-4">

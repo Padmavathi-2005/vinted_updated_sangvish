@@ -683,10 +683,70 @@ const resetPassword = asyncHandler(async (req, res) => {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();
-
     res.status(200).json({
         success: true,
         message: 'Password reset successful'
+    });
+});
+
+// @desc    Check username availability
+// @route   GET /api/users/check-username/:username
+// @access  Public
+const checkUsername = asyncHandler(async (req, res) => {
+    const { username } = req.params;
+    const currentUserId = req.query.currentUserId;
+
+    if (!username || username.length < 3) {
+        return res.json({ available: true });
+    }
+
+    // Case-insensitive search
+    const query = { username: { $regex: new RegExp(`^${username}$`, 'i') } };
+    
+    if (currentUserId && currentUserId !== 'undefined') {
+        query._id = { $ne: currentUserId };
+    }
+
+    const user = await User.findOne(query);
+
+    if (!user) {
+        return res.json({ available: true });
+    }
+
+    // Not available, generate recommendations
+    const suggestions = [];
+    const base = username.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_');
+    
+    // Suggestion 1: base + random number
+    suggestions.push(`${base}_${Math.floor(100 + Math.random() * 899)}`);
+    
+    // Suggestion 2: base + year
+    suggestions.push(`${base}_${new Date().getFullYear()}`);
+    
+    // Suggestion 3: if they have first/last name, merge them
+    const existingUser = currentUserId && currentUserId !== 'undefined' ? await User.findById(currentUserId) : null;
+    if (existingUser && existingUser.first_name && existingUser.last_name) {
+        const merged = `${existingUser.first_name.toLowerCase()}_${existingUser.last_name.toLowerCase()}`.replace(/\s+/g, '_');
+        if (merged !== base && merged.length >= 3) {
+            suggestions.push(merged);
+        }
+    }
+
+    // Ensure suggestions are unique and not taken
+    const uniqueSuggestions = [...new Set(suggestions)];
+    const finalSuggestions = [];
+    
+    for (const s of uniqueSuggestions) {
+        const taken = await User.findOne({ username: { $regex: new RegExp(`^${s}$`, 'i') } });
+        if (!taken) {
+            finalSuggestions.push(s);
+        }
+        if (finalSuggestions.length >= 3) break;
+    }
+
+    res.json({
+        available: false,
+        suggestions: finalSuggestions
     });
 });
 
@@ -703,5 +763,6 @@ export {
     forgotPassword,
     sendSignupOTP,
     verifyOTP,
-    resetPassword
+    resetPassword,
+    checkUsername
 };

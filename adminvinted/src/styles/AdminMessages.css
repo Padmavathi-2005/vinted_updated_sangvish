@@ -4,7 +4,7 @@
     height: calc(100vh - 120px);
     /* margin: 20px; */
     background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
+    /* backdrop-filter: blur(10px); */
     border-radius: 20px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
     /* More pronounced shadow */
@@ -616,7 +616,8 @@
     }
 
     .chat-item-context-mini div:first-child {
-        display: none; /* Hide 'Regarding item' text on mobile */
+        display: none;
+        /* Hide 'Regarding item' text on mobile */
     }
 
     .chat-item-context-mini .fw-bold {
@@ -663,7 +664,7 @@
     height: 60px;
     border-radius: 8px;
     object-fit: cover;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .item-banner-title {

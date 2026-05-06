@@ -102,16 +102,17 @@ const ListingsSection = () => {
         };
     }, [loading]); // Recalculate when loading state changes
 
-    if (!loading && popularItems.length === 0 && newestItems.length === 0) {
-        return null; // Hide section if no items
-    }
-
     const rawItems = activeTab === 'popular' ? popularItems : newestItems;
     // Show exactly 2 rows
     const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
     useEffect(() => {
         setIsMobileOrTablet(window.innerWidth <= 991);
     }, []);
+
+    if (!loading && popularItems.length === 0 && newestItems.length === 0) {
+        return null; // Hide section if no items
+    }
+    
     const itemsToShow = isMobileOrTablet ? 10 : (columns * 2);
     const displayItems = rawItems.slice(0, itemsToShow);
     const skeletonCount = itemsToShow;

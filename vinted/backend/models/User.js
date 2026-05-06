@@ -76,6 +76,8 @@ const userSchema = mongoose.Schema(
             state: String,
             country: String,
             pincode: String,
+            lat: Number,
+            lng: Number,
         },
         is_deleted: {
             type: Boolean,

@@ -1,4 +1,5 @@
 import fs from 'fs';
+import mongoose from 'mongoose';
 import asyncHandler from 'express-async-handler';
 import Item from '../models/Item.js';
 import Category from '../models/Category.js';
@@ -10,18 +11,27 @@ import Notification from '../models/Notification.js';
 import jwt from 'jsonwebtoken';
 import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
+import Negotiation from '../models/Negotiation.js';
 
 
 // @desc    Get single item by ID
 // @route   GET /api/items/:id
 // @access  Public
 const getItemById = asyncHandler(async (req, res) => {
-    const item = await Item.findById(req.params.id)
+    const { id } = req.params;
+    let query = {};
+    if (mongoose.Types.ObjectId.isValid(id)) {
+        query = { _id: id };
+    } else {
+        query = { slug: id };
+    }
+
+    const item = await Item.findOne(query)
         .populate('seller_id', 'username email profile_image created_at rating_avg rating_count')
         .populate('category_id', 'name slug')
         .populate('subcategory_id', 'name slug')
         .populate('item_type_id', 'name slug')
-        .populate('currency_id', 'code symbol');
+        .populate('currency_id', 'code symbol exchange_rate');
 
     if (!item) {
         res.status(404);
@@ -30,47 +40,46 @@ const getItemById = asyncHandler(async (req, res) => {
 
     // Check for accepted offer for this user
     let acceptedOffer = null;
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer')) {
+    const currentUser = req.user;
+    
+    if (currentUser) {
         try {
-            const token = authHeader.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
-            const userId = decoded.id;
+            const userId = currentUser._id.toString();
+            const userObjectId = new mongoose.Types.ObjectId(userId);
+            
+            // SUPER BROAD SEARCH: Check both tables and all roles
+            const [negRecord, convRecord] = await Promise.all([
+                Negotiation.findOne({
+                    item_id: item._id,
+                    $or: [
+                        { buyer_id: userObjectId }, { seller_id: userObjectId },
+                        { buyer_id: userId }, { seller_id: userId }
+                    ],
+                    status: 'active'
+                }),
+                Conversation.findOne({
+                    item_id: item._id,
+                    'participants.user': { $in: [userObjectId, userId] },
+                    accepted_offer_amount: { $ne: null }
+                }).sort({ updated_at: -1 })
+            ]);
 
-            // Find conversations for this item involving this user
-            const conversations = await Conversation.find({
-                item_id: item._id,
-                'participants.user': userId
-            });
-
-            if (conversations.length > 0) {
-                const convIds = conversations.map(c => c._id);
-                // Find most recent accepted offer from this user
-                const offer = await Message.findOne({
-                    conversation_id: { $in: convIds },
-                    message_type: 'offer',
-                    offer_status: 'accepted'
-                }).sort({ created_at: -1 });
-
-                if (offer) {
-                    acceptedOffer = {
-                        amount: offer.offer_amount,
-                        message_id: offer._id
-                    };
-                }
+            if (negRecord) {
+                acceptedOffer = { amount: negRecord.agreed_price, source: 'neg' };
+            } else if (convRecord) {
+                acceptedOffer = { amount: convRecord.accepted_offer_amount, source: 'conv' };
             }
         } catch (err) {
-            // Token invalid or other error, ignore and continue as public
-            console.error('Error checking for accepted offer:', err.message);
+            console.error('Price lookup error:', err.message);
         }
     }
 
     // IP-based unique view counting
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.connection?.remoteAddress || 'unknown';
     try {
-        await ItemView.create({ item_id: req.params.id, ip_address: ip });
+        await ItemView.create({ item_id: item._id, ip_address: ip });
         // If create succeeds → new unique view, increment count
-        await Item.findByIdAndUpdate(req.params.id, { $inc: { views_count: 1 } });
+        await Item.findByIdAndUpdate(item._id, { $inc: { views_count: 1 } });
     } catch (err) {
         // Duplicate key error (code 11000) means this IP already viewed → skip
         if (err.code !== 11000) {
@@ -79,9 +88,13 @@ const getItemById = asyncHandler(async (req, res) => {
     }
 
     const itemObj = item.toObject();
-    if (acceptedOffer) {
-        itemObj.accepted_offer = acceptedOffer;
-    }
+    itemObj.accepted_offer = acceptedOffer;
+    itemObj.debug_offer = {
+        user_identified: !!currentUser,
+        user_id: currentUser ? currentUser._id : null,
+        offer_found: !!acceptedOffer,
+        source: acceptedOffer ? acceptedOffer.source : 'none'
+    };
 
     res.status(200).json(itemObj);
 });
@@ -90,7 +103,15 @@ const getItemById = asyncHandler(async (req, res) => {
 // @route   GET /api/items/:id/similar
 // @access  Public
 const getSimilarItems = asyncHandler(async (req, res) => {
-    const item = await Item.findById(req.params.id);
+    const { id } = req.params;
+    let query = {};
+    if (mongoose.Types.ObjectId.isValid(id)) {
+        query = { _id: id };
+    } else {
+        query = { slug: id };
+    }
+
+    const item = await Item.findOne(query);
     if (!item) {
         res.status(404);
         throw new Error('Item not found');
@@ -101,7 +122,8 @@ const getSimilarItems = asyncHandler(async (req, res) => {
         _id: { $ne: item._id },
         status: 'active',
         is_deleted: false,
-        is_sold: false,
+        is_sold: { $ne: true },
+        is_ordered: { $ne: true },
         subcategory_id: item.subcategory_id,
     })
         .populate('seller_id', 'username profile_image rating_avg rating_count')
@@ -117,7 +139,8 @@ const getSimilarItems = asyncHandler(async (req, res) => {
             _id: { $nin: existingIds },
             status: 'active',
             is_deleted: false,
-            is_sold: false,
+            is_sold: { $ne: true },
+            is_ordered: { $ne: true },
             category_id: item.category_id,
         })
             .populate('seller_id', 'username profile_image rating_avg rating_count')
@@ -145,7 +168,8 @@ const getItems = asyncHandler(async (req, res) => {
         let queryObj = { 
             status: { $in: ['active', 'available'] }, 
             is_deleted: false, 
-            is_sold: false 
+            is_sold: { $ne: true },
+            is_ordered: { $ne: true }
         };
 
         // --- Category/Subcategory Slugs ---
@@ -317,12 +341,15 @@ const getItems = asyncHandler(async (req, res) => {
 // @route   GET /api/items/myitems
 // @access  Private
 const getMyItems = asyncHandler(async (req, res) => {
-    const { page, limit } = req.query;
+    const { page, limit, is_sold } = req.query;
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 12;
     const skip = (pageNum - 1) * limitNum;
 
     const queryObj = { seller_id: req.user.id };
+    if (is_sold !== undefined) {
+        queryObj.is_sold = is_sold === 'true';
+    }
     const totalCount = await Item.countDocuments(queryObj);
 
     const items = await Item.find(queryObj)
@@ -413,7 +440,7 @@ const setItem = asyncHandler(async (req, res) => {
         brand,
         category_id,
         subcategory_id,
-        item_type_id: item_type_id || null, // Optional
+        item_type_id: item_type_id || null,
         size,
         color,
         condition,
@@ -423,7 +450,15 @@ const setItem = asyncHandler(async (req, res) => {
         shipping_included: shipping_included === 'true' || shipping_included === true,
         images,
         status: 'active',
-        attributes: attributes ? JSON.parse(attributes) : []
+        attributes: attributes ? JSON.parse(attributes) : [],
+        lat: req.body.lat ? parseFloat(req.body.lat) : null,
+        lng: req.body.lng ? parseFloat(req.body.lng) : null,
+        location: req.body.location || '',
+        location_label: req.body.location_label || '',
+        country: req.body.country || '',
+        state: req.body.state || '',
+        city: req.body.city || '',
+        pincode: req.body.pincode || '',
     });
 
     res.status(201).json(item);
@@ -514,6 +549,16 @@ const updateItem = asyncHandler(async (req, res) => {
     
     if (status !== undefined) updateData.status = status;
     if (is_sold !== undefined) updateData.is_sold = is_sold === 'true' || is_sold === true;
+    
+    // Location Updates
+    if (req.body.lat !== undefined) updateData.lat = req.body.lat ? parseFloat(req.body.lat) : null;
+    if (req.body.lng !== undefined) updateData.lng = req.body.lng ? parseFloat(req.body.lng) : null;
+    if (req.body.location !== undefined) updateData.location = req.body.location;
+    if (req.body.location_label !== undefined) updateData.location_label = req.body.location_label;
+    if (req.body.country !== undefined) updateData.country = req.body.country;
+    if (req.body.state !== undefined) updateData.state = req.body.state;
+    if (req.body.city !== undefined) updateData.city = req.body.city;
+    if (req.body.pincode !== undefined) updateData.pincode = req.body.pincode;
     
     // Always update images if we processed them
     updateData.images = updatedImages;

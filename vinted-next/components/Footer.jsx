@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Form, Button } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Dropdown } from 'react-bootstrap';
 import Link from 'next/link';
 import * as FaIcons from 'react-icons/fa';
 import * as Fa6Icons from 'react-icons/fa6';
@@ -24,6 +24,8 @@ import LanguageContext from '@/context/LanguageContext';
 import axios from '@/utils/axios';
 import { getImageUrl, safeString } from '@/utils/constants';
 import { isValidEmail } from '@/utils/validation';
+import CurrencyContext from '@/context/CurrencyContext';
+import { FaGlobe } from 'react-icons/fa';
 
 const Footer = () => {
     const { t } = useTranslation();
@@ -101,6 +103,72 @@ const Footer = () => {
         }
     };
 
+    const { languages, setLanguage } = React.useContext(LanguageContext);
+    const { currencies, currentCurrency, setCurrency } = React.useContext(CurrencyContext);
+
+    const LanguageSwitcher = () => (
+        <Dropdown>
+            <Dropdown.Toggle 
+                variant="light" 
+                size="sm" 
+                className="rounded-pill px-3 d-flex align-items-center gap-2 border-0"
+                style={{ fontSize: '0.8rem', fontWeight: '700', background: '#f8fafc', color: '#475569' }}
+            >
+                <FaGlobe style={{ fontSize: '0.75rem', opacity: 0.7 }} />
+                {currentLanguage?.name}
+            </Dropdown.Toggle>
+            <Dropdown.Menu style={{ borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', padding: '8px' }}>
+                {languages.map(l => (
+                    <Dropdown.Item 
+                        key={l._id} 
+                        onClick={() => setLanguage(l)}
+                        style={{ 
+                            borderRadius: '8px', 
+                            fontSize: '0.85rem', 
+                            padding: '8px 12px',
+                            background: currentLanguage?._id === l._id ? '#f1f5f9' : 'transparent',
+                            color: currentLanguage?._id === l._id ? '#0ea5e9' : 'inherit',
+                            fontWeight: currentLanguage?._id === l._id ? '700' : '500'
+                        }}
+                    >
+                        {l.name}
+                    </Dropdown.Item>
+                ))}
+            </Dropdown.Menu>
+        </Dropdown>
+    );
+
+    const CurrencySwitcher = () => (
+        <Dropdown>
+            <Dropdown.Toggle 
+                variant="light" 
+                size="sm" 
+                className="rounded-pill px-3 d-flex align-items-center gap-2 border-0"
+                style={{ fontSize: '0.8rem', fontWeight: '700', background: '#f8fafc', color: '#475569' }}
+            >
+                {currentCurrency?.code}
+            </Dropdown.Toggle>
+            <Dropdown.Menu style={{ borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', padding: '8px' }}>
+                {currencies.map(c => (
+                    <Dropdown.Item 
+                        key={c._id} 
+                        onClick={() => setCurrency(c)}
+                        style={{ 
+                            borderRadius: '8px', 
+                            fontSize: '0.85rem', 
+                            padding: '8px 12px',
+                            background: currentCurrency?._id === c._id ? '#f1f5f9' : 'transparent',
+                            color: currentCurrency?._id === c._id ? '#0ea5e9' : 'inherit',
+                            fontWeight: currentCurrency?._id === c._id ? '700' : '500'
+                        }}
+                    >
+                        {c.code} ({c.symbol})
+                    </Dropdown.Item>
+                ))}
+            </Dropdown.Menu>
+        </Dropdown>
+    );
+
     return (
         <footer className="footer">
             <Container fluid className="px-md-5 px-3">
@@ -150,6 +218,7 @@ const Footer = () => {
                                     </>
                                 )}
                             </div>
+
                         </div>
                     </Col>
 

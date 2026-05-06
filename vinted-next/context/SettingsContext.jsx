@@ -47,10 +47,6 @@ export const SettingsProvider = ({ children }) => {
                     document.documentElement.style.setProperty('--body-font', 'system-ui, -apple-system, sans-serif');
 
 
-                    if (data.site_name) {
-                        const nameString = safeString(data.site_name);
-                        document.title = nameString;
-                    }
 
                     if (data.site_favicon || data.favicon) {
                         const faviconString = safeString(data.site_favicon || data.favicon);

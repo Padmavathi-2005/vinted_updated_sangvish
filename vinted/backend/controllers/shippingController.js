@@ -6,8 +6,17 @@ import Order from '../models/Order.js';
 // @route   GET /api/shipping/companies
 // @access  Private (Sellers need this)
 export const getActiveShippingCompanies = asyncHandler(async (req, res) => {
-    const companies = await ShippingCompany.find({ status: 'active' }).sort({ company_name: 1 });
-    res.json(companies);
+    // Fetch all active companies
+    const companies = await ShippingCompany.find({ status: 'active' });
+    
+    // Sort logic: "DHL Express" first, then others alphabetically
+    const sorted = companies.sort((a, b) => {
+        if (a.company_name === 'DHL Express') return -1;
+        if (b.company_name === 'DHL Express') return 1;
+        return a.company_name.localeCompare(b.company_name);
+    });
+
+    res.json(sorted);
 });
 
 // @desc    Dispatch an order (Seller)
@@ -46,14 +55,54 @@ export const dispatchOrder = asyncHandler(async (req, res) => {
     }
 
     order.shipping_company_id = shipping_company_id;
-    order.tracking_id = tracking_id;
     order.dispatch_date = dispatch_date || new Date();
+
+    // DHL AUTOMATION LOGIC
+    const selectedCompany = await ShippingCompany.findById(shipping_company_id);
+    const Setting = (await import('../models/Setting.js')).default;
+    const settings = await Setting.findOne();
+
+    if (selectedCompany?.company_name === 'DHL Express' && settings?.shipping_provider === 'dhl') {
+        try {
+            console.log('--- DHL Automation Triggered ---');
+            const dhlService = (await import('../services/dhlService.js')).default;
+            const User = (await import('../models/User.js')).default;
+            const Item = (await import('../models/Item.js')).default;
+
+            const buyer = await User.findById(order.buyer_id);
+            const seller = await User.findById(order.seller_id);
+            const item = await Item.findById(order.item_id);
+
+            const dhlRes = await dhlService.createShipment(order, item, buyer, seller);
+            
+            order.tracking_id = dhlRes.trackingNumber;
+            order.shipping_label_base64 = dhlRes.labelData;
+            // order.shipping_label_url = dhlRes.trackingUrl; 
+            console.log('✅ DHL Shipment Created:', dhlRes.trackingNumber);
+        } catch (dhlErr) {
+            console.error('❌ DHL Integration Failed:', dhlErr.message);
+            // Fallback to manual if tracking_id was provided, or fail if it was meant to be automatic
+            if (!tracking_id) {
+                res.status(500);
+                throw new Error(`DHL Integration Error: ${dhlErr.message}`);
+            }
+            order.tracking_id = tracking_id;
+        }
+    } else {
+        // Manual Flow
+        if (!tracking_id) {
+            res.status(400);
+            throw new Error('Tracking ID is required for manual shipping');
+        }
+        order.tracking_id = tracking_id;
+    }
     
     // We don't force 'shipped' status here anymore. 
     // The seller will manually mark as shipped after verification.
     // However, we ensure it's at least confirmed
     if (order.order_status === 'pending') {
         order.order_status = 'confirmed';
+        order.confirmed_at = new Date();
     }
 
     await order.save();
@@ -72,7 +121,7 @@ export const dispatchOrder = asyncHandler(async (req, res) => {
             title: 'Tracking Info Added',
             message: `The seller has provided tracking information for your order "${updatedOrder.item_id?.title}" (#${updatedOrder.order_number}). You can now track your package.`,
             type: 'info',
-            link: '/profile?tab=orders'
+            link: `/profile?tab=orders&orderId=${updatedOrder._id}`
         });
     } catch (notifyErr) {
         console.error("Error sending dispatch notification:", notifyErr);
@@ -100,10 +149,15 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     }
 
     order.order_status = status;
-    if (status === 'delivered') {
-        order.delivered_at = new Date();
-    }
+    
+    // Set Timestamps based on status
+    const now = new Date();
+    if (status === 'confirmed') order.confirmed_at = now;
+    if (status === 'packed') order.packed_at = now;
+    if (status === 'shipped') order.shipped_at = now;
+    if (status === 'out_for_delivery') order.out_for_delivery_at = now;
+    if (status === 'delivered') order.delivered_at = now;
 
     await order.save();
-    res.json({ message: `Order status updated to ${status}` });
+    res.json({ message: `Order status updated to ${status}`, order });
 });

@@ -2,13 +2,14 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from '../../utils/axios';
 import { 
     FaTimes, FaImage, FaInfoCircle, FaSave, FaPercentage, FaCheckCircle, 
-    FaPlusCircle, FaEllipsisH, FaTag, FaTrash, FaChevronRight, FaAngleLeft, FaAngleRight 
+    FaPlusCircle, FaEllipsisH, FaTag, FaTrash, FaChevronRight, FaAngleLeft, FaAngleRight,
+    FaMapMarkerAlt, FaSpinner, FaCity, FaGlobe, FaMapPin
 } from 'react-icons/fa';
 import '@/app/styles/EditItemModal.css';
 import '@/app/styles/SellItem.css'; // Reuse SellItem styles for consistency
 import '../../components/common/CustomSelect.css';
 import { getImageUrl, getItemImageUrl, safeString } from '../../utils/constants';
-import { validateTextField, getTextFieldError } from '../../utils/validation';
+import { validateTextField, getTextFieldError, validateAlphaField, getAlphaError } from '../../utils/validation';
 import { useTranslation } from 'react-i18next';
 import AuthContext from '../../context/AuthContext';
 import CurrencyContext from '../../context/CurrencyContext';
@@ -66,8 +67,23 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
     
     // Crop State
     const [showCropModal, setShowCropModal] = useState(false);
-    const [tempImage, setTempImage] = useState(null);
-    const [pendingPhotos, setPendingPhotos] = useState([]);
+    const [tempFile, setTempFile] = useState(null);
+    
+    // Location State
+    const [itemLocation, setItemLocation] = useState({
+        lat: item.lat || null,
+        lng: item.lng || null,
+        label: item.location_label || item.location || '',
+        city: item.city || '',
+        state: item.state || '',
+        country: item.country || '',
+        pincode: item.pincode || ''
+    });
+    const [suggestions, setSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+    const suggestionsRef = useRef(null);
+    const debounceRef = useRef(null);
 
     // Sync state when item changes (after an update)
     useEffect(() => {
@@ -307,6 +323,67 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
         setSpecifications(newSpecs);
     };
     const handleRemoveSpec = (index) => setSpecifications(specifications.filter((_, i) => i !== index));
+    
+    // Address Search Logic
+    const handleAddressSearch = (query) => {
+        if (!query || query.length < 3) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+        }
+        
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(async () => {
+            setLoadingSuggestions(true);
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`,
+                    { headers: { 'User-Agent': 'VintedClone/1.0' } }
+                );
+                const data = await res.json();
+                setSuggestions(data || []);
+                setShowSuggestions(true);
+            } catch {
+                setSuggestions([]);
+            } finally {
+                setLoadingSuggestions(false);
+            }
+        }, 500);
+    };
+
+    const handleSuggestionClick = (suggestion) => {
+        const lat = parseFloat(suggestion.lat);
+        const lng = parseFloat(suggestion.lon);
+        const label = suggestion.display_name;
+        
+        let addrComp = {
+            city: suggestion.address?.city || suggestion.address?.town || suggestion.address?.village || '',
+            state: suggestion.address?.state || '',
+            country: suggestion.address?.country || '',
+            pincode: suggestion.address?.postcode || ''
+        };
+
+        setItemLocation({
+            lat,
+            lng,
+            label,
+            ...addrComp
+        });
+        
+        setSuggestions([]);
+        setShowSuggestions(false);
+    };
+
+    // Close suggestions on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Submit Update
     const handleSubmit = async (e) => {
@@ -350,6 +427,18 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
         formData.append('status', status);
         formData.append('is_sold', isSold);
         formData.append('attributes', JSON.stringify(specifications.filter(s => s.key && s.value)));
+
+        // Location Data
+        if (itemLocation.lat) {
+            formData.append('lat', itemLocation.lat);
+            formData.append('lng', itemLocation.lng);
+            formData.append('location', itemLocation.label);
+            formData.append('location_label', itemLocation.label);
+            formData.append('city', itemLocation.city);
+            formData.append('state', itemLocation.state);
+            formData.append('country', itemLocation.country);
+            formData.append('pincode', itemLocation.pincode);
+        }
 
         // Handle existing vs new images
         const existingPaths = images.filter(img => typeof img === 'string');
@@ -614,6 +703,89 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
                                     >
                                         Inactive
                                     </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Location Section */}
+                        <div className="eim-form-card mb-4">
+                            <h4 className="eim-form-subtitle mb-3">Item Location</h4>
+                            <div className="si-field mb-3" style={{ position: 'relative' }} ref={suggestionsRef}>
+                                <label className="si-label">Search Location</label>
+                                <div className="si-input-group-v2">
+                                    <FaMapMarkerAlt className="si-input-icon-v2" />
+                                    <input 
+                                        type="text" 
+                                        className="si-input" 
+                                        placeholder="City, Area or Full Address"
+                                        value={itemLocation.label}
+                                        onChange={(e) => {
+                                            setItemLocation({ ...itemLocation, label: e.target.value });
+                                            handleAddressSearch(e.target.value);
+                                        }}
+                                    />
+                                    {loadingSuggestions && (
+                                        <div className="si-input-loading">
+                                            <FaSpinner className="fa-spin" />
+                                        </div>
+                                    )}
+                                </div>
+                                {showSuggestions && suggestions.length > 0 && (
+                                    <ul className="address-suggestions-dropdown">
+                                        {suggestions.map((s, i) => (
+                                            <li key={i} onClick={() => handleSuggestionClick(s)}>
+                                                <FaMapMarkerAlt style={{ marginRight: '8px', opacity: 0.7 }} />
+                                                <span>{s.display_name}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+
+                            <div className="row g-2">
+                                <div className="col-6">
+                                    <div className="si-field">
+                                        <label className="si-label small">City</label>
+                                        <input 
+                                            type="text" 
+                                            className="si-input si-input-sm" 
+                                            value={itemLocation.city}
+                                            onChange={(e) => setItemLocation({ ...itemLocation, city: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="col-6">
+                                    <div className="si-field">
+                                        <label className="si-label small">State</label>
+                                        <input 
+                                            type="text" 
+                                            className="si-input si-input-sm" 
+                                            value={itemLocation.state}
+                                            onChange={(e) => setItemLocation({ ...itemLocation, state: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="col-6">
+                                    <div className="si-field">
+                                        <label className="si-label small">Country</label>
+                                        <input 
+                                            type="text" 
+                                            className="si-input si-input-sm" 
+                                            value={itemLocation.country}
+                                            onChange={(e) => setItemLocation({ ...itemLocation, country: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="col-6">
+                                    <div className="si-field">
+                                        <label className="si-label small">Pincode</label>
+                                        <input 
+                                            type="text" 
+                                            className="si-input si-input-sm" 
+                                            value={itemLocation.pincode}
+                                            onChange={(e) => setItemLocation({ ...itemLocation, pincode: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -26,7 +26,6 @@ body {
 }
 
 .admin-layout {
-    display: flex;
     min-height: 100vh;
     width: 100%;
     overflow-x: hidden;
@@ -39,13 +38,12 @@ body {
 }
 
 .admin-content {
-    flex: 1;
     margin-left: 260px;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
     min-width: 0;
-    max-width: 100%;
     overflow-x: hidden;
 }
 
@@ -54,6 +52,7 @@ body {
 }
 
 @media (max-width: 991px) {
+
     .admin-content,
     .sidebar-collapsed .admin-content {
         margin-left: 0 !important;
@@ -86,7 +85,7 @@ body {
     right: 0;
     bottom: 0;
     background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(8px);
+    /* backdrop-filter: blur(8px); */
     z-index: 1;
 }
 

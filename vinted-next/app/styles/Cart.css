@@ -614,3 +614,31 @@
         display: none;
     }
 }
+
+/* ── Sold Items Styling ── */
+.cart-item-row.sold {
+    opacity: 0.7;
+    background: #f1f5f9;
+}
+
+.cart-item-row.sold .cart-item-title {
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+
+.cart-item-row.sold .cart-item-img {
+    filter: grayscale(80%);
+}
+
+.cart-item-sold-tag {
+    background: #fef2f2;
+    color: #dc2626;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid #fecaca;
+    display: inline-block;
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+}

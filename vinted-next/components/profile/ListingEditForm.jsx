@@ -237,7 +237,12 @@ const ListingEditForm = ({ item, onCancel, onUpdate }) => {
                 </button>
                 <div className="d-flex gap-2">
                     <button type="button" onClick={onCancel} className="btn btn-light btn-sm px-4">Cancel</button>
-                    <button type="button" onClick={handleSubmit} className="btn btn-primary btn-sm px-4 d-flex align-items-center gap-2" disabled={loading}>
+                    <button 
+                        type="button" 
+                        onClick={handleSubmit} 
+                        className="btn btn-primary btn-sm px-4 d-flex align-items-center gap-2" 
+                        disabled={loading || !validateTextField(title) || !validateTextField(description) || (brand && !validateTextField(brand)) || specifications.some(s => (s.key && !validateTextField(s.key)) || (s.value && !validateTextField(s.value)))}
+                    >
                         <FaSave /> {loading ? 'Saving...' : 'Save Changes'}
                     </button>
                 </div>
@@ -269,11 +274,29 @@ const ListingEditForm = ({ item, onCancel, onUpdate }) => {
                     <div className="si-card">
                         <div className="si-field">
                             <label className="si-label">Title</label>
-                            <input type="text" className={`si-input ${validationErrors.title ? 'is-invalid' : ''}`} value={title} onChange={e => { setTitle(e.target.value); if (validationErrors.title) setValidationErrors(prev => ({ ...prev, title: false })); }} required />
+                            <input 
+                                type="text" 
+                                className={`si-input ${validationErrors.title || (title && !validateTextField(title)) ? 'is-invalid' : ''}`} 
+                                value={title} 
+                                onChange={e => { setTitle(e.target.value); if (validationErrors.title) setValidationErrors(prev => ({ ...prev, title: false })); }} 
+                                required 
+                            />
+                            {title && !validateTextField(title) && (
+                                <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{getTextFieldError('Title')}</p>
+                            )}
                         </div>
                         <div className="si-field si-field-last">
                             <label className="si-label">Description</label>
-                            <textarea className={`si-textarea ${validationErrors.description ? 'is-invalid' : ''}`} rows={4} value={description} onChange={e => { setDescription(e.target.value); if (validationErrors.description) setValidationErrors(prev => ({ ...prev, description: false })); }} required />
+                            <textarea 
+                                className={`si-textarea ${validationErrors.description || (description && !validateTextField(description)) ? 'is-invalid' : ''}`} 
+                                rows={4} 
+                                value={description} 
+                                onChange={e => { setDescription(e.target.value); if (validationErrors.description) setValidationErrors(prev => ({ ...prev, description: false })); }} 
+                                required 
+                            />
+                            {description && !validateTextField(description) && (
+                                <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{getTextFieldError('Description')}</p>
+                            )}
                         </div>
                     </div>
 
@@ -303,7 +326,23 @@ const ListingEditForm = ({ item, onCancel, onUpdate }) => {
                             </div>
                             <div className="si-field">
                                 <label className="si-label">Brand</label>
-                                <input type="text" className={`si-input ${validationErrors.brand ? 'is-invalid' : ''}`} value={brand} onChange={e => { setBrand(e.target.value); if (validationErrors.brand) setValidationErrors(prev => ({ ...prev, brand: false })); }} />
+                                <input 
+                                    type="text" 
+                                    className={`si-input ${validationErrors.brand || (brand && !validateTextField(brand)) ? 'is-invalid' : ''}`} 
+                                    value={brand} 
+                                    onChange={e => { setBrand(e.target.value); if (validationErrors.brand) setValidationErrors(prev => ({ ...prev, brand: false })); }} 
+                                />
+                                {brand && !validateTextField(brand) && (
+                                    <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{getTextFieldError('Brand')}</p>
+                                )}
+                            </div>
+                            <div className="si-field">
+                                <label className="si-label">Condition</label>
+                                <CustomSelect 
+                                    options={['New', 'Very Good', 'Good', 'Normal', 'Bad', 'Very Bad'].map(c => ({ value: c, label: c }))} 
+                                    value={condition} 
+                                    onChange={setCondition} 
+                                />
                             </div>
                             <div className="si-field">
                                 <label className="si-label">Price ({currentCurrency ? currentCurrency.symbol : '€'})</label>
@@ -323,12 +362,31 @@ const ListingEditForm = ({ item, onCancel, onUpdate }) => {
                             Add any specific details (RAM, Storage, Material, Warranty) based on your product.
                         </div>
                         {specifications.map((spec, index) => (
-                            <div key={index} className="si-spec-row">
-                                <input type="text" className="si-input" placeholder="Label" value={spec.key} onChange={e => handleSpecChange(index, 'key', e.target.value)} />
-                                <input type="text" className="si-input" placeholder="Value" value={spec.value} onChange={e => handleSpecChange(index, 'value', e.target.value)} />
-                                <button type="button" className="si-spec-remove-btn" onClick={() => handleRemoveSpec(index)}>
-                                    <FaTimes />
-                                </button>
+                            <div key={index} className="si-spec-group mb-2">
+                                <div className="si-spec-row">
+                                    <input 
+                                        type="text" 
+                                        className={`si-input ${spec.key && !validateTextField(spec.key) ? 'is-invalid' : ''}`} 
+                                        placeholder="Label" 
+                                        value={spec.key} 
+                                        onChange={e => handleSpecChange(index, 'key', e.target.value)} 
+                                    />
+                                    <input 
+                                        type="text" 
+                                        className={`si-input ${spec.value && !validateTextField(spec.value) ? 'is-invalid' : ''}`} 
+                                        placeholder="Value" 
+                                        value={spec.value} 
+                                        onChange={e => handleSpecChange(index, 'value', e.target.value)} 
+                                    />
+                                    <button type="button" className="si-spec-remove-btn" onClick={() => handleRemoveSpec(index)}>
+                                        <FaTimes />
+                                    </button>
+                                </div>
+                                {((spec.key && !validateTextField(spec.key)) || (spec.value && !validateTextField(spec.value))) && (
+                                    <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '2px', marginLeft: '4px' }}>
+                                        {getTextFieldError('Specification')}
+                                    </p>
+                                )}
                             </div>
                         ))}
                     </div>

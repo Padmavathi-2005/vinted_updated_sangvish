@@ -22,23 +22,25 @@ import WishlistContext from '@/context/WishlistContext';
 import CurrencyContext from '@/context/CurrencyContext';
 import CartContext from '@/context/CartContext';
 import ItemCard from '@/components/common/ItemCard';
-import Meta from '@/components/common/Meta';
 import { usePopup } from '@/components/common/Popup';
 import '@/app/styles/ItemDetail.css';
 import CustomSelect from '@/components/common/CustomSelect';
 import { getImageUrl, getItemImageUrl, safeString } from '@/utils/constants';
 import Link from 'next/link';
+import { validateTextField, getTextFieldError } from '@/utils/validation';
 import { Modal, Button } from 'react-bootstrap';
+import dynamic from 'next/dynamic';
 
 const RECENTLY_VIEWED_KEY = 'vinted_recently_viewed';
 const MAX_RECENT = 12;
 
 const addToRecentlyViewed = (itemId) => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !itemId) return;
     try {
+        const idStr = itemId.toString();
         let list = JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) || '[]');
-        list = list.filter(id => id !== itemId);
-        list.unshift(itemId);
+        list = list.filter(id => id !== idStr);
+        list.unshift(idStr);
         if (list.length > MAX_RECENT) list = list.slice(0, MAX_RECENT);
         localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(list));
     } catch { /* silent */ }
@@ -47,8 +49,9 @@ const addToRecentlyViewed = (itemId) => {
 const getRecentlyViewedIds = (excludeId) => {
     if (typeof window === 'undefined') return [];
     try {
+        const excludeStr = excludeId ? excludeId.toString() : '';
         const list = JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) || '[]');
-        return list.filter(id => id !== excludeId);
+        return list.filter(id => id !== excludeStr);
     } catch { return []; }
 };
 
@@ -67,7 +70,7 @@ const ItemDetailContent = () => {
     const router = useRouter();
     const { user, login } = useContext(AuthContext);
     const { isWishlisted, addToWishlist, removeFromWishlist } = useContext(WishlistContext);
-    const { formatPrice, currentCurrency, defaultCurrency } = useContext(CurrencyContext);
+    const { formatPrice, convertPrice, currentCurrency, defaultCurrency } = useContext(CurrencyContext);
     const { addToCart, isInCart } = useContext(CartContext);
     const { showPopup, PopupComponent } = usePopup();
     const { t } = useTranslation();
@@ -76,6 +79,7 @@ const ItemDetailContent = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeImg, setActiveImg] = useState(0);
+    const [isPortrait, setIsPortrait] = useState(false);
     const [lightbox, setLightbox] = useState(false);
     const [lightboxZoom, setLightboxZoom] = useState(false);
     const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
@@ -117,7 +121,8 @@ const ItemDetailContent = () => {
                 setHoveredSide(null);
                 const res = await axios.get(`/api/items/${id}`);
                 setItem(res.data);
-                addToRecentlyViewed(id);
+                // Always store the unique _id, not the slug/id from URL
+                addToRecentlyViewed(res.data._id);
             } catch (err) {
                 setError(err.response?.data?.message || 'Item not found.');
             } finally {
@@ -137,15 +142,40 @@ const ItemDetailContent = () => {
 
     // Fetch recently viewed
     useEffect(() => {
-        if (!id) return;
-        const recentIds = getRecentlyViewedIds(id);
+        if (!item?._id) return;
+        const recentIds = getRecentlyViewedIds(item._id);
         if (recentIds.length === 0) { setRecentItems([]); return; }
         Promise.all(
-            recentIds.slice(0, 5).map(rid =>
+            recentIds.slice(0, 6).map(rid =>
                 axios.get(`/api/items/${rid}`).then(r => r.data).catch(() => null)
             )
-        ).then(items => setRecentItems(items.filter(Boolean)));
-    }, [id]);
+        ).then(items => {
+            const filtered = items.filter(Boolean);
+            // Deduplicate by ID just in case
+            const unique = [];
+            const seen = new Set();
+            filtered.forEach(i => {
+                const uid = i._id?.toString() || i._id;
+                if (!seen.has(uid)) {
+                    seen.add(uid);
+                    unique.push(i);
+                }
+            });
+            setRecentItems(unique.slice(0, 5));
+        });
+    }, [item?._id]);
+
+    useEffect(() => {
+        const anyOpen = offerModal || shareModal || reportModal || loginPopup;
+        if (anyOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [offerModal, shareModal, reportModal, loginPopup]);
 
     const getImageSrc = (path) =>
         getItemImageUrl(path);
@@ -229,18 +259,36 @@ const ItemDetailContent = () => {
         if (!offerAmount || parseFloat(offerAmount) <= 0) return;
         setOfferSending(true);
         try {
-            const targetCurrency = currentCurrency || defaultCurrency;
-            let rate = targetCurrency?.exchange_rate || 1;
-            let baseRate = item.currency_id?.exchange_rate || 1;
-            const offerInBaseCurrency = (parseFloat(offerAmount) / rate) * baseRate;
+            const currentEffectivePrice = item.accepted_offer ? item.accepted_offer.amount : item.price;
+            const minAllowedOffer = currentEffectivePrice * 0.7;
 
-            const msg = `💰 Offer: ${formatPrice(offerInBaseCurrency, item.currency_id)}${offerMsg ? `\n\n${offerMsg}` : ''}`;
+            // Convert offer amount (in user currency) to item's local currency for backend storage/comparison
+            const offerInItemCurrency = convertPrice(parseFloat(offerAmount), currentCurrency, item.currency_id);
+
+            if (offerInItemCurrency > currentEffectivePrice) {
+                showPopup({
+                    type: 'error',
+                    title: t('item_detail.offer_too_high_title', 'Offer Too High'),
+                    message: `Your offer cannot be higher than the current effective price (${formatPrice(currentEffectivePrice, item.currency_id)})`
+                });
+                return;
+            }
+
+            if (offerInItemCurrency < minAllowedOffer) {
+                showPopup({
+                    type: 'error',
+                    title: t('item_detail.offer_too_low_title', 'Offer Too Low'),
+                    message: `Your offer is too low. The minimum allowed offer is ${formatPrice(minAllowedOffer, item.currency_id)} (70% of the price).`
+                });
+                return;
+            }
+
             const res = await axios.post('/api/messages', {
                 receiver_id: item.seller_id?._id,
-                message: msg,
+                message: offerMsg || `Offer of ${formatPrice(offerInItemCurrency, item.currency_id)} for "${item.title}"`,
                 item_id: item._id,
                 message_type: 'offer',
-                offer_amount: offerInBaseCurrency
+                offer_amount: offerInItemCurrency
             });
             const convId = res.data.conversation?._id || res.data.conversation_id || res.data._id;
             setOfferModal(false);
@@ -254,19 +302,53 @@ const ItemDetailContent = () => {
         }
     };
 
+    // Real-time offer validation
+    const getOfferValidation = () => {
+        if (!offerModal || !item) return { valid: false, canSubmit: false, errors: {} };
+
+        let errors = {};
+        const amount = parseFloat(offerAmount);
+
+        // Amount checks (only if something is typed)
+        if (offerAmount && (isNaN(amount) || amount <= 0)) {
+            errors.amount = t('item_detail.invalid_amount', 'Please enter a valid amount');
+        } else if (amount > 0) {
+            const currentEffectivePrice = item.accepted_offer ? item.accepted_offer.amount : item.price;
+            const convertedPrice = convertPrice(currentEffectivePrice, item.currency_id);
+            const minAllowed = convertedPrice * 0.7;
+
+            if (amount > convertedPrice + 0.01) {
+                errors.amount = t('item_detail.offer_too_high', 'Offer cannot be higher than current price');
+            } else if (amount < minAllowed - 0.01) {
+                errors.amount = t('item_detail.offer_too_low', 'Offer must be at least 70% of the price');
+            }
+        }
+
+        // Message checks (optional, but validated if present)
+        if (offerMsg.length > 300) {
+            errors.message = t('item_detail.msg_too_long', 'Message is too long (max 300 chars)');
+        }
+
+        const hasErrors = Object.keys(errors).length > 0;
+        const canSubmit = amount > 0 && !hasErrors;
+
+        return { valid: !hasErrors, canSubmit, errors };
+    };
+
+    const offerValidation = getOfferValidation();
+
     const handleApplyDiscount = async () => {
         setDiscountError('');
         setDiscountSuccess('');
-        const newPrice = parseFloat(discountInput);
-        if (isNaN(newPrice) || newPrice <= 0) {
-            setDiscountError('Please enter a valid price.');
+        const percentage = parseFloat(discountInput);
+        if (isNaN(percentage) || percentage <= 0 || percentage >= 100) {
+            setDiscountError('Please enter a valid percentage (1-99).');
             return;
         }
+
         const basePrice = item.original_price > 0 ? item.original_price : item.price;
-        if (newPrice >= basePrice) {
-            setDiscountError(`New price must be lower than the original price (${formatPrice(basePrice, item.currency_id)}).`);
-            return;
-        }
+        const newPrice = parseFloat((basePrice * (1 - percentage / 100)).toFixed(2));
+
         setDiscountApplying(true);
         try {
             await axios.put(`/api/items/${id}/discount`, { discounted_price: newPrice });
@@ -274,8 +356,7 @@ const ItemDetailContent = () => {
             const res = await axios.get(`/api/items/${id}`);
             setItem(res.data);
             setDiscountInput('');
-            const pct = Math.round(((basePrice - newPrice) / basePrice) * 100);
-            setDiscountSuccess(`✅ Discount applied! ${pct}% off — new price: ${formatPrice(newPrice, item.currency_id)}`);
+            setDiscountSuccess(`✅ Discount applied! ${percentage}% off — new price: ${formatPrice(newPrice, item.currency_id)}`);
         } catch (err) {
             setDiscountError(err.response?.data?.message || 'Failed to apply discount.');
         } finally {
@@ -304,6 +385,15 @@ const ItemDetailContent = () => {
         if (!user) {
             setLoginAction('report');
             setLoginPopup(true);
+            return;
+        }
+
+        if (!validateTextField(reportMsg)) {
+            showPopup({
+                type: 'error',
+                title: 'Invalid Details',
+                message: getTextFieldError('Additional Details')
+            });
             return;
         }
 
@@ -382,6 +472,17 @@ const ItemDetailContent = () => {
     const handleThumbClick = (idx) => {
         setActiveImg(idx);
         setHoveredSide(null);
+        setIsPortrait(false); // Reset orientation state before loading new image
+    };
+
+    const handleImageLoad = (e) => {
+        const { naturalWidth, naturalHeight } = e.target;
+        // Adjusted requirement: Portrait triggers if height >= 1.7 * width
+        if (naturalHeight >= 1.4 * naturalWidth) {
+            setIsPortrait(true);
+        } else {
+            setIsPortrait(false);
+        }
     };
 
     if (loading) {
@@ -442,14 +543,14 @@ const ItemDetailContent = () => {
         ...(item.attributes || []).map(attr => ({ icon: <FaTag />, label: safeString(attr.key), value: safeString(attr.value) })),
     ].filter(Boolean);
 
+    const shortDesc = item.short_description || (item.description
+        ? item.description.length > 120
+            ? item.description.substring(0, 117) + '...'
+            : item.description
+        : '');
+
     return (
         <div className="id-page">
-            <Meta
-                title={item.title}
-                description={item.description || `Buy ${item.title} on Resale Marketplace.`}
-                image={getImageSrc(images[0])}
-                type="product"
-            />
             <div className="id-container">
                 {/* Breadcrumb */}
                 <div className="id-breadcrumb" style={{ gridColumn: '1 / -1' }}>
@@ -465,11 +566,23 @@ const ItemDetailContent = () => {
                 <div className="id-main-content-grid">
                     {/* ─── Left Column: Gallery ─── */}
                     <div className="id-gallery-col">
-                        <div className="id-gallery-layout">
+                        <div className={`id-gallery-layout ${isPortrait ? 'has-portrait' : ''}`}>
                             {/* Main Image */}
-                            <div className="id-main-img-wrapper" onClick={() => setLightbox(true)}>
-                                <img src={getImageSrc(images[displayedImg])} alt={item.title} className="id-main-img" onError={handleImageError} />
-                                <div className="id-condition-badge" style={{ backgroundColor: condCfg.color }}>{condLabel}</div>
+                            <div className={`id-main-img-wrapper ${isPortrait ? 'portrait-mode' : ''}`} onClick={() => setLightbox(true)}>
+                                <img
+                                    src={getImageSrc(images[displayedImg])}
+                                    alt={item.title}
+                                    className="id-main-img"
+                                    onError={handleImageError}
+                                    onLoad={handleImageLoad}
+                                />
+                                {item.is_sold || item.status === 'sold' || item.is_ordered ? (
+                                    <div className="id-sold-overlay">
+                                        <span>ORDERED</span>
+                                    </div>
+                                ) : (
+                                    <div className="id-condition-badge" style={{ backgroundColor: condCfg.color }}>{condLabel}</div>
+                                )}
                                 <div className="id-zoom-hint"><FaSearchPlus /> {t('item_detail.click_zoom')}</div>
 
                                 {/* Overlay: Stats */}
@@ -484,6 +597,7 @@ const ItemDetailContent = () => {
                                         className={`id-overlay-btn ${isLiked ? 'liked' : ''}`}
                                         onClick={handleWishlistToggle}
                                         title={isLiked ? 'Remove from wishlist' : 'Add to wishlist'}
+                                        disabled={item.is_sold || item.status === 'sold' || item.is_ordered}
                                     >
                                         {isLiked ? <FaHeart /> : <FaRegHeart />}
                                     </button>
@@ -538,6 +652,12 @@ const ItemDetailContent = () => {
                     <div className="id-info-col">
                         {/* PRICE SECTION — FIRST */}
                         <div className="id-price-card">
+                            {(item.is_sold || item.status === 'sold' || item.is_ordered) && (
+                                <div className="id-sold-banner">
+                                    <FaCheckCircle />
+                                    <span>This item has been ordered and is no longer available.</span>
+                                </div>
+                            )}
                             <h1 className="id-item-title">{safeString(item.title)}</h1>
                             <div className="id-price-row">
                                 <div>
@@ -614,6 +734,12 @@ const ItemDetailContent = () => {
                             <div className="id-desc-box">
                                 <h3 className="id-box-title">{t('item_detail.description')}</h3>
                                 <p className="id-description">{safeString(item.description)}</p>
+                                {(item.location_label || item.location) && (
+                                    <div className="id-location-info-small mt-3 pt-3 border-top d-flex align-items-center gap-2 text-muted small">
+                                        <FaMapMarkerAlt style={{ color: '#ef4444' }} />
+                                        <span>{item.location_label || item.location}</span>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -624,7 +750,7 @@ const ItemDetailContent = () => {
                                 </Link>
 
                                 {/* ── Seller Discount Panel ── */}
-                                {!item.is_sold && item.status !== 'sold' && (
+                                {!item.is_sold && item.status !== 'sold' && !item.is_ordered && (
                                     <div style={{
                                         marginTop: '16px', padding: '16px', borderRadius: '12px',
                                         border: '1.5px dashed #e2e8f0', background: '#fafafa'
@@ -644,38 +770,38 @@ const ItemDetailContent = () => {
                                             </div>
                                         ) : (
                                             <div style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: '10px' }}>
-                                                Current price: <strong>{formatPrice(item.price, item.currency_id)}</strong> — Enter a lower price below to apply a discount.
+                                                Current price: <strong>{formatPrice(item.price, item.currency_id)}</strong> — Enter a discount percentage below.
                                             </div>
                                         )}
 
                                         {/* Live preview */}
-                                        {discountInput && !isNaN(parseFloat(discountInput)) && parseFloat(discountInput) > 0 && (() => {
+                                        {discountInput && !isNaN(parseFloat(discountInput)) && parseFloat(discountInput) > 0 && parseFloat(discountInput) < 100 && (() => {
                                             const base = item.original_price > 0 ? item.original_price : item.price;
-                                            const newP = parseFloat(parseFloat(discountInput).toFixed(2));
-                                            if (newP > 0 && newP < base) {
-                                                const pct = Math.round(((base - newP) / base) * 100);
-                                                return (
-                                                    <div style={{ fontSize: '0.82rem', marginBottom: '8px', color: '#16a34a', fontWeight: '600' }}>
-                                                        Preview: <span style={{ textDecoration: 'line-through', color: '#94a3b8' }}>{formatPrice(base, item.currency_id)}</span> → <span style={{ color: '#ef4444' }}>{formatPrice(newP, item.currency_id)}</span> <span style={{ background: '#ef4444', color: 'white', borderRadius: '4px', padding: '1px 5px', fontSize: '0.72rem' }}>-{pct}% OFF</span>
-                                                    </div>
-                                                );
-                                            }
-                                            return null;
+                                            const pct = parseFloat(discountInput);
+                                            const newP = parseFloat((base * (1 - pct / 100)).toFixed(2));
+                                            return (
+                                                <div style={{ fontSize: '0.82rem', marginBottom: '8px', color: '#16a34a', fontWeight: '600' }}>
+                                                    Preview: <span style={{ textDecoration: 'line-through', color: '#94a3b8' }}>{formatPrice(base, item.currency_id)}</span> → <span style={{ color: '#ef4444' }}>{formatPrice(newP, item.currency_id)}</span> <span style={{ background: '#ef4444', color: 'white', borderRadius: '4px', padding: '1px 5px', fontSize: '0.72rem' }}>-{pct}% OFF</span>
+                                                </div>
+                                            );
                                         })()}
 
                                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                            <input
-                                                type="number"
-                                                min="0.01"
-                                                step="0.01"
-                                                value={discountInput}
-                                                onChange={e => { setDiscountInput(e.target.value); setDiscountError(''); setDiscountSuccess(''); }}
-                                                placeholder={`New selling price (below ${formatPrice(item.original_price > 0 ? item.original_price : item.price, item.currency_id)})`}
-                                                style={{
-                                                    border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '8px 12px',
-                                                    fontSize: '0.9rem', flex: 1, minWidth: '180px', outline: 'none'
-                                                }}
-                                            />
+                                            <div style={{ position: 'relative', flex: 1, minWidth: '180px' }}>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="99"
+                                                    value={discountInput}
+                                                    onChange={e => { setDiscountInput(e.target.value); setDiscountError(''); setDiscountSuccess(''); }}
+                                                    placeholder="Enter discount %"
+                                                    style={{
+                                                        border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '8px 30px 8px 12px',
+                                                        fontSize: '0.9rem', width: '100%', outline: 'none', boxSizing: 'border-box'
+                                                    }}
+                                                />
+                                                <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontWeight: '700' }}>%</span>
+                                            </div>
                                             <button
                                                 onClick={handleApplyDiscount}
                                                 disabled={discountApplying || !discountInput}
@@ -709,27 +835,35 @@ const ItemDetailContent = () => {
                             </>
                         ) : (
                             <div className={`id-cta-group${!item.negotiable ? ' no-offer' : ''}`}>
-                                {/* Row 1: Buy Now */}
-                                <button className="id-btn-buy" style={{ gridColumn: '1 / -1' }} onClick={handleBuyNow}>
-                                    <FaShoppingBag /> {t('item_detail.buy_now')}
-                                </button>
-                                {/* Row 2: Cart + Offer */}
-                                {user && isInCart(item._id) ? (
-                                    <Link href="/cart" className="id-btn-in-cart">
-                                        <FaCheckCircle /> {t('item_detail.in_cart')}
-                                    </Link>
+                                {item.is_sold || item.status === 'sold' || item.is_ordered ? (
+                                    <button className="id-btn-sold" disabled>
+                                        <FaShoppingBag /> ORDERED
+                                    </button>
                                 ) : (
-                                    <button className="id-btn-cart" onClick={handleAddToCart}>
-                                        <FaShoppingCart /> {t('item_detail.add_to_cart')}
-                                    </button>
-                                )}
-                                {item.negotiable && (
-                                    <button className="id-btn-offer" onClick={() => {
-                                        if (!requireLogin('offer')) return;
-                                        setOfferModal(true);
-                                    }}>
-                                        <FaHandshake /> {t('item_detail.make_offer')}
-                                    </button>
+                                    <>
+                                        {/* Row 1: Buy Now */}
+                                        <button className="id-btn-buy" style={{ gridColumn: '1 / -1' }} onClick={handleBuyNow}>
+                                            <FaShoppingBag /> {t('item_detail.buy_now')}
+                                        </button>
+                                        {/* Row 2: Cart + Offer */}
+                                        {user && isInCart(item._id) ? (
+                                            <Link href="/cart" className="id-btn-in-cart">
+                                                <FaCheckCircle /> {t('item_detail.in_cart')}
+                                            </Link>
+                                        ) : (
+                                            <button className="id-btn-cart" onClick={handleAddToCart}>
+                                                <FaShoppingCart /> {t('item_detail.add_to_cart')}
+                                            </button>
+                                        )}
+                                        {item.negotiable && (
+                                            <button className="id-btn-offer" onClick={() => {
+                                                if (!requireLogin('offer')) return;
+                                                setOfferModal(true);
+                                            }}>
+                                                <FaHandshake /> {t('item_detail.make_offer')}
+                                            </button>
+                                        )}
+                                    </>
                                 )}
                                 {/* Row 3: Message Seller (full width) */}
                                 <button
@@ -796,6 +930,7 @@ const ItemDetailContent = () => {
                 </div>
             </div>
 
+
             {/* ─── Similar Products ─── */}
             {similarItems.length > 0 && (
                 <div className="id-section-below">
@@ -834,7 +969,7 @@ const ItemDetailContent = () => {
 
             {/* Lightbox / Modals etc. could be added here or in PopupComponent */}
             <PopupComponent />
-            
+
             {/* ─── Make Offer Modal ─── */}
             {offerModal && (
                 <div className="id-offer-overlay" onClick={() => setOfferModal(false)}>
@@ -846,16 +981,21 @@ const ItemDetailContent = () => {
                             <p>{t('item_detail.offer_desc')} <strong>{item.title}</strong></p>
                         </div>
                         <div className="id-offer-current-price">
-                            <span>{t('item_detail.listed_price')}</span>
-                            <strong>{formatPrice(item.price, item.currency_id)}</strong>
+                            <span>{item.accepted_offer ? t('item_detail.accepted_offer_price', 'Accepted Offer') : t('item_detail.listed_price')}</span>
+                            <strong style={{ color: item.accepted_offer ? '#059669' : 'inherit' }}>
+                                {formatPrice(item.accepted_offer ? item.accepted_offer.amount : item.price, item.currency_id)}
+                            </strong>
+                        </div>
+                        <div className="id-offer-min-allowed" style={{ textAlign: 'center', marginBottom: '16px', fontSize: '0.8rem', color: '#64748b' }}>
+                            {t('item_detail.min_offer_hint', 'Minimum allowed offer (70%)')}: <strong>{formatPrice((item.accepted_offer ? item.accepted_offer.amount : item.price) * 0.7, item.currency_id)}</strong>
                         </div>
                         <div className="id-offer-form">
                             <label className="id-offer-label">{t('item_detail.your_offer')}</label>
-                            <div className="id-offer-input-wrap">
+                            <div className={`id-offer-input-wrap ${offerValidation.errors.amount ? 'has-error' : ''}`}>
                                 <span className="id-offer-currency">{(currentCurrency || defaultCurrency)?.symbol || '₹'}</span>
                                 <input
                                     type="number"
-                                    className="id-offer-input"
+                                    className={`id-offer-input ${offerValidation.errors.amount ? 'is-invalid' : ''}`}
                                     placeholder="0.00"
                                     value={offerAmount}
                                     onChange={e => setOfferAmount(e.target.value)}
@@ -863,18 +1003,37 @@ const ItemDetailContent = () => {
                                     autoFocus
                                 />
                             </div>
+                            {offerValidation.errors.amount && (
+                                <div className="id-offer-error-text" style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '4px', fontWeight: '600' }}>
+                                    {offerValidation.errors.amount}
+                                </div>
+                            )}
                             <label className="id-offer-label" style={{ marginTop: '16px' }}>{t('item_detail.optional_msg')}</label>
                             <textarea
-                                className="id-offer-textarea"
+                                className={`id-offer-textarea ${offerValidation.errors.message ? 'is-invalid' : ''}`}
                                 placeholder={t('item_detail.msg_placeholder')}
                                 value={offerMsg}
                                 onChange={e => setOfferMsg(e.target.value)}
                                 rows={3}
                             />
+                            {offerValidation.errors.message && (
+                                <div className="id-offer-error-text" style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '4px', fontWeight: '600' }}>
+                                    {offerValidation.errors.message}
+                                </div>
+                            )}
+                            <div className="id-offer-msg-counter" style={{
+                                textAlign: 'right',
+                                fontSize: '0.7rem',
+                                marginTop: '4px',
+                                color: offerMsg.length > 300 ? '#ef4444' : '#94a3b8',
+                                fontWeight: offerMsg.length > 300 ? '700' : '500'
+                            }}>
+                                {offerMsg.length} / 300
+                            </div>
                             <button
                                 className="id-offer-submit"
                                 onClick={handleMakeOffer}
-                                disabled={!offerAmount || parseFloat(offerAmount) <= 0 || offerSending}
+                                disabled={!offerValidation.canSubmit || offerSending}
                             >
                                 {offerSending ? t('item_detail.sending') : t('item_detail.send_offer')}
                             </button>
@@ -894,6 +1053,29 @@ const ItemDetailContent = () => {
                             <p>{t('item_detail.share_desc')}</p>
                         </div>
 
+                        {/* Product Preview */}
+                        <div className="id-share-preview">
+                            <div className="id-share-preview-img-wrap">
+                                <img src={getImageSrc(images[0])} alt={item.title} className="id-share-preview-img" />
+                            </div>
+                            <div className="id-share-preview-info">
+                                <h3 className="id-share-preview-title">{item.title}</h3>
+                                <div className="id-share-preview-price">
+                                    {formatPrice(item.accepted_offer ? item.accepted_offer.amount : item.price, item.currency_id)}
+                                    {item.original_price > 0 && item.original_price > item.price && (
+                                        <span className="id-share-preview-original">
+                                            {formatPrice(item.original_price, item.currency_id)}
+                                        </span>
+                                    )}
+                                </div>
+                                {shortDesc && (
+                                    <div className="id-share-preview-desc">
+                                        {shortDesc}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                         <div className="id-share-grid">
                             <div className="id-share-item" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(window.location.href)}`)}>
                                 <div className="id-share-icon whatsapp"><FaWhatsapp /></div>
@@ -907,7 +1089,7 @@ const ItemDetailContent = () => {
                                 <div className="id-share-icon twitter"><FaXTwitter /></div>
                                 <span>X / Twitter</span>
                             </div>
-                            <div 
+                            <div
                                 className="id-share-item"
                                 onClick={() => {
                                     const subject = encodeURIComponent(item.title);
@@ -1037,17 +1219,22 @@ const ItemDetailContent = () => {
 
                             <label className="id-offer-label">Additional Details</label>
                             <textarea
-                                className="id-offer-textarea"
+                                className={`id-offer-textarea ${reportMsg && !validateTextField(reportMsg) ? 'invalid' : ''}`}
                                 placeholder="Describe the issue in detail..."
                                 value={reportMsg}
                                 onChange={e => setReportMsg(e.target.value)}
                                 rows={4}
                             />
+                            {reportMsg && !validateTextField(reportMsg) && (
+                                <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px', fontWeight: '500' }}>
+                                    {getTextFieldError('Additional Details')}
+                                </p>
+                            )}
                             <button
                                 className="id-offer-submit"
                                 style={{ background: '#ef4444', color: '#fff', border: 'none' }}
                                 onClick={handleReportSubmit}
-                                disabled={!reportReason || !reportMsg || reportSending}
+                                disabled={!reportReason || !reportMsg || reportSending || !validateTextField(reportMsg)}
                             >
                                 {reportSending ? "Sending..." : "Submit Report"}
                             </button>
@@ -1063,15 +1250,15 @@ const ItemDetailContent = () => {
                         <button className="id-lightbox-close" onClick={() => { setLightbox(false); setLightboxZoom(false); }}>
                             <FaTimes />
                         </button>
-                        <div 
+                        <div
                             className={`id-lightbox-img-container ${lightboxZoom ? 'zoomed' : ''}`}
                             onClick={() => setLightboxZoom(!lightboxZoom)}
                             onMouseMove={handleLightboxMouseMove}
                             style={{ cursor: lightboxZoom ? 'zoom-out' : 'zoom-in' }}
                         >
-                            <img 
-                                src={getImageSrc(images[activeImg])} 
-                                alt={item.title} 
+                            <img
+                                src={getImageSrc(images[activeImg])}
+                                alt={item.title}
                                 className="id-lightbox-img"
                                 style={lightboxZoom ? {
                                     transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
@@ -1082,8 +1269,8 @@ const ItemDetailContent = () => {
                         {images.length > 1 && (
                             <div className="id-lightbox-thumbs">
                                 {images.map((img, i) => (
-                                    <div 
-                                        key={i} 
+                                    <div
+                                        key={i}
                                         className={`id-lb-thumb ${i === activeImg ? 'active' : ''}`}
                                         onClick={() => setActiveImg(i)}
                                     >

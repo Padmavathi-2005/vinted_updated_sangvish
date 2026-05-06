@@ -9,6 +9,8 @@ import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaApple, FaFac
 import { FaXTwitter } from 'react-icons/fa6';
 import AuthContext from '@/context/AuthContext';
 import useRecaptcha from '@/hooks/useRecaptcha';
+import { validateTextField, validateAlphaField, getAlphaError, getTextFieldError } from '@/utils/validation';
+import Meta from '@/components/common/Meta';
 import '@/app/styles/Auth.css';
 
 export default function Register() {
@@ -72,6 +74,18 @@ export default function Register() {
         if (!email || !username || !password) {
             return setError('Please fill all required fields');
         }
+
+        if (!validateTextField(username)) {
+            return setError(getTextFieldError('Display Name'));
+        }
+
+        if (first_name && !validateAlphaField(first_name)) {
+            return setError(getAlphaError('First Name'));
+        }
+
+        if (last_name && !validateAlphaField(last_name)) {
+            return setError(getAlphaError('Last Name'));
+        }
         setLoading(true);
         setError('');
         try {
@@ -125,8 +139,7 @@ export default function Register() {
 
     return (
         <>
-            <title>Register | Resale Marketplace</title>
-            <meta name="description" content="Join our marketplace community and start buying or selling fashion today." />
+            <Meta title="Register" description="Join our community to buy and sell pre-loved fashion." />
             <div className="auth-page">
                 <div className="auth-card">
                     {step === 2 && (

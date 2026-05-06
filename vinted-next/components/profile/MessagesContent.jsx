@@ -8,21 +8,13 @@ import AuthContext from '@/context/AuthContext';
 import NotificationContext from '@/context/NotificationContext';
 import CurrencyContext from '@/context/CurrencyContext';
 import { useTranslation } from 'react-i18next';
-import { FaPaperPlane, FaUser, FaClock, FaCheck, FaTimes, FaInbox, FaBan, FaEllipsisV, FaEnvelope, FaShoppingBag, FaArrowLeft, FaPlus } from 'react-icons/fa';
+import { FaPaperPlane, FaUser, FaClock, FaCheck, FaTimes, FaInbox, FaBan, FaEllipsisV, FaEnvelope, FaShoppingBag, FaArrowLeft, FaPlus, FaBoxOpen } from 'react-icons/fa';
 import { getImageUrl, safeString } from '@/utils/constants';
 import '@/app/styles/Messaging.css';
-import { io as socketIO } from 'socket.io-client';
+import getSocket from '@/utils/socket';
 
 // Helper for socket initialization - only on client
-let socket;
-if (typeof window !== 'undefined') {
-    socket = socketIO('/', {
-        path: '/socket.io/',
-        transports: ['polling', 'websocket'],
-        reconnection: true,
-        reconnectionAttempts: 5
-    });
-}
+const socket = getSocket();
 
 const getMarketplaceName = (siteNameStrOrObj) => {
     return safeString(siteNameStrOrObj) || 'Marketplace';
@@ -451,7 +443,7 @@ const MessagesContent = () => {
                                 return (
                                     <div key={u._id} className="pd-user-picker-item">
                                         <div className="pd-avatar-wrapper-mini" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '50%', overflow: 'hidden', width: '36px', height: '36px' }}>
-                                            <div className="pd-avatar-placeholder-mini" style={{ fontSize: '14px', fontWeight: '800', color: '#94a3b8' }}>
+                                            <div className="pd-avatar-placeholder-mini" style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>
                                                 {safeString(u.username)?.charAt(0).toUpperCase()}
                                             </div>
                                             {u.profile_image && (
@@ -540,7 +532,7 @@ const MessagesContent = () => {
                                     const other = otherData?.user;
                                     return (
                                         <>
-                                            <div className="pd-avatar-placeholder-mini" style={{ fontSize: '14px', fontWeight: '800', color: '#94a3b8' }}>
+                                            <div className="pd-avatar-placeholder-mini" style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>
                                                 {safeString(other?.username || other?.name)?.charAt(0).toUpperCase()}
                                             </div>
                                             {other?.profile_image && (
@@ -593,7 +585,7 @@ const MessagesContent = () => {
                                         )
                                     ) : (
                                         <>
-                                            <div className="pd-avatar-placeholder-mini" style={{ fontSize: '14px', fontWeight: '800', color: '#94a3b8' }}>
+                                            <div className="pd-avatar-placeholder-mini" style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>
                                                 {safeString(other?.username)?.charAt(0).toUpperCase()}
                                             </div>
                                             {other?.profile_image && (
@@ -698,7 +690,7 @@ const MessagesContent = () => {
                                             )
                                         ) : (
                                             <>
-                                                <div className="pd-avatar-placeholder-mini" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '800', color: '#94a3b8' }}>
+                                                <div className="pd-avatar-placeholder-mini" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '800', color: 'white' }}>
                                                     {safeString(headerOther?.username)?.charAt(0).toUpperCase()}
                                                 </div>
                                                 {headerOther?.profile_image && (
@@ -716,7 +708,12 @@ const MessagesContent = () => {
                                     <div className="pd-msg-user-meta">
                                         <div className="fw-bold">{isMarketplace ? headerSiteName : safeString(headerOther?.username)}</div>
                                         {isMarketplace ? (
-                                            <div className="text-muted small">{headerOtherOnModel === 'Admin' ? 'Official Support' : 'Order Notifications'}</div>
+                                            <div className="text-muted small">
+                                                {headerOtherOnModel === 'Admin' ? 'Official Support' : 'Order Notifications'}
+                                                <span className="ms-2 badge bg-success-soft text-success">
+                                                    {t('profile.balance')}: {formatPrice(user?.balance || 0)}
+                                                </span>
+                                            </div>
                                         ) : (
                                             <div className="text-muted small">
                                                 {formatLastSeen(headerOther?.last_login)}
@@ -832,6 +829,14 @@ const MessagesContent = () => {
                                                                     <span className="text-primary fw-bold">{formatPrice(data.total_amount || data.item_price)}</span>
                                                                 </div>
                                                             </div>
+                                                            <div className="pd-rich-system-footer">
+                                                                <button 
+                                                                    className="pd-rich-system-btn primary"
+                                                                    onClick={() => router.push(`/profile?tab=orders&orderId=${data.order_id}`)}
+                                                                >
+                                                                    <FaBoxOpen size={14} /> {t('profile.view_order_details', 'View Order Details')}
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     );
                                                 } catch (e) {
@@ -848,6 +853,14 @@ const MessagesContent = () => {
                                                                 <p className="mb-1"><strong>Amount:</strong> <span className="text-success fw-bold">{formatPrice(data.amount, data.currency)}</span></p>
                                                                 <p className="mb-1 small"><strong>Method:</strong> {data.method || 'Bank Transfer'}</p>
                                                                 <p className="mb-0 xsmall text-muted">ID: {data.request_id}</p>
+                                                            </div>
+                                                            <div className="pd-rich-system-footer">
+                                                                <button 
+                                                                    className="pd-rich-system-btn secondary"
+                                                                    onClick={() => router.push('/profile?tab=payments&sub=wallet')}
+                                                                >
+                                                                    <FaWallet size={14} /> {t('wallet.view_wallet', 'View Wallet')}
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     );
@@ -881,21 +894,62 @@ const MessagesContent = () => {
 
                                         if (msg.message_type === 'offer') {
                                             const isReceiver = (msg.receiver_id?._id || msg.receiver_id)?.toString() === (user.id || user._id)?.toString();
-                                            const currentItem = msg.item_id || activeConv.item_id;
+                                            
+                                            // 1. Try to get populated item from message
+                                            let currentItem = msg.item_id && typeof msg.item_id === 'object' ? msg.item_id : null;
+                                            
+                                            // 2. If message only has ID string, check if it matches the populated conversation item
+                                            if (!currentItem && msg.item_id && activeConv.item_id) {
+                                                const msgItemId = msg.item_id.toString();
+                                                const convItemId = (activeConv.item_id._id || activeConv.item_id).toString();
+                                                if (msgItemId === convItemId && typeof activeConv.item_id === 'object') {
+                                                    currentItem = activeConv.item_id;
+                                                }
+                                            }
+                                            
                                             const currencyId = currentItem?.currency_id || settings?.default_currency;
-
                                             return (
                                                 <div key={msg._id} className={`pd-msg-item ${isSent ? 'sent' : 'received'}`}>
                                                     <div className="pd-msg-offer-card">
+                                                        {currentItem && (
+                                                            <div 
+                                                                 className="pd-msg-offer-item-context" 
+                                                                 onClick={() => router.push(`/items/${currentItem.slug || currentItem._id}`)}
+                                                                 style={{ cursor: 'pointer' }}>
+                                                                <div className="pd-msg-offer-item-thumb">
+                                                                    {getImageUrl(currentItem?.images?.[0]) ? (
+                                                                        <img src={getImageUrl(currentItem?.images?.[0])} alt={safeString(currentItem?.title)} />
+                                                                    ) : (
+                                                                        <div className="pd-msg-offer-item-placeholder">
+                                                                            <FaBoxOpen />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="pd-msg-offer-item-info">
+                                                                    <div className="pd-msg-offer-item-name">{safeString(currentItem?.title)}</div>
+                                                                    <div className="pd-msg-offer-item-price">
+                                                                        {t('item_detail.listed_price')}: {formatPrice(currentItem?.price, currencyId)}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                         <div className="pd-msg-offer-header">
-                                                            <FaShoppingBag /> {t('profile.offer_received', 'Offer Received')}
+                                                            <FaShoppingBag /> {isSent ? t('profile.offer_sent_for', 'Offer Sent for') : t('profile.offer_received_for', 'Offer Received for')} <strong>{safeString(currentItem?.title)}</strong>
                                                         </div>
-                                                        <div className="pd-msg-offer-amount">
-                                                            <span className="price-new">{formatPrice(msg.offer_amount, currencyId)}</span>
-                                                            {currentItem?.price && currentItem.price !== msg.offer_amount && (
-                                                                <span className="price-old">{formatPrice(currentItem.price, currencyId)}</span>
+                                                        <div className="pd-msg-offer-amount-section">
+                                                            <div className="pd-msg-offer-label">{t('profile.offered_price', 'OFFERED PRICE:')}</div>
+                                                            <div className="pd-msg-offer-value">{formatPrice(msg.offer_amount, currencyId)}</div>
+                                                            {currentItem?.price > 0 && msg.offer_amount < currentItem?.price && (
+                                                                <div className="pd-msg-offer-savings">
+                                                                    {Math.round(((currentItem?.price - msg.offer_amount) / currentItem?.price) * 100)}% {t('profile.off_listed_price', 'less than listed price')}
+                                                                </div>
                                                             )}
                                                         </div>
+                                                        {msg.message && !msg.message.startsWith('Offer of') && (
+                                                            <div className="pd-msg-offer-text">
+                                                                {msg.message}
+                                                            </div>
+                                                        )}
                                                         <div className={`pd-msg-offer-status-badge ${msg.offer_status}`}>
                                                             {t(`profile.offer_${msg.offer_status}`, msg.offer_status.toUpperCase())}
                                                         </div>
@@ -905,12 +959,17 @@ const MessagesContent = () => {
                                                                 <button className="reject" onClick={() => handleRespondToOffer(msg._id, 'declined')}>Decline</button>
                                                             </div>
                                                         )}
+                                                        {!isReceiver && msg.offer_status === 'pending' && (
+                                                            <div className="pd-msg-offer-actions" style={{ gridTemplateColumns: '1fr' }}>
+                                                                <button className="reject" onClick={() => handleRespondToOffer(msg._id, 'declined')}>Cancel Offer</button>
+                                                            </div>
+                                                        )}
                                                         {msg.offer_status === 'accepted' && currentItem && (
                                                             <div className="pd-msg-offer-actions" style={{ gridTemplateColumns: '1fr' }}>
                                                                 <button 
                                                                     className="accept" 
                                                                     onClick={() => {
-                                                                        const itemId = currentItem?._id || currentItem;
+                                                                        const itemId = currentItem?.slug || currentItem?._id || currentItem;
                                                                         if (itemId) {
                                                                             router.push(`/items/${itemId}`);
                                                                         }

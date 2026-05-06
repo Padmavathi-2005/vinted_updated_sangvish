@@ -3,7 +3,8 @@ import {
     FaCloudUploadAlt, FaSave, FaUndo, FaImage, FaChevronDown, 
     FaCcStripe, FaPaypal, FaChevronRight, FaPlus, FaTrash, 
     FaGoogle, FaFacebookSquare, FaApple, FaGlobe, FaShieldAlt,
-    FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube, FaTiktok, FaExternalLinkAlt
+    FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube, FaTiktok, FaExternalLinkAlt,
+    FaMapMarkerAlt, FaTruck, FaBox
 } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 import { Form, Button, Row, Col, Card, InputGroup, Container, Accordion, Nav } from 'react-bootstrap';
@@ -773,6 +774,360 @@ const DynamicSettings = () => {
         );
     };
 
+    const renderMapSettings = () => {
+        const provider = formData.map_provider || 'openstreetmap';
+        const googleKey = formData.google_maps_api_key || '';
+
+        return (
+            <div className="map-settings-section">
+                <div className="ds-section-title mb-1">MAP INTEGRATION</div>
+                <p className="ds-section-subtitle mb-4">Choose your map provider for item location display on the frontend</p>
+
+                {/* Provider Cards */}
+                <Row className="gy-4 mb-4">
+                    {/* OpenStreetMap Card */}
+                    <Col md={6}>
+                        <div
+                            className={`ds-gateway-card border rounded shadow-sm p-4 cursor-pointer ${provider === 'openstreetmap' ? 'border-primary' : ''}`}
+                            style={{ cursor: 'pointer', transition: 'all 0.2s', background: provider === 'openstreetmap' ? '#eff6ff' : '#fff' }}
+                            onClick={() => setFormData({ ...formData, map_provider: 'openstreetmap' })}
+                        >
+                            <div className="d-flex align-items-center gap-3 mb-3">
+                                <div style={{ fontSize: '2rem' }}>🗺️</div>
+                                <div>
+                                    <div className="fw-bold">OpenStreetMap</div>
+                                    <div className="xx-small text-muted">Free & Open Source — No API Key Needed</div>
+                                </div>
+                                {provider === 'openstreetmap' && (
+                                    <span className="ms-auto ds-status-badge active">✓ Selected</span>
+                                )}
+                            </div>
+                            <p className="xx-small text-muted mb-0">
+                                Powered by Leaflet.js + OpenStreetMap tiles. Free to use, no account required. 
+                                Geocoding via Nominatim API.
+                            </p>
+                        </div>
+                    </Col>
+
+                    {/* Google Maps Card */}
+                    <Col md={6}>
+                        <div
+                            className={`ds-gateway-card border rounded shadow-sm p-4 cursor-pointer ${provider === 'google' ? 'border-primary' : ''}`}
+                            style={{ cursor: 'pointer', transition: 'all 0.2s', background: provider === 'google' ? '#eff6ff' : '#fff' }}
+                            onClick={() => setFormData({ ...formData, map_provider: 'google' })}
+                        >
+                            <div className="d-flex align-items-center gap-3 mb-3">
+                                <FaGoogle style={{ fontSize: '1.8rem', color: '#4285F4' }} />
+                                <div>
+                                    <div className="fw-bold">Google Maps</div>
+                                    <div className="xx-small text-muted">Requires Google Maps API Key</div>
+                                </div>
+                                {provider === 'google' && (
+                                    <span className="ms-auto ds-status-badge active">✓ Selected</span>
+                                )}
+                            </div>
+                            <p className="xx-small text-muted mb-0">
+                                Official Google Maps JavaScript API. Requires a billing-enabled API key from Google Cloud Console.
+                            </p>
+                        </div>
+                    </Col>
+                </Row>
+
+                {/* Google API Key input — only show if Google selected */}
+                {provider === 'google' && (
+                    <div className="ds-gateway-card border rounded shadow-sm p-4 bg-white mb-4">
+                        <Row className="gy-3">
+                            <Col md={12}>
+                                <Form.Group>
+                                    <Form.Label className="form-label-bold">Google Maps API Key</Form.Label>
+                                    <Form.Control
+                                        type="password"
+                                        className="ds-input"
+                                        name="google_maps_api_key"
+                                        value={googleKey}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter your Google Maps JavaScript API Key"
+                                        autoComplete="new-password"
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={12}>
+                                <div className="ds-help-box">
+                                    <span className="ds-help-title">How to get a Google Maps API Key</span>
+                                    <ol className="mb-0 ps-3 xx-small text-muted">
+                                        <li className="mb-1">Go to the <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer" className="text-primary">Google Cloud Console</a>.</li>
+                                        <li className="mb-1">Create or select a project, then navigate to <b>APIs &amp; Services → Credentials</b>.</li>
+                                        <li className="mb-1">Click <b>Create Credentials → API Key</b>.</li>
+                                        <li className="mb-1">Enable the <b>Maps JavaScript API</b> and <b>Geocoding API</b> for your project.</li>
+                                        <li>Paste the key above and save settings.</li>
+                                    </ol>
+                                </div>
+                            </Col>
+                        </Row>
+                    </div>
+                )}
+
+                {/* Live Preview */}
+                <div className="ds-gateway-card border rounded shadow-sm p-4 bg-light">
+                    <div className="fw-bold small mb-2"><FaMapMarkerAlt className="text-danger me-2" />Live Preview</div>
+                    <p className="xx-small text-muted">
+                        {provider === 'openstreetmap'
+                            ? '✅ OpenStreetMap is active. No key required. The map will load using free tiles.'
+                            : googleKey
+                                ? '✅ Google Maps API key is set. The map will load using Google.'
+                                : '⚠️ Google Maps is selected but no API key has been provided. Please enter a key above.'}
+                    </p>
+                </div>
+            </div>
+        );
+    };
+
+    const renderShippingSettings = () => {
+        const provider = formData.shipping_provider || 'manual';
+        
+        return (
+            <div className="shipping-settings-section">
+                <div className="ds-section-title mb-1">SHIPPING INTEGRATION</div>
+                <p className="ds-section-subtitle mb-4">Choose your automated shipping provider for labels and tracking</p>
+
+                {/* Provider Cards */}
+                <Row className="gy-4 mb-4">
+                    {/* DHL Card */}
+                    <Col md={3}>
+                        <div
+                            className={`ds-gateway-card border rounded shadow-sm p-4 cursor-pointer ${provider === 'dhl' ? 'border-primary' : ''}`}
+                            style={{ cursor: 'pointer', transition: 'all 0.2s', background: provider === 'dhl' ? '#eff6ff' : '#fff' }}
+                            onClick={() => setFormData({ ...formData, shipping_provider: 'dhl' })}
+                        >
+                            <div className="d-flex align-items-center gap-3 mb-3">
+                                <div style={{ fontSize: '1.8rem' }}>📦</div>
+                                <div>
+                                    <div className="fw-bold">DHL Express</div>
+                                    <div className="xx-small text-muted">Direct Integration</div>
+                                </div>
+                                {provider === 'dhl' && (
+                                    <span className="ms-auto ds-status-badge active">✓</span>
+                                )}
+                            </div>
+                            <p className="xx-small text-muted mb-0">
+                                High-speed global shipping with direct DHL API sync.
+                            </p>
+                        </div>
+                    </Col>
+
+                    {/* Manual Card */}
+                    <Col md={3}>
+                        <div
+                            className={`ds-gateway-card border rounded shadow-sm p-4 cursor-pointer ${provider === 'manual' ? 'border-primary' : ''}`}
+                            style={{ cursor: 'pointer', transition: 'all 0.2s', background: provider === 'manual' ? '#eff6ff' : '#fff' }}
+                            onClick={() => setFormData({ ...formData, shipping_provider: 'manual' })}
+                        >
+                            <div className="d-flex align-items-center gap-3 mb-3">
+                                <div style={{ fontSize: '1.8rem' }}>📝</div>
+                                <div>
+                                    <div className="fw-bold">Manual</div>
+                                    <div className="xx-small text-muted">Fixed Rate</div>
+                                </div>
+                                {provider === 'manual' && (
+                                    <span className="ms-auto ds-status-badge active">✓</span>
+                                )}
+                            </div>
+                            <p className="xx-small text-muted mb-0">
+                                Seller manually enters tracking IDs. No API required. 
+                            </p>
+                        </div>
+                    </Col>
+
+                    {/* Shiprocket Card */}
+                    <Col md={3}>
+                        <div
+                            className={`ds-gateway-card border rounded shadow-sm p-4 cursor-pointer ${provider === 'shiprocket' ? 'border-primary' : ''}`}
+                            style={{ cursor: 'pointer', transition: 'all 0.2s', background: provider === 'shiprocket' ? '#eff6ff' : '#fff' }}
+                            onClick={() => setFormData({ ...formData, shipping_provider: 'shiprocket' })}
+                        >
+                            <div className="d-flex align-items-center gap-3 mb-3">
+                                <div style={{ fontSize: '1.8rem' }}>🚀</div>
+                                <div>
+                                    <div className="fw-bold">Shiprocket</div>
+                                    <div className="xx-small text-muted">Aggregator</div>
+                                </div>
+                                {provider === 'shiprocket' && (
+                                    <span className="ms-auto ds-status-badge active">✓</span>
+                                )}
+                            </div>
+                            <p className="xx-small text-muted mb-0">
+                                Automated labels via Shiprocket (India focus).
+                            </p>
+                        </div>
+                    </Col>
+
+                    {/* EasyPost Card */}
+                    <Col md={3}>
+                        <div
+                            className={`ds-gateway-card border rounded shadow-sm p-4 cursor-pointer ${provider === 'easypost' ? 'border-primary' : ''}`}
+                            style={{ cursor: 'pointer', transition: 'all 0.2s', background: provider === 'easypost' ? '#eff6ff' : '#fff' }}
+                            onClick={() => setFormData({ ...formData, shipping_provider: 'easypost' })}
+                        >
+                            <div className="d-flex align-items-center gap-3 mb-3">
+                                <div style={{ fontSize: '1.8rem' }}>🌎</div>
+                                <div>
+                                    <div className="fw-bold">EasyPost</div>
+                                    <div className="xx-small text-muted">Multi-Carrier</div>
+                                </div>
+                                {provider === 'easypost' && (
+                                    <span className="ms-auto ds-status-badge active">✓</span>
+                                )}
+                            </div>
+                            <p className="xx-small text-muted mb-0">
+                                Multi-carrier shipping for global marketplaces.
+                            </p>
+                        </div>
+                    </Col>
+                </Row>
+
+                {/* Flat Rate Setting */}
+                <div className="ds-gateway-card border rounded shadow-sm p-4 bg-white mb-4">
+                    <Row className="gy-3">
+                        <Col md={6}>
+                            <Form.Group>
+                                <Form.Label className="form-label-bold">Global Shipping Fee (Flat)</Form.Label>
+                                <InputGroup>
+                                    <InputGroup.Text>₹</InputGroup.Text>
+                                    <Form.Control
+                                        type="number"
+                                        className="ds-input"
+                                        name="flat_shipping_rate"
+                                        value={formData.flat_shipping_rate || ''}
+                                        onChange={handleInputChange}
+                                        placeholder="e.g. 200"
+                                    />
+                                </InputGroup>
+                                <Form.Text className="text-muted xx-small">Used when manual shipping is selected or as a fallback.</Form.Text>
+                            </Form.Group>
+                        </Col>
+                    </Row>
+                </div>
+
+                {/* Shiprocket Config */}
+                {provider === 'shiprocket' && (
+                    <div className="ds-gateway-card border rounded shadow-sm p-4 bg-white mb-4">
+                        <div className="fw-bold mb-3 d-flex align-items-center gap-2"><div style={{ fontSize: '1.2rem' }}>🚀</div> Shiprocket API Credentials</div>
+                        <Row className="gy-3">
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label className="form-label-bold">Shiprocket Email</Form.Label>
+                                    <Form.Control
+                                        type="email"
+                                        className="ds-input"
+                                        name="shiprocket_email"
+                                        value={formData.shiprocket_email || ''}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter account email"
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label className="form-label-bold">Shiprocket Password</Form.Label>
+                                    <Form.Control
+                                        type="password"
+                                        className="ds-input"
+                                        name="shiprocket_password"
+                                        value={formData.shiprocket_password || ''}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter account password"
+                                        autoComplete="new-password"
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                    </div>
+                )}
+
+                {/* EasyPost Config */}
+                {provider === 'easypost' && (
+                    <div className="ds-gateway-card border rounded shadow-sm p-4 bg-white mb-4">
+                        <div className="fw-bold mb-3 d-flex align-items-center gap-2"><div style={{ fontSize: '1.2rem' }}>🌎</div> EasyPost API Credentials</div>
+                        <Row className="gy-3">
+                            <Col md={12}>
+                                <Form.Group>
+                                    <Form.Label className="form-label-bold">EasyPost Production API Key</Form.Label>
+                                    <Form.Control
+                                        type="password"
+                                        className="ds-input"
+                                        name="easypost_api_key"
+                                        value={formData.easypost_api_key || ''}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter API Key"
+                                        autoComplete="new-password"
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                    </div>
+                )}
+
+                {/* DHL Config */}
+                {provider === 'dhl' && (
+                    <div className="ds-gateway-card border rounded shadow-sm p-4 bg-white mb-4">
+                        <div className="fw-bold mb-3 d-flex align-items-center gap-2"><div style={{ fontSize: '1.2rem' }}>📦</div> DHL API Credentials</div>
+                        <Row className="gy-3">
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label className="form-label-bold">DHL API Key</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        className="ds-input"
+                                        name="dhl_api_key"
+                                        value={formData.dhl_api_key || ''}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter API Key"
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label className="form-label-bold">DHL API Secret</Form.Label>
+                                    <Form.Control
+                                        type="password"
+                                        className="ds-input"
+                                        name="dhl_api_secret"
+                                        value={formData.dhl_api_secret || ''}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter API Secret"
+                                        autoComplete="new-password"
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={12}>
+                                <Form.Group>
+                                    <Form.Label className="form-label-bold">DHL Account Number</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        className="ds-input"
+                                        name="dhl_account_number"
+                                        value={formData.dhl_account_number || ''}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter Account Number"
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                    </div>
+                )}
+
+                <div className="ds-gateway-card border rounded shadow-sm p-4 bg-light">
+                    <div className="fw-bold small mb-2"><FaTruck className="text-primary me-2" />Status</div>
+                    <p className="xx-small text-muted mb-0">
+                        {provider === 'manual' 
+                            ? 'Currently using Manual Shipping. Sellers must provide tracking URLs themselves.'
+                            : `Configuring ${provider.charAt(0).toUpperCase() + provider.slice(1)} integration. This will enable automated tracking and label generation.`}
+                    </p>
+                </div>
+            </div>
+        );
+    };
+
     const getFieldsForType = (type) => {
         const fieldMap = {
             general_settings: [
@@ -812,6 +1167,13 @@ const DynamicSettings = () => {
             ],
             social_settings: [
                 'social_links'
+            ],
+            map_settings: [
+                'map_provider', 'google_maps_api_key'
+            ],
+            shipping_settings: [
+                'shipping_provider', 'shiprocket_email', 'shiprocket_password', 'easypost_api_key', 
+                'dhl_api_key', 'dhl_api_secret', 'dhl_account_number', 'flat_shipping_rate'
             ]
         };
         return fieldMap[type] || [];
@@ -1140,6 +1502,10 @@ const DynamicSettings = () => {
                             <>{renderSocialLoginSettings()}</>
                         ) : type === 'recaptcha_settings' ? (
                             <>{renderRecaptchaSettings()}</>
+                        ) : type === 'map_settings' ? (
+                            <>{renderMapSettings()}</>
+                        ) : type === 'shipping_settings' ? (
+                            <>{renderShippingSettings()}</>
                         ) : (
                             <Row>
                                 {getFieldsForType(type).map((key, index) => (

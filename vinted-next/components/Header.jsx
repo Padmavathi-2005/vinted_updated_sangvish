@@ -4,12 +4,12 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from '@/utils/axios';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { FaSearch, FaBell, FaShoppingCart, FaBars, FaTimes, FaChevronRight, FaChevronLeft, FaPlus, FaHeart, FaCoins, FaCheck, FaGlobe, FaUser, FaExchangeAlt, FaSignOutAlt, FaThLarge, FaCamera, FaRegHeart, FaRegBell, FaListAlt } from 'react-icons/fa';
+import { FaSearch, FaBell, FaShoppingCart, FaBars, FaTimes, FaChevronRight, FaChevronLeft, FaPlus, FaHeart, FaCoins, FaCheck, FaGlobe, FaUser, FaExchangeAlt, FaSignOutAlt, FaThLarge, FaCamera, FaRegHeart, FaRegBell, FaListAlt, FaTachometerAlt } from 'react-icons/fa';
 import { FiShoppingCart, FiGlobe, FiChevronDown } from 'react-icons/fi';
 import { HiSparkles } from 'react-icons/hi';
 import ReactMarkdown from 'react-markdown';
 import '@/app/styles/Header.css';
-import '@/app/styles/MegaMenu.css'; 
+import '@/app/styles/MegaMenu.css';
 import AuthContext from '@/context/AuthContext';
 import WishlistContext from '@/context/WishlistContext';
 import CurrencyContext from '@/context/CurrencyContext';
@@ -37,6 +37,8 @@ const Header = () => {
     const menuRef = useRef(null);
     const searchRef = useRef(null);
     const fileInputRef = useRef(null);
+    const mobileLangRef = useRef(null);
+    const mobileCurrRef = useRef(null);
 
 
     // User Dropdown State
@@ -103,6 +105,8 @@ const Header = () => {
     const [mobileLevel, setMobileLevel] = useState(0); // 0: Main, 1: Sub, 2: Items
     const [mobileSelectedCategory, setMobileSelectedCategory] = useState(null);
     const [mobileSelectedSubcategory, setMobileSelectedSubcategory] = useState(null);
+    const [isMobileLangOpen, setIsMobileLangOpen] = useState(false);
+    const [isMobileCurrOpen, setIsMobileCurrOpen] = useState(false);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [searchHistory, setSearchHistory] = useState([]);
@@ -226,10 +230,29 @@ const Header = () => {
             if (isAIDrawerOpen && aiBoxRef.current && !aiBoxRef.current.contains(event.target)) {
                 setIsAIDrawerOpen(false);
             }
+            // Mobile Dropdowns outside click
+            if (mobileLangRef.current && !mobileLangRef.current.contains(event.target)) {
+                setIsMobileLangOpen(false);
+            }
+            if (mobileCurrRef.current && !mobileCurrRef.current.contains(event.target)) {
+                setIsMobileCurrOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isAIDrawerOpen]);
+    }, [isAIDrawerOpen, isMobileMenuOpen]);
+
+    // Body scroll lock for mobile menu
+    useEffect(() => {
+        if (isMobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isMobileMenuOpen]);
 
     // AI Scroll Visibility logic removed as per user request to always show
 
@@ -696,7 +719,7 @@ const Header = () => {
                 </div>
                 {/* Right Section: Actions - Hidden on < 1200px */}
                 <div className="right-section d-none d-xl-flex">
-                    <button 
+                    <button
                         onClick={(e) => {
                             if (!user) {
                                 e.preventDefault();
@@ -705,7 +728,7 @@ const Header = () => {
                                 router.push('/sell');
                             }
                         }}
-                        className="sell-btn" 
+                        className="sell-btn"
                         style={{ backgroundColor: settings.primary_color, border: 'none' }}
                     >
                         <FaPlus /> {t('header.sell_button')}
@@ -776,21 +799,8 @@ const Header = () => {
                                             {settingsTab === 'language' ? (
                                                 /* Language Section */
                                                 <div>
-                                                    <div style={{ position: 'relative', marginBottom: '8px' }}>
-                                                        <FaSearch style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: settings.primary_color, fontSize: '0.75rem' }} />
-                                                        <input
-                                                            type="text"
-                                                            placeholder={t('header.search_languages')}
-                                                            value={languageSearchTerm}
-                                                            onChange={(e) => setLanguageSearchTerm(e.target.value)}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            style={{
-                                                                width: '100%', padding: '7px 10px 7px 30px', border: `1px solid ${settings.primary_color}`, borderRadius: '8px', fontSize: '0.8rem', outline: 'none', background: '#ffffff', boxShadow: `0 2px 8px ${settings.primary_color}15`
-                                                            }}
-                                                        />
-                                                    </div>
                                                     <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }} className="custom-scrollbar">
-                                                        {languages && languages.filter(l => l.name.toLowerCase().includes(languageSearchTerm.toLowerCase()) || l.native_name.toLowerCase().includes(languageSearchTerm.toLowerCase())).map(language => (
+                                                        {languages && languages.map(language => (
                                                             <button
                                                                 key={language._id}
                                                                 onClick={() => { setLanguage(language); setLanguageSearchTerm(''); }}
@@ -807,21 +817,8 @@ const Header = () => {
                                             ) : (
                                                 /* Currency Section */
                                                 <div>
-                                                    <div style={{ position: 'relative', marginBottom: '8px' }}>
-                                                        <FaSearch style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: settings.primary_color, fontSize: '0.75rem' }} />
-                                                        <input
-                                                            type="text"
-                                                            placeholder={t('header.search_currencies')}
-                                                            value={currencySearchTerm}
-                                                            onChange={(e) => setCurrencySearchTerm(e.target.value)}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            style={{
-                                                                width: '100%', padding: '7px 10px 7px 30px', border: `1px solid ${settings.primary_color}`, borderRadius: '8px', fontSize: '0.8rem', outline: 'none', background: '#ffffff', boxShadow: `0 2px 8px ${settings.primary_color}15`
-                                                            }}
-                                                        />
-                                                    </div>
                                                     <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }} className="custom-scrollbar">
-                                                        {currencies && currencies.filter(c => c.name.toLowerCase().includes(currencySearchTerm.toLowerCase()) || c.code.toLowerCase().includes(currencySearchTerm.toLowerCase())).map(currency => (
+                                                        {currencies && currencies.map(currency => (
                                                             <button
                                                                 key={currency._id}
                                                                 onClick={() => { setCurrency(currency); setCurrencySearchTerm(''); }}
@@ -845,7 +842,7 @@ const Header = () => {
                         {user ? (
                             <>
                                 {/* Logged-in icons: Favorites, Notifications, Cart */}
-                            <Link
+                                <Link
                                     href="/profile?tab=favorites"
                                     className="icon-wrapper heart-link"
                                     title={t('header.my_favorites')}
@@ -873,7 +870,7 @@ const Header = () => {
                                         className="icon-wrapper"
                                         title={t('header.notifications')}
                                         style={{ position: 'relative', cursor: 'pointer', color: hoveredIcon === 'bell' || isNotifDropdownOpen ? settings.primary_color : '#495057' }}
-                                    onClick={() => router.push('/profile?tab=notifications')}
+                                        onClick={() => router.push('/profile?tab=notifications')}
                                     >
                                         {hoveredIcon === 'bell' || isNotifDropdownOpen ? <FaBell /> : <FaRegBell />}
                                         {unreadCount > 0 && (
@@ -1111,7 +1108,7 @@ const Header = () => {
                                                 </div>
 
                                                 <Link href={`/profile?tab=dashboard&mode=${mode}`} className="dropdown-item-custom" style={{ display: 'flex', alignItems: 'center', gap: '12px' }} onClick={() => setIsUserDropdownOpen(false)}>
-                                                    <div style={{ width: '20px', display: 'flex', justifyContent: 'center' }}><FaUser style={{ color: '#adb5bd', fontSize: '1rem' }} /></div>
+                                                    <div style={{ width: '20px', display: 'flex', justifyContent: 'center' }}><FaTachometerAlt style={{ color: '#adb5bd', fontSize: '1rem' }} /></div>
                                                     {t('profile.dashboard', 'Dashboard')}
                                                 </Link>
                                                 <Link href={`/profile?tab=profile_settings&mode=${mode}`} className="dropdown-item-custom" style={{ display: 'flex', alignItems: 'center', gap: '12px' }} onClick={() => setIsUserDropdownOpen(false)}>
@@ -1424,11 +1421,11 @@ const Header = () => {
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         {mobileLevel > 0 && (
                             <button onClick={handleMobileBack} className="mo-back-btn">
-                                <FaChevronLeft /> Back
+                                <FaChevronLeft /> {t('header.back')}
                             </button>
                         )}
                         <span className="mo-title">
-                            {mobileLevel === 0 && 'Menu'}
+                            {mobileLevel === 0 && t('header.menu')}
                             {mobileLevel === 1 && t(`categories.${safeString(mobileSelectedCategory?.name)}`, { defaultValue: safeString(mobileSelectedCategory?.name) })}
                             {mobileLevel === 2 && t(`categories.${safeString(mobileSelectedSubcategory?.name)}`, { defaultValue: safeString(mobileSelectedSubcategory?.name) })}
                         </span>
@@ -1447,27 +1444,181 @@ const Header = () => {
                                 </div>
                             ))}
                             <div style={{ padding: '20px', borderTop: '1px solid #f1f3f5', marginTop: 'auto' }}>
+                                {/* Language & Currency Switchers for Mobile */}
+                                <div style={{ padding: '0 0 10px 0', fontSize: '0.8rem', fontWeight: '700', color: '#868e96', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <FiGlobe /> {t('header.settings')}
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                                    <div style={{ flex: 1, position: 'relative' }} ref={mobileLangRef}>
+                                        <div
+                                            onClick={() => {
+                                                setIsMobileLangOpen(!isMobileLangOpen);
+                                                setIsMobileCurrOpen(false);
+                                            }}
+                                            style={{
+                                                height: '42px',
+                                                padding: '0 12px',
+                                                background: '#f8f9fa',
+                                                borderRadius: '10px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '700',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                cursor: 'pointer',
+                                                border: '1px solid #e9ecef',
+                                                color: '#475569'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                                <FiGlobe style={{ color: settings.primary_color, flexShrink: 0 }} />
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                    {currentLanguage?.name || currentLanguage?.code?.toUpperCase() || t('header.language_label')}
+                                                </span>
+                                            </div>
+                                            <FiChevronDown style={{ flexShrink: 0, opacity: 0.5 }} />
+                                        </div>
+                                        {isMobileLangOpen && (
+                                            <div style={{
+                                                position: 'absolute', top: '100%', left: 0, right: 0,
+                                                background: 'white', border: '1px solid #e9ecef',
+                                                borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
+                                                maxHeight: '220px', overflowY: 'auto', zIndex: 100,
+                                                marginTop: '8px'
+                                            }}>
+                                                {languages.map(l => (
+                                                    <div
+                                                        key={l._id}
+                                                        onClick={() => { setLanguage(l); setIsMobileLangOpen(false); }}
+                                                        style={{
+                                                            padding: '12px 15px', fontSize: '0.85rem',
+                                                            background: currentLanguage?._id === l._id ? `${settings.primary_color}10` : 'transparent',
+                                                            color: currentLanguage?._id === l._id ? settings.primary_color : '#475569',
+                                                            fontWeight: currentLanguage?._id === l._id ? '700' : '500',
+                                                            cursor: 'pointer',
+                                                            borderBottom: '1px solid #f8f9fa'
+                                                        }}
+                                                    >
+                                                        {l.name}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div style={{ flex: 1, position: 'relative' }} ref={mobileCurrRef}>
+                                        <div
+                                            onClick={() => {
+                                                setIsMobileCurrOpen(!isMobileCurrOpen);
+                                                setIsMobileLangOpen(false);
+                                            }}
+                                            style={{
+                                                height: '42px',
+                                                padding: '0 12px',
+                                                background: '#f8f9fa',
+                                                borderRadius: '10px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '700',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                cursor: 'pointer',
+                                                border: '1px solid #e9ecef',
+                                                color: '#475569'
+                                            }}
+                                        >
+                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {currentCurrency?.code || t('header.currency_label')} ({currentCurrency?.symbol})
+                                            </span>
+                                            <FiChevronDown style={{ flexShrink: 0, opacity: 0.5 }} />
+                                        </div>
+                                        {isMobileCurrOpen && (
+                                            <div style={{
+                                                position: 'absolute', top: '100%', left: 0, right: 0,
+                                                background: 'white', border: '1px solid #e9ecef',
+                                                borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
+                                                maxHeight: '220px', overflowY: 'auto', zIndex: 100,
+                                                marginTop: '8px'
+                                            }}>
+                                                {currencies.map(c => (
+                                                    <div
+                                                        key={c._id}
+                                                        onClick={() => { setCurrency(c); setIsMobileCurrOpen(false); }}
+                                                        style={{
+                                                            padding: '12px 15px', fontSize: '0.85rem',
+                                                            background: currentCurrency?._id === c._id ? `${settings.primary_color}10` : 'transparent',
+                                                            color: currentCurrency?._id === c._id ? settings.primary_color : '#475569',
+                                                            fontWeight: currentCurrency?._id === c._id ? '700' : '500',
+                                                            cursor: 'pointer',
+                                                            borderBottom: '1px solid #f8f9fa'
+                                                        }}
+                                                    >
+                                                        {c.code} ({c.symbol})
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {user && (
+                                    <div style={{ marginBottom: '20px' }}>
+                                        <div style={{ padding: '0 0 10px 0', fontSize: '0.8rem', fontWeight: '700', color: '#868e96', textTransform: 'uppercase' }}>{t('header.mode')}</div>
+                                        <button
+                                            onClick={() => { toggleMode(); closeMobileMenu(); }}
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px 16px',
+                                                background: `${settings.primary_color}10`,
+                                                border: `1px solid ${settings.primary_color}20`,
+                                                borderRadius: '12px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '12px',
+                                                color: settings.primary_color,
+                                                fontWeight: '700',
+                                                fontSize: '0.9rem',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <div style={{
+                                                width: '32px', height: '32px', borderRadius: '8px',
+                                                background: settings.primary_color, color: 'white',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                            }}>
+                                                <FaExchangeAlt size={14} />
+                                            </div>
+                                            <span>
+                                                {mode === 'buyer' ? t('user_menu.switch_to_selling') : t('user_menu.switch_to_buying')}
+                                            </span>
+                                        </button>
+                                    </div>
+                                )}
+
                                 {user ? (
                                     <>
-                                        <div style={{ padding: '0 0 10px 0', fontSize: '0.8rem', fontWeight: '700', color: '#868e96', textTransform: 'uppercase' }}>Account</div>
-                                        <Link href="/profile" className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <FaUser size={16} /> My Profile
+                                        <div style={{ padding: '0 0 10px 0', fontSize: '0.8rem', fontWeight: '700', color: '#868e96', textTransform: 'uppercase' }}>{t('header.account')}</div>
+                                        <Link href={`/profile?tab=dashboard&mode=${mode}`} className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <FaTachometerAlt size={16} /> {t('user_menu.dashboard')}
                                         </Link>
-                                        <Link href={mode === 'seller' ? "/profile?tab=listings" : "/profile?tab=orders"} className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <Link href={`/profile?tab=profile_settings&mode=${mode}`} className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <FaUser size={16} /> {t('user_menu.my_profile')}
+                                        </Link>
+                                        <Link href={mode === 'seller' ? "/profile?tab=listings&mode=seller" : "/profile?tab=orders&mode=buyer"} className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                             {mode === 'seller' ? <FaListAlt size={16} /> : <FaShoppingCart size={16} />}
-                                            {mode === 'seller' ? (mode === 'seller' ? 'Manage listings' : 'My orders') : 'My orders'}
+                                            {mode === 'seller' ? t('user_menu.manage_listings') : t('user_menu.my_orders')}
                                         </Link>
-                                        <Link href="/profile?tab=favorites" className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <FaRegHeart size={16} /> Favorites
+                                        <Link href="/profile?tab=favorites&mode=buyer" className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <FaRegHeart size={16} /> {t('header.favorites')}
                                         </Link>
-                                        <Link href="/profile?tab=messages" className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <FaRegBell size={16} /> Messages
+                                        <Link href={`/profile?tab=messages&mode=${mode}`} className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <FaRegBell size={16} /> {t('user_menu.messages')}
                                         </Link>
                                         <Link href="/cart" className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <FiShoppingCart size={16} /> Cart
+                                            <FiShoppingCart size={16} /> {t('header.cart')}
                                         </Link>
                                         <button onClick={handleLogout} className="mobile-link" style={{ border: 'none', background: 'none', width: '100%', textAlign: 'left', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <FaSignOutAlt size={16} /> Logout
+                                            <FaSignOutAlt size={16} /> {t('user_menu.logout')}
                                         </button>
                                     </>
                                 ) : (
@@ -1477,7 +1628,7 @@ const Header = () => {
                                     </>
                                 )}
                                 <Link href="/sell" className="mobile-btn" style={{ backgroundColor: settings.primary_color, marginTop: '20px' }} onClick={closeMobileMenu}>
-                                    <FaPlus /> Sell Now
+                                    <FaPlus /> {t('header.sell_now')}
                                 </Link>
                             </div>
                         </>
@@ -1714,10 +1865,10 @@ const Header = () => {
                     </div>
                 )
             }
-            <Popup 
-                popup={popup} 
-                onClose={closePopup} 
-                onConfirm={popup?.onConfirm} 
+            <Popup
+                popup={popup}
+                onClose={closePopup}
+                onConfirm={popup?.onConfirm}
             />
         </header>
     );

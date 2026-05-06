@@ -53,6 +53,11 @@ const orderSchema = mongoose.Schema(
             type: Number,
             required: true,
         },
+        currency_id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Currency',
+            required: true,
+        },
         payment_method: {
             type: String,
             required: true,
@@ -64,7 +69,7 @@ const orderSchema = mongoose.Schema(
         },
         order_status: {
             type: String,
-            enum: ['pending', 'confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned', 'return_requested'],
+            enum: ['pending', 'confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned', 'return_requested', 'completed'],
             default: 'pending',
         },
         shipping_company_id: {
@@ -80,6 +85,12 @@ const orderSchema = mongoose.Schema(
         stripe_payment_id: {
             type: String,
         },
+        shipping_label_url: {
+            type: String,
+        },
+        shipping_label_base64: {
+            type: String,
+        },
         shipping_address: {
             full_name: String,
             phone: String,
@@ -90,6 +101,9 @@ const orderSchema = mongoose.Schema(
             pincode: String,
         },
         delivered_at: {
+            type: Date,
+        },
+        confirmed_at: {
             type: Date,
         },
         packed_at: {

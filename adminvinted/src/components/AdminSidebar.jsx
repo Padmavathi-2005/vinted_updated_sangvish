@@ -46,9 +46,7 @@ const AdminSidebar = ({ isCollapsed, setIsCollapsed }) => {
     const { settingTypes, siteName, siteLogo } = useSettings();
 
     // State for expanded submenus
-    const [expandedMenus, setExpandedMenus] = useState({
-        settings: true // Default expanded
-    });
+    const [expandedMenus, setExpandedMenus] = useState({});
 
     const menuItems = [
         { path: '/dashboard', icon: <FaTachometerAlt />, label: t('sidebar.dashboard') },
@@ -123,7 +121,10 @@ const AdminSidebar = ({ isCollapsed, setIsCollapsed }) => {
         });
 
         if (activeItem && activeItem.subItems) {
-            setExpandedMenus(prev => ({ ...prev, [activeItem.id]: true }));
+            setExpandedMenus({ [activeItem.id]: true });
+        } else {
+            // Close all if we moved to a top-level item without sub-items
+            setExpandedMenus({});
         }
 
         // Smooth scroll to active element
@@ -204,7 +205,9 @@ const AdminSidebar = ({ isCollapsed, setIsCollapsed }) => {
                     {menuItems.map((item) => {
                         if (item.subItems) {
                             const isExpanded = expandedMenus[item.id];
-                            const isActive = location.pathname.startsWith(item.path);
+                            const isActive = item.subItems.some(sub => 
+                                location.pathname === sub.path || location.pathname.startsWith(sub.path + '/')
+                            ) || location.pathname === item.path;
 
                             return (
                                 <div key={item.id} className="nav-group">

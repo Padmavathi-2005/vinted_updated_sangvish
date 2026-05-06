@@ -6,7 +6,7 @@ import Link from 'next/link';
 import axios from '@/utils/axios';
 import AuthContext from '@/context/AuthContext';
 import CurrencyContext from '@/context/CurrencyContext';
-import { FaListAlt, FaBoxOpen, FaHeart, FaWallet, FaCheckCircle, FaExclamationTriangle, FaUserEdit, FaAngleLeft, FaAngleRight, FaEnvelope, FaBell, FaTruck, FaClock, FaCreditCard, FaMoneyBillWave, FaBars, FaTimes, FaStar, FaTag, FaLightbulb, FaPlusCircle } from 'react-icons/fa';
+import { FaListAlt, FaBoxOpen, FaHeart, FaWallet, FaCheckCircle, FaExclamationTriangle, FaUserEdit, FaAngleLeft, FaAngleRight, FaEnvelope, FaBell, FaTruck, FaClock, FaCreditCard, FaMoneyBillWave, FaBars, FaTimes, FaStar, FaTag, FaLightbulb, FaPlusCircle, FaMapMarkerAlt, FaSpinner } from 'react-icons/fa';
 import '@/app/styles/Profile.css';
 import EditProfileModal from '@/components/common/EditProfileModal';
 import EditItemModal from '@/components/common/EditItemModal';
@@ -20,7 +20,9 @@ import { useTranslation } from 'react-i18next';
 import Meta from '@/components/common/Meta';
 import CustomSelect from '@/components/common/CustomSelect';
 import { getImageUrl, getItemImageUrl, safeString } from '@/utils/constants';
-import { validateTextField, getTextFieldError } from '@/utils/validation';
+import { validateTextField, getTextFieldError, validateAlphaField, getAlphaError } from '@/utils/validation';
+import OrderTimeline from '@/components/profile/OrderTimeline';
+import { printShippingLabel } from '@/utils/shippingLabel';
 
 const ProfileContent = () => {
     const { user, loading, updateUser, logout, mode, toggleMode, setMode } = useContext(AuthContext);
@@ -89,6 +91,8 @@ const ProfileContent = () => {
     useEffect(() => {
         setListingsPage(1);
         setFavoritesPage(1);
+        setBoughtPage(1);
+        setSoldPage(1);
         window.scrollTo({ top: 0, behavior: 'instant' });
     }, [activeTab]);
 
@@ -102,6 +106,7 @@ const ProfileContent = () => {
     const [listingsPage, setListingsPage] = useState(1);
     const [listingsTotalPages, setListingsTotalPages] = useState(1);
     const [listingsTotalCount, setListingsTotalCount] = useState(0);
+    const [allListingsCount, setAllListingsCount] = useState(0);
 
     // Favorites State
     const [favorites, setFavorites] = useState([]);
@@ -116,22 +121,37 @@ const ProfileContent = () => {
     // Orders State
     const [boughtOrders, setBoughtOrders] = useState([]);
     const [soldOrders, setSoldOrders] = useState([]);
+    const [boughtPage, setBoughtPage] = useState(1);
+    const [soldPage, setSoldPage] = useState(1);
+    const [boughtTotalPages, setBoughtTotalPages] = useState(1);
+    const [soldTotalPages, setSoldTotalPages] = useState(1);
+    const [boughtTotalCount, setBoughtTotalCount] = useState(0);
+    const [soldTotalCount, setSoldTotalCount] = useState(0);
     const [ordersLoading, setOrdersLoading] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showOrderModal, setShowOrderModal] = useState(false);
+    const [addressForm, setAddressForm] = useState({ full_name: '', address_line: '', city: '', pincode: '', phone: '', state: '', country: '', lat: null, lng: null });
     const [isEditingAddress, setIsEditingAddress] = useState(false);
-    const [addressForm, setAddressForm] = useState({
-        full_name: '',
-        address_line: '',
-        city: '',
-        state: '',
-        pincode: '',
-        phone: ''
-    });
+    
+    // Address Autocomplete states for order address edit
+    const [addressSuggestions, setAddressSuggestions] = useState([]);
+    const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+    const [loadingAddressSuggestions, setLoadingAddressSuggestions] = useState(false);
+    const addressSuggestionsRef = React.useRef(null);
+    const addressDebounceRef = React.useRef(null);
 
     const [orderSubTab, setOrderSubTab] = useState('all');
+    const [listingsSubTab, setListingsSubTab] = useState('all');
     const [paymentSubTab, setPaymentSubTab] = useState('wallet');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // Deep link support for payment subtabs
+    const urlSub = searchParams.get('sub');
+    useEffect(() => {
+        if (urlSub) {
+            setPaymentSubTab(urlSub);
+        }
+    }, [urlSub]);
 
     // Review state
     const [reviewRating, setReviewRating] = useState(0);
@@ -239,13 +259,21 @@ const ProfileContent = () => {
         if (!user) return;
         setListingsLoading(true);
         try {
-            const res = await axios.get('/api/items/myitems', {
-                params: { page: pageNum, limit: 12, sort: 'newest' }
-            });
+            const params = { page: pageNum, limit: 12, sort: 'newest' };
+            if (listingsSubTab === 'sold') {
+                params.is_sold = 'true';
+            }
+            const res = await axios.get('/api/items/myitems', { params });
             const { items, totalPages, totalCount, total_count } = res.data;
+            const currentTotal = totalCount || total_count || 0;
  
             setListingsTotalPages(totalPages);
-            setListingsTotalCount(totalCount || total_count || 0);
+            setListingsTotalCount(currentTotal);
+            
+            // Only update the global 'All' count if we are on the 'all' tab
+            if (listingsSubTab === 'all') {
+                setAllListingsCount(currentTotal);
+            }
 
             if (isAppend) {
                 setMyListings(prev => {
@@ -261,7 +289,7 @@ const ProfileContent = () => {
         } finally {
             setListingsLoading(false);
         }
-    }, [user]);
+    }, [user, listingsSubTab]);
 
     // Fetch Favorites
     const fetchMyFavorites = useCallback(async (pageNum, isAppend = false) => {
@@ -292,35 +320,160 @@ const ProfileContent = () => {
         }
     }, [user]);
 
-    // Fetch Orders
+
     const fetchMyOrders = useCallback(async () => {
         if (!user) return;
         setOrdersLoading(true);
         try {
-            const res = await axios.get('/api/orders');
+            // Fetch both, but we use the relevant page based on current mode for the query
+            // In a more complex app, we might fetch them separately, but this maintains consistency
+            const currentPage = mode === 'buyer' ? boughtPage : soldPage;
+            const res = await axios.get(`/api/orders?page=${currentPage}&limit=10`);
+            
             setBoughtOrders(res.data.bought || []);
             setSoldOrders(res.data.sold || []);
+            
+            if (res.data.pagination) {
+                setBoughtTotalPages(res.data.pagination.boughtPages || 1);
+                setSoldTotalPages(res.data.pagination.soldPages || 1);
+                setBoughtTotalCount(res.data.pagination.boughtTotal || 0);
+                setSoldTotalCount(res.data.pagination.soldTotal || 0);
+            }
         } catch (error) {
             console.error("Error fetching orders:", error);
         } finally {
             setOrdersLoading(false);
         }
-    }, [user]);
+    }, [user, mode, boughtPage, soldPage]); // Restored dependencies for correct page tracking
+
+    const handleOrderAddressSearch = (query) => {
+        if (!query || query.length < 3) {
+            setAddressSuggestions([]);
+            setShowAddressSuggestions(false);
+            return;
+        }
+
+        clearTimeout(addressDebounceRef.current);
+        addressDebounceRef.current = setTimeout(async () => {
+            setLoadingAddressSuggestions(true);
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`,
+                    {
+                        headers: {
+                            'User-Agent': 'VintedClone/1.0'
+                        }
+                    }
+                );
+                const data = await res.json();
+                setAddressSuggestions(data || []);
+                setShowAddressSuggestions(true);
+            } catch (err) {
+                console.error("Address search failed:", err);
+                setAddressSuggestions([]);
+            } finally {
+                setLoadingAddressSuggestions(false);
+            }
+        }, 500);
+    };
+
+    const handleAddressSuggestionClick = (suggestion) => {
+        const lat = parseFloat(suggestion.lat);
+        const lng = parseFloat(suggestion.lon);
+        const label = suggestion.display_name;
+
+        const addrComp = {
+            city: suggestion.address?.city || suggestion.address?.town || suggestion.address?.village || '',
+            state: suggestion.address?.state || '',
+            country: suggestion.address?.country || '',
+            pincode: suggestion.address?.postcode || ''
+        };
+
+        setAddressForm(prev => ({
+            ...prev,
+            address_line: label,
+            city: addrComp.city || prev.city,
+            state: addrComp.state || prev.state,
+            country: addrComp.country || prev.country,
+            pincode: addrComp.pincode || prev.pincode,
+            lat,
+            lng
+        }));
+
+        setAddressSuggestions([]);
+        setShowAddressSuggestions(false);
+    };
+
+    // Close address suggestions on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (addressSuggestionsRef.current && !addressSuggestionsRef.current.contains(e.target)) {
+                setShowAddressSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleAddressUpdate = async (e) => {
         if (e) e.preventDefault();
         try {
+            // Custom Validation
+            if (addressForm.full_name && !validateAlphaField(addressForm.full_name)) return alert(getAlphaError('Full Name'));
+            if (addressForm.city && !validateAlphaField(addressForm.city)) return alert(getAlphaError('City'));
+            if (addressForm.state && !validateAlphaField(addressForm.state)) return alert(getAlphaError('State'));
+            if (addressForm.country && !validateAlphaField(addressForm.country)) return alert(getAlphaError('Country'));
+            if (addressForm.pincode && addressForm.pincode.length < 4) return alert('Pincode should be at least 4 digits');
+
+            // Update order address
             const res = await axios.put(`/api/orders/${selectedOrder._id}/address`, {
                 shipping_address: addressForm
             });
             setSelectedOrder(res.data);
             setIsEditingAddress(false);
             fetchMyOrders();
-            alert('Address updated successfully');
+
+            // Sync with profile address (as requested: "if they provide address then that the user address in this profile page and the form use the same update db crtly")
+            const profilePayload = new FormData();
+            profilePayload.append('address', JSON.stringify({
+                full_name: addressForm.full_name,
+                address_line: addressForm.address_line,
+                city: addressForm.city,
+                state: addressForm.state || '',
+                country: addressForm.country || '',
+                pincode: addressForm.pincode,
+                lat: addressForm.lat,
+                lng: addressForm.lng
+            }));
+            
+            await axios.put('/api/users/profile', profilePayload, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            
+            // Re-fetch profile to keep local user state in sync
+            const userRes = await axios.get('/api/users/profile', {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            updateUser(userRes.data);
+
+            alert('Address updated successfully and saved to your profile.');
         } catch (err) {
             console.error('Error updating address:', err);
             alert(err.response?.data?.message || 'Failed to update address');
         }
+    };
+
+    const handleAddressInputChange = (e) => {
+        const { name, value } = e.target;
+        let finalValue = value;
+
+        if (name === 'pincode') {
+            finalValue = value.replace(/\D/g, '').slice(0, 8);
+        } else if (name === 'phone') {
+            finalValue = value.replace(/[^0-9+]/g, '');
+        }
+
+        setAddressForm(prev => ({ ...prev, [name]: finalValue }));
     };
 
     const getStatusLabel = (status) => {
@@ -559,7 +712,7 @@ const ProfileContent = () => {
     useEffect(() => {
         if (user && activeTab === 'dashboard') {
             axios.get('/api/items/myitems', { params: { limit: 1 } })
-                .then(res => setListingsTotalCount(res.data.totalCount || res.data.total_count || 0))
+                .then(res => setAllListingsCount(res.data.totalCount || res.data.total_count || 0))
                 .catch(() => {});
 
             axios.get('/api/favorites', { params: { limit: 1 } })
@@ -587,7 +740,31 @@ const ProfileContent = () => {
         if (activeTab === 'orders' || activeTab === 'dashboard') {
             fetchMyOrders();
         }
-    }, [activeTab, fetchMyOrders]);
+    }, [activeTab, mode, boughtPage, soldPage, fetchMyOrders]);
+
+    // Auto-open order details if orderId is in URL
+    useEffect(() => {
+        if (!ordersLoading && activeTab === 'orders' && !showOrderModal) {
+            const orderId = searchParams.get('orderId');
+            if (orderId) {
+                const order = [...boughtOrders, ...soldOrders].find(o => o._id === orderId);
+                if (order) {
+                    setSelectedOrder(order);
+                    setShowOrderModal(true);
+                    setIsEditingAddress(false);
+                    checkExistingReview(order._id);
+                    setAddressForm({
+                        full_name: order.shipping_address?.full_name || '',
+                        address_line: order.shipping_address?.address_line || '',
+                        city: order.shipping_address?.city || '',
+                        state: order.shipping_address?.state || '',
+                        pincode: order.shipping_address?.pincode || '',
+                        phone: order.shipping_address?.phone || ''
+                    });
+                }
+            }
+        }
+    }, [ordersLoading, activeTab, searchParams, boughtOrders, soldOrders, showOrderModal]);
 
     // Fetch Shipping Companies for Seller
     useEffect(() => {
@@ -735,7 +912,7 @@ const ProfileContent = () => {
 
     return (
         <div className="profile-dashboard">
-            
+            <Meta title={getTabLabel(activeTab)} description="Manage your account, orders, and listings on our marketplace." />
             {/* ─── Mobile Header ─── */}
             <div className="pd-mobile-header">
                 <button className="pd-mobile-hamburger" onClick={() => setMobileMenuOpen(true)}>
@@ -879,13 +1056,13 @@ const ProfileContent = () => {
                             <div className="mt-3 pt-3 border-top text-start">
                                 <p className="extra-small mb-2 fw-bold text-uppercase" style={{ letterSpacing: '0.05em', color: '#64748b' }}>Listings Summary</p>
                                 <div className="d-flex flex-column gap-2">
-                                    <div className="small d-flex justify-content-between">
+                                    <div className="small d-flex justify-content-between clickable-sidebar-stat" onClick={() => setListingsSubTab('all')}>
                                         <span>Total Items</span>
-                                        <span className="fw-bold">{listingsTotalCount}</span>
+                                        <span className="fw-bold" style={{ color: listingsSubTab === 'all' ? 'var(--primary-color)' : 'inherit' }}>{allListingsCount || 0}</span>
                                     </div>
-                                    <div className="small d-flex justify-content-between">
+                                    <div className="small d-flex justify-content-between clickable-sidebar-stat" onClick={() => setListingsSubTab('sold')}>
                                         <span>Sold Items</span>
-                                        <span className="fw-bold text-success">{soldOrders.length || user.sold_count || 0}</span>
+                                        <span className="fw-bold text-success" style={{ textDecoration: listingsSubTab === 'sold' ? 'underline' : 'none' }}>{soldOrders.length || user.sold_count || 0}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1094,12 +1271,22 @@ const ProfileContent = () => {
                             <div className="pd-section-header mb-4">
                                 <div className="pd-section-title-wrap">
                                     <h2 className="fw-bold m-0" style={{ fontSize: '1.4rem' }}>{t('user_menu.manage_listings', 'Manage listings')}</h2>
-                                    <span className="pd-badge-count">{listingsTotalCount || 0} items</span>
+                                    <div className="d-flex gap-2 align-items-center mt-1">
+                                        <span 
+                                            className={`pd-badge-count clickable ${listingsSubTab === 'all' ? 'active' : ''}`}
+                                            onClick={() => setListingsSubTab('all')}
+                                        >
+                                            {allListingsCount || 0} items
+                                        </span>
+                                        <span 
+                                            className={`pd-badge-count clickable sold ${listingsSubTab === 'sold' ? 'active' : ''}`}
+                                            onClick={() => setListingsSubTab('sold')}
+                                        >
+                                            {soldOrders.length || user.sold_count || 0} sold
+                                        </span>
+                                    </div>
                                 </div>
                                 <div className="d-flex gap-2 align-items-center">
-                                    <button className="btn btn-light btn-sm d-flex align-items-center gap-2 border" onClick={() => fetchMyListings(listingsPage)}>
-                                        <FaClock /> {t('profile.refresh', 'Refresh')}
-                                    </button>
                                     <Link href="/sell" className="btn btn-primary btn-sm px-3 d-flex align-items-center gap-2">
                                         <FaPlusCircle /> {t('profile.add_new_item', 'Add New Item')}
                                     </Link>
@@ -1154,8 +1341,15 @@ const ProfileContent = () => {
                                     <span className="pd-badge-count">{favoritesTotalCount || 0} items</span>
                                 </div>
                                 <div className="d-flex gap-2">
-                                    <button className="btn btn-light btn-sm border d-flex align-items-center gap-2" onClick={() => fetchMyFavorites(favoritesPage)}>
-                                        <FaClock /> {t('profile.refresh', 'Refresh')}
+                                    <button 
+                                        className="btn btn-light btn-sm border d-flex align-items-center gap-2" 
+                                        onClick={() => fetchMyFavorites(favoritesPage)}
+                                        disabled={favoritesLoading}
+                                    >
+                                        {favoritesLoading ? (
+                                            <div className="spinner-border spinner-border-sm" role="status"></div>
+                                        ) : <FaClock />} 
+                                        {t('profile.refresh', 'Refresh')}
                                     </button>
                                 </div>
                             </div>
@@ -1201,22 +1395,37 @@ const ProfileContent = () => {
                                 <div className="pd-orders-header-title">
                                     <h2 className="m-0">
                                         {mode === 'buyer' ? t('user_menu.my_orders', 'My orders') : t('profile.orders_received', 'Orders Received')}
-                                        <span className="pd-badge-count">{filteredOrders.length}</span>
+                                        <span className="pd-badge-count">{mode === 'buyer' ? boughtTotalCount : soldTotalCount}</span>
                                     </h2>
                                     <p className="text-muted small m-0">{mode === 'buyer' ? 'Track and manage your purchases' : 'Manage your sales and shipments'}</p>
                                 </div>
                                 <div className="pd-orders-header-actions">
-                                    <button className="btn btn-refresh" onClick={fetchMyOrders}>
-                                        <FaClock className="me-1" /> {t('profile.refresh', 'Refresh')}
-                                    </button>
+                                    <div className="pd-orders-filter-wrap">
+                                        <CustomSelect
+                                            options={[
+                                                { value: 'all', label: t('profile.all_orders', 'All Orders') },
+                                                { value: 'pending', label: t('order_status.pending', 'Pending') },
+                                                { value: 'confirmed', label: t('order_status.confirmed', 'Confirmed') },
+                                                { value: 'packed', label: t('order_status.packed', 'Packed') },
+                                                { value: 'shipped', label: t('order_status.shipped', 'Shipped') },
+                                                { value: 'delivered', label: t('order_status.delivered', 'Delivered') },
+                                                { value: 'returns', label: t('order_status.returns', 'Returns') },
+                                                { value: 'cancelled', label: t('order_status.cancelled', 'Cancelled') }
+                                            ]}
+                                            value={orderSubTab}
+                                            onChange={(val) => setOrderSubTab(val)}
+                                            placeholder="Filter Status"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
-                            {ordersLoading ? (
+                            {ordersLoading && filteredOrders.length === 0 ? (
                                 <div className="text-center py-5">
                                     <div className="spinner-border text-primary" role="status"></div>
                                 </div>
                             ) : filteredOrders.length > 0 ? (
+                                <>
                                 <div className="pd-orders-grid">
                                     {filteredOrders.map(order => (
                                         <div
@@ -1260,7 +1469,12 @@ const ProfileContent = () => {
 
                                                 <div className="pd-oic-body">
                                                     <div className="pd-oic-info">
-                                                        <h3 className="pd-oic-title">{safeString(order.item_id?.title) || 'Unknown Item'}</h3>
+                                                        <div className="d-flex justify-content-between align-items-start mb-1">
+                                                            <h3 className="pd-oic-title">{safeString(order.item_id?.title) || 'Unknown Item'}</h3>
+                                                            <div className={`pd-oic-mobile-status ${order.order_status || 'placed'}`}>
+                                                                {getStatusLabel(order.order_status)}
+                                                            </div>
+                                                        </div>
                                                         <div className="pd-oic-participant-mini">
                                                             {mode === 'buyer' ? (
                                                                 <>
@@ -1279,7 +1493,7 @@ const ProfileContent = () => {
                                                     <div className="pd-oic-financials">
                                                         <div className="pd-oic-price-tag">
                                                             <span className="pd-oic-price-label">Total Amount</span>
-                                                            <span className="pd-oic-price-value">{formatPrice(order.total_amount)}</span>
+                                                            <span className="pd-oic-price-value">{formatPrice(order.total_amount, order.currency_id)}</span>
                                                         </div>
                                                         {order.payment_status === 'paid' && (
                                                             <div className="pd-oic-payment-status paid">
@@ -1299,6 +1513,26 @@ const ProfileContent = () => {
                                         </div>
                                     ))}
                                 </div>
+                                
+                                {mode === 'buyer' && boughtTotalPages > 1 && (
+                                    <div className="mt-4">
+                                        <Pagination 
+                                            currentPage={boughtPage} 
+                                            totalPages={boughtTotalPages} 
+                                            onPageChange={setBoughtPage} 
+                                        />
+                                    </div>
+                                )}
+                                {mode === 'seller' && soldTotalPages > 1 && (
+                                    <div className="mt-4">
+                                        <Pagination 
+                                            currentPage={soldPage} 
+                                            totalPages={soldTotalPages} 
+                                            onPageChange={setSoldPage} 
+                                        />
+                                    </div>
+                                )}
+                            </>
                             ) : (
                                 <div className="pd-empty-state-full">
                                     <div className="pd-empty-icon-circle">
@@ -1333,37 +1567,18 @@ const ProfileContent = () => {
                                         <div className="pd-modal-body p-4">
                                             <div className="order-detail-grid">
                                                 <div className="order-detail-main">
-                                                    <div className="order-tracker-container">
+                                                    <div className="order-tracker-container mb-4">
                                                         <h4 className="detail-section-title">{t('profile.delivery_progress', 'Delivery Progress')}</h4>
-                                                        <div className="order-tracker">
-                                                            {/* Step 1: Confirmed */}
-                                                            <div className={`tracker-step ${['confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered'].includes(selectedOrder.order_status) ? 'completed' : ''}`}>
-                                                                <div className="tracker-dot"></div>
-                                                                <div className="tracker-label">{t('order_status.confirmed', 'Confirmed')}</div>
-                                                            </div>
-                                                            {/* Step 2: Packed / Dispatched */}
-                                                            <div className={`tracker-step ${['packed', 'shipped', 'out_for_delivery', 'delivered'].includes(selectedOrder.order_status) ? 'completed' : ''}`}>
-                                                                <div className="tracker-dot"></div>
-                                                                <div className="tracker-label">{t('order_status.packed_dispatched', 'Packed / Dispatched')}</div>
-                                                            </div>
-                                                            {/* Step 3: Shipped */}
-                                                            <div className={`tracker-step ${['shipped', 'out_for_delivery', 'delivered'].includes(selectedOrder.order_status) ? 'completed' : ''}`}>
-                                                                <div className="tracker-dot"></div>
-                                                                <div className="tracker-label">{t('order_status.shipped', 'Shipped')}</div>
-                                                            </div>
-                                                            {/* Step 4: Out for Delivery */}
-                                                            <div className={`tracker-step ${['out_for_delivery', 'delivered'].includes(selectedOrder.order_status) ? 'completed' : ''}`}>
-                                                                <div className="tracker-dot"></div>
-                                                                <div className="tracker-label">{t('order_status.out_for_delivery', 'Out for Delivery')}</div>
-                                                            </div>
-                                                            {/* Step 5: Delivered */}
-                                                            <div className={`tracker-step ${selectedOrder.order_status === 'delivered' ? 'completed' : ''}`}>
-                                                                <div className="tracker-dot"></div>
-                                                                <div className="tracker-label">{t('order_status.delivered', 'Delivered')}</div>
-                                                            </div>
-                                                            <div className="tracker-line-bg"></div>
-                                                            <div className="tracker-line-fill" data-status={selectedOrder.order_status || 'pending'}></div>
-                                                        </div>
+                                                        <OrderTimeline 
+                                                            status={selectedOrder.order_status} 
+                                                            history={{
+                                                                created_at: selectedOrder.created_at,
+                                                                confirmed_at: selectedOrder.confirmed_at,
+                                                                packed_at: selectedOrder.packed_at,
+                                                                shipped_at: selectedOrder.shipped_at,
+                                                                delivered_at: selectedOrder.delivered_at
+                                                            }} 
+                                                        />
                                                     </div>
 
                                                     <div className="detail-section mt-5">
@@ -1397,32 +1612,89 @@ const ProfileContent = () => {
                                                                         />
                                                                     </div>
                                                                     <div className="col-12">
-                                                                        <input
-                                                                            type="text"
-                                                                            className="form-control form-control-sm"
-                                                                            placeholder={t('profile.address_line', 'Address Line')}
-                                                                            value={addressForm.address_line}
-                                                                            onChange={(e) => setAddressForm({ ...addressForm, address_line: e.target.value })}
-                                                                            required
-                                                                        />
+                                                                        <div className="position-relative" ref={addressSuggestionsRef}>
+                                                                            <input
+                                                                                type="text"
+                                                                                className="form-control form-control-sm"
+                                                                                placeholder={t('profile.address_line', 'Address Line')}
+                                                                                value={addressForm.address_line}
+                                                                                onChange={(e) => {
+                                                                                    const val = e.target.value;
+                                                                                    setAddressForm({ ...addressForm, address_line: val });
+                                                                                    handleOrderAddressSearch(val);
+                                                                                }}
+                                                                                required
+                                                                                autoComplete="off"
+                                                                            />
+                                                                            {loadingAddressSuggestions && (
+                                                                                <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 5 }}>
+                                                                                    <FaSpinner className="fa-spin" />
+                                                                                </div>
+                                                                            )}
+                                                                            {showAddressSuggestions && addressSuggestions.length > 0 && (
+                                                                                <ul className="address-suggestions-dropdown" style={{ 
+                                                                                    position: 'absolute', top: '100%', left: 0, right: 0, 
+                                                                                    backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '4px',
+                                                                                    listStyle: 'none', padding: 0, margin: '2px 0 0 0', zIndex: 1000,
+                                                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: '200px', overflowY: 'auto'
+                                                                                }}>
+                                                                                    {addressSuggestions.map((s, i) => (
+                                                                                        <li 
+                                                                                            key={i} 
+                                                                                            onClick={() => handleAddressSuggestionClick(s)}
+                                                                                            style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '0.8rem', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'flex-start', gap: '8px' }}
+                                                                                            onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
+                                                                                            onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                                                                                        >
+                                                                                            <FaMapMarkerAlt style={{ marginTop: '3px', color: '#64748b', flexShrink: 0 }} />
+                                                                                            <span>{s.display_name}</span>
+                                                                                        </li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                     <div className="col-6">
                                                                         <input
                                                                             type="text"
+                                                                            name="city"
                                                                             className="form-control form-control-sm"
                                                                             placeholder={t('profile.city', 'City')}
                                                                             value={addressForm.city}
-                                                                            onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
+                                                                            onChange={handleAddressInputChange}
                                                                             required
                                                                         />
                                                                     </div>
                                                                     <div className="col-6">
                                                                         <input
                                                                             type="text"
+                                                                            name="state"
+                                                                            className="form-control form-control-sm"
+                                                                            placeholder={t('profile.state', 'State')}
+                                                                            value={addressForm.state}
+                                                                            onChange={handleAddressInputChange}
+                                                                            required
+                                                                        />
+                                                                    </div>
+                                                                    <div className="col-6">
+                                                                        <input
+                                                                            type="text"
+                                                                            name="country"
+                                                                            className="form-control form-control-sm"
+                                                                            placeholder={t('profile.country', 'Country')}
+                                                                            value={addressForm.country}
+                                                                            onChange={handleAddressInputChange}
+                                                                            required
+                                                                        />
+                                                                    </div>
+                                                                    <div className="col-6">
+                                                                        <input
+                                                                            type="text"
+                                                                            name="pincode"
                                                                             className="form-control form-control-sm"
                                                                             placeholder={t('profile.pincode', 'Pincode')}
                                                                             value={addressForm.pincode}
-                                                                            onChange={(e) => setAddressForm({ ...addressForm, pincode: e.target.value })}
+                                                                            onChange={handleAddressInputChange}
                                                                             required
                                                                         />
                                                                     </div>
@@ -1456,7 +1728,10 @@ const ProfileContent = () => {
 
                                                     <div className="detail-section mt-5">
                                                         <h4 className="detail-section-title mb-3">{t('profile.purchased_item', 'Purchased Item')}</h4>
-                                                        <div className="detail-item-card p-3 bg-white border rounded-3 shadow-sm">
+                                                        <Link 
+                                                            href={`/items/${selectedOrder.item_id?.slug || selectedOrder.item_id?._id || selectedOrder.item_id}`}                                                            className="detail-item-card p-3 bg-white border rounded-3 shadow-sm d-block text-decoration-none transition-all hover-shadow-md"
+                                                            style={{ cursor: 'pointer' }}
+                                                        >
                                                             <div className="d-flex align-items-center gap-4">
                                                                 <img className="rounded-3 shadow-sm" style={{ width: '80px', height: '80px', objectFit: 'cover' }} src={getItemImageUrl(selectedOrder.item_id?.images?.[0])} alt="" />
                                                                 <div className="flex-grow-1">
@@ -1466,17 +1741,16 @@ const ProfileContent = () => {
                                                                     </p>
                                                                     <div className="d-flex align-items-center gap-2">
                                                                         <span className="badge bg-primary-soft text-primary px-2 py-1 rounded-pill extra-small">Item Price</span>
-                                                                        <span className="fw-bold text-dark small">{formatPrice(selectedOrder.item_price)}</span>
+                                                                        <span className="fw-bold text-dark small">{formatPrice(selectedOrder.item_price, selectedOrder.currency_id)}</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
+                                                        </Link>
                                                     </div>
-
-                                                    {(selectedOrder.tracking_id || selectedOrder.shipping_company_id || selectedOrder.delivered_at) && (
+                                                      {(selectedOrder.tracking_id || selectedOrder.shipping_company_id || selectedOrder.delivered_at) && (
                                                         <div className="detail-section mt-5">
-                                                            <h4 className="detail-section-title mb-3">{t('profile.tracking_info', 'Delivery & Tracking History')}</h4>
-                                                            <div className="p-3 bg-white border rounded-3 shadow-sm tracker-history-box">
+                                                            <h4 className="detail-section-title mb-3">{t('profile.tracking_info', 'Courier Details')}</h4>
+                                                            <div className="p-4 bg-white border rounded-3 shadow-sm tracker-history-box">
                                                                 <div className="d-flex justify-content-between mb-2">
                                                                     <span className="text-muted small">Shipping Partner</span>
                                                                     <span className="small fw-bold text-dark">{selectedOrder.shipping_company_id?.company_name || 'Standard Shipping'}</span>
@@ -1484,39 +1758,6 @@ const ProfileContent = () => {
                                                                 <div className="d-flex justify-content-between mb-4">
                                                                     <span className="text-muted small">Tracking Number</span>
                                                                     <span className="small fw-bold text-dark text-uppercase">{selectedOrder.tracking_id || 'N/A'}</span>
-                                                                </div>
-
-                                                                <div className="timeline-trail pt-3 border-top">
-                                                                    {selectedOrder.created_at && (
-                                                                        <div className="timeline-milestone">
-                                                                            <span className="text-muted extra-small uppercase">Ordered</span>
-                                                                            <span className="small fw-bold text-dark">{new Date(selectedOrder.created_at).toLocaleDateString()}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    {selectedOrder.packed_at && (
-                                                                        <div className="timeline-milestone">
-                                                                            <span className="text-muted extra-small uppercase">Packed</span>
-                                                                            <span className="small fw-bold text-dark">{new Date(selectedOrder.packed_at).toLocaleDateString()}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    {selectedOrder.shipped_at && (
-                                                                        <div className="timeline-milestone">
-                                                                            <span className="text-muted extra-small uppercase">Shipped</span>
-                                                                            <span className="small fw-bold text-dark">{new Date(selectedOrder.shipped_at).toLocaleDateString()}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    {selectedOrder.out_for_delivery_at && (
-                                                                        <div className="timeline-milestone">
-                                                                            <span className="text-muted extra-small uppercase">Out for Delivery</span>
-                                                                            <span className="small fw-bold text-dark">{new Date(selectedOrder.out_for_delivery_at).toLocaleDateString()}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    {selectedOrder.delivered_at && (
-                                                                        <div className="timeline-milestone active">
-                                                                            <span className="text-success extra-small fw-bold uppercase">Delivered</span>
-                                                                            <span className="small fw-bold text-success">{new Date(selectedOrder.delivered_at).toLocaleDateString()}</span>
-                                                                        </div>
-                                                                    )}
                                                                 </div>
 
                                                                 {selectedOrder.shipping_company_id?.tracking_url && selectedOrder.tracking_id && (
@@ -1556,7 +1797,7 @@ const ProfileContent = () => {
                                                         </div>
                                                         <div className="payment-row mt-3 border-top pt-3 total">
                                                             <span>{t('profile.paid_total', 'Paid Total')}</span>
-                                                            <span>{formatPrice(selectedOrder.total_amount)}</span>
+                                                            <span>{formatPrice(selectedOrder.total_amount, selectedOrder.currency_id)}</span>
                                                         </div>
                                                     </div>
 
@@ -1576,7 +1817,7 @@ const ProfileContent = () => {
                                                         <div className="pd-section-card mt-3 p-3 bg-danger-soft border-danger" style={{ borderLeft: '4px solid #ef4444' }}>
                                                             <h4 className="detail-section-title text-danger mb-2">Order Cancelled</h4>
                                                             <p className="small mb-1"><strong>Reason:</strong> {selectedOrder.cancel_reason || 'N/A'}</p>
-                                                            <p className="extra-small text-muted mb-0">Refund of {formatPrice(selectedOrder.total_amount)} has been credited back to the buyer's wallet.</p>
+                                                            <p className="extra-small text-muted mb-0">Refund of {formatPrice(selectedOrder.total_amount, selectedOrder.currency_id)} has been credited back to the buyer's wallet.</p>
                                                         </div>
                                                     )}
 
@@ -1652,6 +1893,16 @@ const ProfileContent = () => {
                                                                 <FaTruck className="text-primary" />
                                                                 {t('profile.shipping_management', 'Order Fulfillment')}
                                                             </h4>
+
+                                                            <div className="mb-4">
+                                                                <button 
+                                                                    className="btn btn-light border w-100 d-flex align-items-center justify-content-center gap-2 py-2 fw-bold"
+                                                                    onClick={() => printShippingLabel(selectedOrder, user)}
+                                                                >
+                                                                    🖨️ {t('profile.print_label', 'Print Shipping Label')}
+                                                                </button>
+                                                                <p className="xx-small text-muted text-center mt-2">Generate a printable address label for your package.</p>
+                                                            </div>
 
                                                             <div className="d-grid gap-2">
                                                                 {/* Confirmed -> Packed */}

@@ -129,13 +129,14 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
     return (
         <div className={`listing-card ${isFav ? 'is-favorited' : ''} ${onEdit ? 'editable' : ''}`} style={{ display: 'block', width: '100%', height: '100%', position: 'relative' }}>
             {/* Absolute Link Overlay for SEO & Navigation without nested interactive elements */}
-            <Link href={`/items/${item._id}`} onClick={handleCardClick} style={{ position: 'absolute', inset: 0, zIndex: 5 }} aria-label={safeString(item.title || item.name, 'Item')} />
+            <Link href={`/items/${item.slug || item._id}`} onClick={handleCardClick} style={{ position: 'absolute', inset: 0, zIndex: 5 }} aria-label={safeString(item.title || item.name, 'Item')} />
 
             <div className="listing-image-wrapper" style={{ position: 'relative' }}>
                 <img 
                     src={imageUrl} 
                     alt={safeString(item.title || item.name)} 
                     className="listing-image" 
+                    style={(item.is_sold || item.status === 'sold' || item.is_ordered || item.status === 'inactive') ? { filter: 'grayscale(100%)' } : {}}
                     onError={(e) => {
                         e.target.onerror = null; 
                         e.target.src = getImageUrl('images/site/not_found.png');
@@ -159,7 +160,8 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
                             background: 'none',
                             border: 'none',
                             zIndex: 20,
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            opacity: (item.is_sold || item.status === 'sold' || item.is_ordered || item.status === 'inactive') ? 0.6 : 1
                         }}
                     >
                         {isFav ? <FaHeart style={{ color: '#ef4444', fontSize: '1.2rem' }} /> : <FaRegHeart style={{ color: 'white', fontSize: '1.2rem' }} />}
@@ -200,7 +202,7 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
                 {item.isTopRated && <span className="badge-top-rated" style={{ zIndex: 10, position: 'absolute', bottom: '15px', left: '15px' }}>TOP RATED</span>}
 
                 {/* Condition Badge */}
-                {item.condition && !item.is_sold && item.status !== 'sold' && (
+                {item.condition && !item.is_sold && item.status !== 'sold' && !item.is_ordered && (
                     <span className="condition-badge" style={{ zIndex: 10 }}>
                         <FaTag style={{ fontSize: '0.6rem' }} />
                         {safeString(item.condition)}
@@ -215,10 +217,10 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
                     </span>
                 )}
 
-                {/* SOLD Badge */}
-                {(item.is_sold || item.status === 'sold') && (
+                {/* ORDERED Badge */}
+                {(item.is_sold || item.status === 'sold' || item.is_ordered) && (
                     <div className="sold-overlay" style={{ zIndex: 10 }}>
-                        <span>SOLD</span>
+                        <span>ORDERED</span>
                     </div>
                 )}
 

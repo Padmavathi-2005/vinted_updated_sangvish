@@ -9,6 +9,7 @@ import { FaGoogle, FaApple, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaShieldAlt, 
 import { FaXTwitter } from 'react-icons/fa6';
 import AuthContext from '@/context/AuthContext';
 import useRecaptcha from '@/hooks/useRecaptcha';
+import Meta from '@/components/common/Meta';
 import '@/app/styles/Auth.css';
 
 const LoginContent = () => {
@@ -202,8 +203,7 @@ const LoginContent = () => {
 export default function Login() {
     return (
         <Suspense fallback={<div className="d-flex justify-content-center p-5"><div className="spinner-border text-primary" /></div>}>
-            <title>Login | Resale Marketplace</title>
-            <meta name="description" content="Sign in to your account to buy and sell pre-loved fashion." />
+            <Meta title="Login" description="Sign in to your account to buy and sell pre-loved items." />
             <LoginContent />
         </Suspense>
     );

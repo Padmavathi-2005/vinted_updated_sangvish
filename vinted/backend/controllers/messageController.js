@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
+import Negotiation from '../models/Negotiation.js';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import Admin from '../models/Admin.js';
@@ -152,12 +153,9 @@ const sendMessage = asyncHandler(async (req, res) => {
                 { $elemMatch: { user: sender_id, on_model: sender_model } },
                 { $elemMatch: { user: receiver_id, on_model: receiver_model } }
             ]
-        }
+        },
+        item_id: item_id || null // Strictly match the item context
     };
-
-    if (item_id) {
-        query.item_id = item_id;
-    }
 
     let conversation = await Conversation.findOne(query);
 
@@ -204,6 +202,44 @@ const sendMessage = asyncHandler(async (req, res) => {
         offer_amount: offer_amount,
         item_id: item_id || conversation.item_id,
     });
+
+    if (message_type === 'offer' && offer_amount !== null) {
+        if (offer_amount <= 0) {
+            await newMessage.deleteOne();
+            res.status(400);
+            throw new Error('Offer amount must be greater than zero');
+        }
+        
+        const Item = mongoose.model('Item');
+        const item = await Item.findById(item_id || conversation.item_id);
+        
+        if (item) {
+            // Check for existing accepted offers for this user to determine effective price
+            let effectivePrice = item.price;
+            const existingOffer = await Message.findOne({
+                conversation_id: conversation._id,
+                message_type: 'offer',
+                offer_status: 'accepted'
+            }).sort({ created_at: -1 });
+
+            if (existingOffer) {
+                effectivePrice = existingOffer.offer_amount;
+            }
+
+            if (offer_amount > effectivePrice) {
+                await newMessage.deleteOne();
+                res.status(400);
+                throw new Error(`Offer cannot be higher than the current effective price`);
+            }
+
+            const minAllowed = effectivePrice * 0.7;
+            if (offer_amount < minAllowed) {
+                await newMessage.deleteOne();
+                res.status(400);
+                throw new Error(`Offer is too low. Minimum allowed is 70% of the price.`);
+            }
+        }
+    }
 
     const populatedMessage = await Message.findById(newMessage._id).populate('sender_id', 'name username profile_image');
 
@@ -425,6 +461,29 @@ const respondToOffer = asyncHandler(async (req, res) => {
     if (conversation) {
         conversation.last_message = systemMessageText;
         conversation.last_message_at = Date.now();
+        if (status === 'accepted') {
+            conversation.accepted_offer_amount = message.offer_amount;
+            
+            // Create or update a formal Negotiation record
+            await Negotiation.findOneAndUpdate(
+                { 
+                    item_id: message.item_id, 
+                    buyer_id: message.receiver_id, // The one who received the accept is the one who made the offer
+                    status: 'active' 
+                },
+                {
+                    item_id: message.item_id,
+                    buyer_id: message.receiver_id,
+                    seller_id: req.user._id,
+                    agreed_price: message.offer_amount,
+                    currency_id: message.currency_id,
+                    status: 'active',
+                    conversation_id: conversation._id,
+                    expires_at: new Date(+new Date() + 48 * 60 * 60 * 1000)
+                },
+                { upsert: true, new: true }
+            );
+        }
         await conversation.save();
     }
 

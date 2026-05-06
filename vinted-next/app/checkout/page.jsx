@@ -20,11 +20,18 @@ import Meta from '@/components/common/Meta';
 import { usePopup } from '@/components/common/Popup';
 import '@/app/styles/Checkout.css';
 import { useTranslation } from 'react-i18next';
+import { 
+    validateAlphaField, 
+    getAlphaError, 
+    validateTextField, 
+    getTextFieldError 
+} from '@/utils/validation';
+
 
 // Promise to be resolved when settings are fetched
 let stripePromise = null;
 
-const SHIPPING_FEE = 2; // In USD ($2.00)
+const SHIPPING_FEE = 200; // In INR (Base currency)
 
 const Checkout = () => {
     const router = useRouter();
@@ -55,14 +62,7 @@ const Checkout = () => {
             return (price / itemRate) * defaultCurrency.exchange_rate;
         };
 
-        selectedItems.forEach(item => {
-            subtotal += getInDefault(item.price, item.currency_id);
-            if (!item.shipping_included) {
-                shippingTotal += getInDefault(SHIPPING_FEE, 'usd');
-            }
-        });
-
-        // Group selected items by seller ONLY for bundle discounts
+        // Group selected items by seller
         const selectedBySeller = selectedItems.reduce((acc, item) => {
             const sid = item.seller_id?._id || item.seller_id;
             if (!acc[sid]) acc[sid] = { items: [], seller: item.seller_id };
@@ -74,7 +74,19 @@ const Checkout = () => {
             const { items, seller } = group;
             if (items.length === 0) return;
 
-            // Discount: Check seller bundle discounts
+            // 1. Add item prices to subtotal
+            items.forEach(item => {
+                subtotal += getInDefault(item.price, item.currency_id);
+            });
+
+            // 2. Calculate Combined Shipping (200 INR per seller if not free)
+            const anyFreeShipping = items.some(i => i.shipping_included);
+            if (!anyFreeShipping) {
+                // SHIPPING_FEE in backend is 200 INR
+                shippingTotal += getInDefault(200, 'inr');
+            }
+
+            // 3. Calculate Bundle Discount
             if (seller && seller.bundle_discounts?.enabled) {
                 const count = items.length;
                 let pct = 0;
@@ -102,6 +114,12 @@ const Checkout = () => {
     };
 
     const { subtotal, shippingTotal, discountTotal, total } = calculateBundleTotals();
+
+    const commonCountry = useMemo(() => {
+        if (selectedItems.length === 0) return '';
+        const countries = [...new Set(selectedItems.map(item => item.country || 'India'))];
+        return countries.length === 1 ? countries[0] : 'Multiple';
+    }, [selectedItems]);
 
     const [availableMethods, setAvailableMethods] = useState([]);
     const [walletBalance, setWalletBalance] = useState(0);
@@ -374,14 +392,21 @@ const Checkout = () => {
     }, [paymentMethod, paypalLoaded, total, step, defaultCurrency?.code]); // handlePlaceOrder removed to prevent flicker
 
     const [form, setForm] = useState({
-        full_name: user?.username || '',
-        phone: '',
-        address_line: '',
-        city: '',
-        state: '',
-        country: 'India',
-        pincode: ''
+        full_name: user?.address?.full_name || user?.username || '',
+        phone: user?.phone || '',
+        address_line: user?.address?.address_line || '',
+        city: user?.address?.city || '',
+        state: user?.address?.state || '',
+        country: commonCountry !== 'Multiple' ? commonCountry : (user?.address?.country || 'India'),
+        pincode: user?.address?.pincode || ''
     });
+
+    // Update country if commonCountry changes (and not multiple)
+    React.useEffect(() => {
+        if (commonCountry && commonCountry !== 'Multiple') {
+            setForm(f => ({ ...f, country: commonCountry }));
+        }
+    }, [commonCountry]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -420,6 +445,20 @@ const Checkout = () => {
             }
         });
 
+        // Alphabetical Validations
+        if (form.full_name && !validateAlphaField(form.full_name)) {
+            errors.full_name = getAlphaError('Full Name');
+        }
+        if (form.city && !validateAlphaField(form.city)) {
+            errors.city = getAlphaError('City');
+        }
+        if (form.state && !validateAlphaField(form.state)) {
+            errors.state = getAlphaError('State');
+        }
+        if (form.country && !validateAlphaField(form.country)) {
+            errors.country = getAlphaError('Country');
+        }
+
         // Phone Validation (at least 10 digits, optional + at start)
         const phoneRegex = /^\+?[0-9]{10,15}$/;
         if (form.phone && !phoneRegex.test(form.phone)) {
@@ -447,6 +486,15 @@ const Checkout = () => {
 
     const handlePlaceOrder = React.useCallback(async (e, stripePaymentId = null) => {
         if (e) e.preventDefault();
+
+        if (commonCountry === 'Multiple') {
+            showPopup({ 
+                type: 'error', 
+                title: 'International Shipping', 
+                message: 'Items in your cart are from different countries. Please checkout items from the same country separately.' 
+            });
+            return;
+        }
 
         if (!validateForm()) return;
 
@@ -523,7 +571,7 @@ const Checkout = () => {
 
     return (
         <div className="checkout-page">
-            
+            <Meta title="Checkout" description="Complete your purchase securely on our marketplace." />
             <div className="checkout-container">
                 <div className="checkout-breadcrumb">
                     <Link href="/">{t('checkout.home')}</Link><FaChevronRight />
@@ -577,7 +625,18 @@ const Checkout = () => {
                             </div>
                             <div className="checkout-field">
                                 <label>{t('checkout.country')}</label>
-                                <input name="country" value={form.country} onChange={handleChange} />
+                                <input 
+                                    name="country" 
+                                    value={form.country} 
+                                    onChange={handleChange} 
+                                    disabled={commonCountry !== 'Multiple'}
+                                    style={{ background: commonCountry !== 'Multiple' ? '#f8fafc' : '#fff', cursor: commonCountry !== 'Multiple' ? 'not-allowed' : 'text' }}
+                                />
+                                {commonCountry !== 'Multiple' && (
+                                    <p className="xx-small text-muted mt-1">
+                                        <FaShieldAlt className="me-1" /> Domestic shipping only. Country is locked to seller's location.
+                                    </p>
+                                )}
                             </div>
                         </div>
 
@@ -717,9 +776,6 @@ const Checkout = () => {
                                         </div>
                                         <div className="checkout-summary-item-price">
                                             <strong>{formatPrice(item.price, item.currency_id, defaultCurrency)}</strong>
-                                            {!item.shipping_included && (
-                                                <small>+{formatPrice(SHIPPING_FEE, 'usd', defaultCurrency)} {t('checkout.shipping').toLowerCase()}</small>
-                                            )}
                                             {item.shipping_included && (
                                                 <small className="ship-inc">{t('checkout.shipping_included')}</small>
                                             )}
