@@ -11,7 +11,7 @@ export async function generateMetadata() {
     const settings = await res.json();
     
     const siteName = safeString(settings?.site_name, 'Resale');
-    const siteLogo = settings?.site_logo ? getImageUrl(settings.site_logo) : null;
+    const siteLogo = settings?.site_logo ? getImageUrl(settings.site_logo) : `${BASE_URL}/images/site/logo.png`;
     const siteFavicon = settings?.site_favicon ? getImageUrl(settings.site_favicon) : '/favicon.ico';
 
     return {
@@ -19,23 +19,36 @@ export async function generateMetadata() {
         default: siteName,
         template: `%s | ${siteName}`,
       },
-      description: 'Buy and sell pre-loved fashion.',
+      description: settings?.site_description || 'Buy and sell pre-loved fashion.',
       icons: {
-        icon: siteFavicon,
+        icon: [
+          { url: siteFavicon },
+          { url: siteFavicon, rel: 'shortcut icon' },
+        ],
+        apple: [
+          { url: siteFavicon, sizes: '180x180', type: 'image/png' },
+        ],
       },
       openGraph: {
         title: siteName,
-        description: 'Buy and sell pre-loved fashion.',
+        description: settings?.site_description || 'Buy and sell pre-loved fashion.',
         url: BASE_URL,
         siteName: siteName,
-        images: siteLogo ? [{ url: siteLogo }] : [],
+        images: [
+          {
+            url: siteLogo,
+            width: 1200,
+            height: 630,
+            alt: siteName,
+          },
+        ],
         type: 'website',
       },
       twitter: {
         card: 'summary_large_image',
         title: siteName,
-        description: 'Buy and sell pre-loved fashion.',
-        images: siteLogo ? [siteLogo] : [],
+        description: settings?.site_description || 'Buy and sell pre-loved fashion.',
+        images: [siteLogo],
       },
     };
   } catch (error) {

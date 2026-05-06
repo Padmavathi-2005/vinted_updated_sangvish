@@ -49,6 +49,8 @@ const Meta = ({
         <Head>
             {/* Favicon */}
             <link rel="icon" href={siteFavicon} />
+            <link rel="shortcut icon" href={siteFavicon} />
+            <link rel="apple-touch-icon" href={siteFavicon} />
 
             {/* Standard Meta Tags */}
             <title>{metaTitle}</title>
