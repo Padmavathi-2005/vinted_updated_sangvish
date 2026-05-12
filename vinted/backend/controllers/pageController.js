@@ -39,14 +39,22 @@ export const getPageById = async (req, res) => {
 // Create a new page
 export const createPage = async (req, res) => {
     try {
-        const { title, slug, content, isActive } = req.body;
+        const { title, slug, content, isActive, seo_title, seo_description, seo_keywords } = req.body;
 
         const existingPage = await Page.findOne({ slug });
         if (existingPage) {
             return res.status(400).json({ message: 'Page with this slug already exists' });
         }
 
-        const page = new Page({ title, slug, content, isActive });
+        const page = new Page({ 
+            title, 
+            slug, 
+            content, 
+            isActive,
+            seo_title,
+            seo_description,
+            seo_keywords
+        });
         const savedPage = await page.save();
         res.status(201).json(savedPage);
     } catch (error) {
@@ -57,7 +65,7 @@ export const createPage = async (req, res) => {
 // Update an existing page
 export const updatePage = async (req, res) => {
     try {
-        const { title, slug, content, isActive } = req.body;
+        const { title, slug, content, isActive, seo_title, seo_description, seo_keywords } = req.body;
 
         const existingPage = await Page.findOne({ slug, _id: { $ne: req.params.id } });
         if (existingPage) {
@@ -66,7 +74,15 @@ export const updatePage = async (req, res) => {
 
         const updatedPage = await Page.findByIdAndUpdate(
             req.params.id,
-            { title, slug, content, isActive },
+            { 
+                title, 
+                slug, 
+                content, 
+                isActive,
+                seo_title,
+                seo_description,
+                seo_keywords
+            },
             { new: true, runValidators: true }
         );
 

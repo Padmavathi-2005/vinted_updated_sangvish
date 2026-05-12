@@ -10,7 +10,7 @@ const updateAdminPassword = async () => {
         await mongoose.connect(process.env.MONGO_URI);
         console.log('Connected to MongoDB');
 
-        const email = 'admin@gmail.com';
+        const email = 'sangvish21@gmail.com';
         const newPassword = 'admin'; // User requested 'admin'
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);

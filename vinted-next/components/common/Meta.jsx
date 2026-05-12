@@ -10,7 +10,8 @@ const Meta = ({
     description = "", 
     image = "", 
     url = "",
-    type = "website"
+    type = "website",
+    keywords = ""
 }) => {
     const { settings } = useSettings();
     const [currentUrl, setCurrentUrl] = useState(url);
@@ -37,7 +38,7 @@ const Meta = ({
     // Default values if props are missing
     const defaultDesc = "Join our community to buy and sell pre-loved fashion. Sustainable, affordable, and easy.";
     const metaDesc = safeString(description || settings?.site_description) || defaultDesc;
-    const metaKeywords = safeString(settings?.site_keywords) || "marketplace, resale, fashion";
+    const metaKeywords = safeString(keywords || settings?.site_keywords) || "marketplace, resale, fashion";
     
     // IMAGE HANDLING: Ensure it's absolute for social crawlers
     let metaImage = image;

@@ -136,7 +136,17 @@
       "is_sold": "هل يباع؟",
       "is_blocked": "هل تم حظره؟",
       "sold": "مُباع",
-      "available": "متاح"
+      "available": "متاح",
+      "active": "نشط",
+      "item_type": "نوع العنصر",
+      "item_type_placeholder": "اختر نوع العنصر...",
+      "brand": "ماركة",
+      "brand_placeholder": "أدخل الماركة...",
+      "size": "مقاس",
+      "size_placeholder": "أدخل المقاس...",
+      "color": "لون",
+      "color_placeholder": "أدخل اللون...",
+      "specifications": "مواصفات"
     }
   },
   "orders": {

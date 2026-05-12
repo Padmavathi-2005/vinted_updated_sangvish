@@ -265,10 +265,6 @@ const WithdrawalRequests = () => {
                     </div>
                 </div>
                 <div className="wallet-header-actions">
-                    <button className="wallet-btn wallet-btn-outline" onClick={() => fetchRequests(true)} disabled={refreshing}>
-                        <FaSync className={refreshing ? 'spin' : ''} />
-                        <span>Refresh</span>
-                    </button>
                 </div>
             </div>
 

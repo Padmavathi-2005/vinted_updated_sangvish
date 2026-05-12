@@ -110,7 +110,7 @@ const Contact = () => {
                                 </div>
                                 <div className="info-content">
                                     <label>{t('contact.email', 'Email Us')}</label>
-                                    <p>{settings.support_email || 'support@resale.com'}</p>
+                                    <p>{settings.support_email || 'sangvish21@gmail.com'}</p>
                                 </div>
                             </div>
 

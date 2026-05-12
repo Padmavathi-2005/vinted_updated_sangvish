@@ -211,9 +211,6 @@ const Subscribers = () => {
                             <p className="text-muted small mb-0">Manage your newsletter list and subscribers</p>
                         </div>
                         <div className="d-flex gap-2">
-                            <Button variant="outline-secondary" onClick={fetchSubscribers} className="btn-admin-outline">
-                                <FaSync /> Refresh
-                            </Button>
                             <Dropdown>
                                 <Dropdown.Toggle variant="primary" id="dropdown-export" className="btn-admin-action">
                                     <FaDownload /> Export

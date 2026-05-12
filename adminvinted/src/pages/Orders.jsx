@@ -286,9 +286,6 @@ const Orders = () => {
                             <p className="text-muted small mb-0">{t('orders.subtitle')}</p>
                         </div>
                         <div className="d-flex gap-2">
-                            <Button variant="outline-primary" onClick={fetchOrders} className="d-flex align-items-center gap-2 bg-white">
-                                <FaSync /> {t('common.refresh')}
-                            </Button>
                             <Dropdown>
                                 <Dropdown.Toggle variant="primary" id="dropdown-export" className="d-flex align-items-center gap-2">
                                     <FaDownload /> {t('common.export')}

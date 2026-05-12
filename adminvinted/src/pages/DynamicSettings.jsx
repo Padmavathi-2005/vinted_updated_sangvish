@@ -590,7 +590,7 @@ const DynamicSettings = () => {
                             value={formData.default_currency_id || ''}
                             onChange={(val) => setFormData({ ...formData, default_currency_id: val })}
                         />
-                        <Form.Text className="text-muted xx-small">The primary currency for your marketplace.</Form.Text>
+                        <Form.Text className="text-muted xx-small">The primary currency for Resale.</Form.Text>
                     </Col>
 
                     <Col md={12} className="border-top pt-4">
@@ -979,7 +979,7 @@ const DynamicSettings = () => {
                                 )}
                             </div>
                             <p className="xx-small text-muted mb-0">
-                                Multi-carrier shipping for global marketplaces.
+                                Multi-carrier shipping for Resale.
                             </p>
                         </div>
                     </Col>

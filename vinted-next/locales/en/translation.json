@@ -65,7 +65,7 @@
     "start_selling": "Start Selling",
     "explore_items": "Explore Items",
     "recent_listings": "Recent Listings",
-    "local_marketplace": "LOCAL CLASSIFIEDS MARKETPLACE",
+    "local_marketplace": "Resale Marketplace",
     "user_trust_rating": "User Trust Rating",
     "happy_sellers": "Happy Sellers",
     "browse_categories": "Browse Items by Category",
@@ -152,7 +152,8 @@
     "report_reason": "Why are you reporting this?",
     "report_description": "Additional Details",
     "report_placeholder": "Describe the issue in more detail...",
-    "submit_report": "Submit Report"
+    "submit_report": "Submit Report",
+    "check_out_this": "Hey, checkout this product on"
   },
   "products": {
     "shop_collection": "Shop Our Collection",
@@ -465,7 +466,7 @@
     "stay_inspired": "Stay Inspired",
     "subscribe_text": "Subscribe to get the latest trends, sales, and community updates delivered to your inbox.",
     "email_placeholder": "Your email address",
-    "copyright": "Vinted Clone Inc. Crafted with passion for a better planet.",
+    "copyright": "Resale Inc. Crafted with passion for a better planet.",
     "privacy_policy": "Privacy Policy",
     "terms_of_service": "Terms of Service",
     "cookie_settings": "Cookie Settings",

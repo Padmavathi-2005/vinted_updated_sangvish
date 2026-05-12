@@ -40,6 +40,9 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
     const [specifications, setSpecifications] = useState(item.attributes || []);
     const [status, setStatus] = useState(item.status || 'active');
     const [isSold, setIsSold] = useState(item.is_sold || false);
+    const [seoTitle, setSeoTitle] = useState(item.seo_title || '');
+    const [seoDescription, setSeoDescription] = useState(item.seo_description || '');
+    const [seoKeywords, setSeoKeywords] = useState(item.seo_keywords || '');
     
     // Category State
     const [categories, setCategories] = useState([]);
@@ -102,6 +105,9 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
             setImages(item.images || []);
             setStatus(item.status || 'active');
             setIsSold(item.is_sold || false);
+            setSeoTitle(item.seo_title || '');
+            setSeoDescription(item.seo_description || '');
+            setSeoKeywords(item.seo_keywords || '');
             
             // Re-fetch subcategories if category changed
             const catId = item.category_id?._id || item.category_id;
@@ -426,6 +432,9 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
         formData.append('shipping_included', shippingIncluded);
         formData.append('status', status);
         formData.append('is_sold', isSold);
+        formData.append('seo_title', seoTitle);
+        formData.append('seo_description', seoDescription);
+        formData.append('seo_keywords', seoKeywords);
         formData.append('attributes', JSON.stringify(specifications.filter(s => s.key && s.value)));
 
         // Location Data
@@ -805,6 +814,44 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
                             )) : (
                                 <div className="text-center py-3 text-muted small">No custom attributes added yet.</div>
                             )}
+                        </div>
+
+                        {/* SEO Section */}
+                        <div className="eim-form-card mb-4">
+                            <h4 className="eim-form-subtitle mb-3">SEO Optimization <span className="text-muted small fw-normal">(Optional)</span></h4>
+                            
+                            <div className="si-field mb-3">
+                                <label className="si-label">SEO Title <span className="text-muted small fw-normal">(Optional)</span></label>
+                                <input 
+                                    type="text" 
+                                    className="si-input" 
+                                    placeholder="Targeted title for search engines" 
+                                    value={seoTitle} 
+                                    onChange={e => setSeoTitle(e.target.value)} 
+                                />
+                            </div>
+
+                            <div className="si-field mb-3">
+                                <label className="si-label">SEO Description <span className="text-muted small fw-normal">(Optional)</span></label>
+                                <textarea 
+                                    className="si-textarea" 
+                                    rows={3} 
+                                    placeholder="Brief summary for search engine snippets" 
+                                    value={seoDescription} 
+                                    onChange={e => setSeoDescription(e.target.value)} 
+                                />
+                            </div>
+
+                            <div className="si-field">
+                                <label className="si-label">SEO Keywords <span className="text-muted small fw-normal">(Optional)</span></label>
+                                <input 
+                                    type="text" 
+                                    className="si-input" 
+                                    placeholder="e.g. vintage, denim, blue jacket (separate with commas)" 
+                                    value={seoKeywords} 
+                                    onChange={e => setSeoKeywords(e.target.value)} 
+                                />
+                            </div>
                         </div>
 
                         {/* Discount / Price Drop Section */}

@@ -44,16 +44,15 @@ const Transactions = () => {
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    const fetchTransactions = async (isRefresh = false) => {
+    const fetchTransactions = async () => {
         try {
-            isRefresh ? setRefreshing(true) : setLoading(true);
+            setLoading(true);
             const { data } = await axios.get('/api/admin/transactions');
             setTransactions(data);
         } catch (err) {
             console.error('Error fetching transactions:', err);
         } finally {
             setLoading(false);
-            setRefreshing(false);
         }
     };
 
@@ -241,15 +240,6 @@ const Transactions = () => {
                     </div>
                 </div>
                 <div className="wallet-header-actions">
-                    <button
-                        className="wallet-btn wallet-btn-outline"
-                        onClick={() => fetchTransactions(true)}
-                        title="Refresh"
-                        disabled={refreshing}
-                    >
-                        <FaSync className={refreshing ? 'spin' : ''} />
-                        <span>Refresh</span>
-                    </button>
                     <div ref={exportRef} style={{ position: 'relative' }}>
                         <button
                             className="wallet-btn wallet-btn-primary"

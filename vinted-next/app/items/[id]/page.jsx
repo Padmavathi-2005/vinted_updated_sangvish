@@ -17,7 +17,7 @@ export async function generateMetadata({ params }) {
 
     if (!item || !item.title) return { title: 'Item Not Found' };
 
-    const siteName = safeString(settings?.site_name, 'Marketplace');
+    const siteName = safeString(settings?.site_name, 'Resale');
     const title = safeString(item.title);
     const description = safeString(item.short_description || item.description)?.substring(0, 160) || `Buy ${title} on ${siteName}.`;
     const image = item.images && item.images[0] ? getImageUrl(item.images[0]) : null;

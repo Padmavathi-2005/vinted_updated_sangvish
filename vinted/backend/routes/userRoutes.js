@@ -27,6 +27,7 @@ router.post('/send-signup-otp', sendSignupOTP);
 router.post('/verify-otp', verifyOTP);
 router.put('/resetpassword/:resettoken', resetPassword);
 router.get('/me', protect, getMe);
+router.get('/profile', protect, getMe);
 router.get('/', protect, getAllUsers);
 router.get('/check-username/:username', checkUsername);
 router.get('/:id/public', getPublicUser);

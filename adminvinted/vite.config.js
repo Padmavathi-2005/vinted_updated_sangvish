@@ -12,7 +12,7 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/images': {
-        target: 'http://localhost:5006',
+        target: 'http://localhost:5003',
         changeOrigin: true,
       }
     }

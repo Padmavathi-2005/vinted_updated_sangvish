@@ -11,6 +11,10 @@ const itemSchema = mongoose.Schema(
             type: String,
             required: [true, 'Please add a title'],
         },
+        slug: {
+            type: String,
+            unique: true,
+        },
         description: {
             type: String,
             required: [true, 'Please add a description'],
@@ -163,5 +167,21 @@ const itemSchema = mongoose.Schema(
         }
     }
 );
+
+function slugify(text) {
+    return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w-]+/g, '')
+        .replace(/--+/g, '-');
+}
+
+itemSchema.pre('save', async function () {
+    if (this.isModified('title') || !this.slug) {
+        this.slug = `${slugify(this.title)}-${this._id.toString().substring(18)}`;
+    }
+});
 
 export default mongoose.model('Item', itemSchema);

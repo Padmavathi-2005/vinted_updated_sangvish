@@ -42,6 +42,7 @@ import { protect, adminProtect } from './middleware/authMiddleware.js';
 import { getReportsAdmin, updateReportStatus, handleReportAction } from './controllers/reportController.js';
 import startDiscountReminderJob from './jobs/discountReminderJob.js';
 import startAutoCompleteOrderJob from './jobs/autoCompleteOrderJob.js';
+import startNightlyResetJob from './jobs/nightlyResetJob.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -158,6 +159,7 @@ const startServer = async () => {
         // Start scheduled jobs
         startDiscountReminderJob();
         startAutoCompleteOrderJob();
+        startNightlyResetJob();
 
         app.use(errorHandler);
 

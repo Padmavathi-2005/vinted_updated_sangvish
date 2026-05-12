@@ -8,7 +8,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config();
+// Explicitly load .env from the backend directory to avoid CWD issues
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const dbUri = process.env.LOCAL_MONGO_URI || process.env.MONGO_URI;
 const backupDir = path.join(__dirname, 'db_backup');

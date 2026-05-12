@@ -298,9 +298,6 @@ export const PaymentMethodsList = ({ isIntegrated = false, activeGlobalLang }) =
                         <div style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>
                             {filteredData.length} result{filteredData.length !== 1 ? 's' : ''}
                         </div>
-                        <button className="wallet-btn wallet-btn-outline wallet-btn-sm" onClick={() => fetchAll(true)} disabled={refreshing}>
-                            <FaSync className={refreshing ? 'spin' : ''} />
-                        </button>
                         {!isIntegrated && (
                             <button className="wallet-btn wallet-btn-primary wallet-btn-sm" onClick={openAdd}>
                                 <FaPlus size={11} /> Add Gateway

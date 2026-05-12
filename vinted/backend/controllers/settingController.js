@@ -20,7 +20,7 @@ const getSettingsByType = asyncHandler(async (req, res) => {
     if (!setting && type === 'general_settings') {
         setting = await Setting.create({
             type: 'general_settings',
-            site_name: { en: 'My Marketplace' },
+            site_name: { en: 'Resale' },
             site_url: '',
             site_logo: 'images/site/logo.png',
             site_favicon: 'images/site/favicon.png',
@@ -171,7 +171,7 @@ const getSettingsByType = asyncHandler(async (req, res) => {
 
         // Ensure general_settings has site fields if they were merged
         if (type === 'general_settings') {
-            if (!responseData.site_name) responseData.site_name = { en: 'Marketplace' };
+            if (!responseData.site_name) responseData.site_name = { en: 'Resale' };
             if (!responseData.site_logo) responseData.site_logo = 'images/site/logo.png';
             if (!responseData.site_favicon) responseData.site_favicon = 'images/site/favicon.png';
             if (!responseData.site_og_image) responseData.site_og_image = responseData.site_logo;

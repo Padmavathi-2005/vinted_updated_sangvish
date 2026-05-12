@@ -23,6 +23,7 @@ import CurrencyContext from '@/context/CurrencyContext';
 import CartContext from '@/context/CartContext';
 import ItemCard from '@/components/common/ItemCard';
 import { usePopup } from '@/components/common/Popup';
+import { useSettings } from '@/context/SettingsContext';
 import '@/app/styles/ItemDetail.css';
 import CustomSelect from '@/components/common/CustomSelect';
 import { getImageUrl, getItemImageUrl, safeString } from '@/utils/constants';
@@ -74,6 +75,7 @@ const ItemDetailContent = () => {
     const { addToCart, isInCart } = useContext(CartContext);
     const { showPopup, PopupComponent } = usePopup();
     const { t } = useTranslation();
+    const { settings } = useSettings();
 
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -465,14 +467,20 @@ const ItemDetailContent = () => {
         );
     };
 
-    const handleImageError = (e) => {
-        e.target.style.display = 'none';
+    const [brokenImages, setBrokenImages] = useState(new Set());
+
+    const handleImageError = (path) => {
+        setBrokenImages(prev => {
+            const next = new Set(prev);
+            next.add(path);
+            return next;
+        });
     };
 
     const handleThumbClick = (idx) => {
         setActiveImg(idx);
         setHoveredSide(null);
-        setIsPortrait(false); // Reset orientation state before loading new image
+        setIsPortrait(false); 
     };
 
     const handleImageLoad = (e) => {
@@ -573,9 +581,19 @@ const ItemDetailContent = () => {
                                     src={getImageSrc(images[displayedImg])}
                                     alt={item.title}
                                     className="id-main-img"
-                                    onError={handleImageError}
+                                    style={{ display: brokenImages.has(images[displayedImg]) ? 'none' : 'block' }}
+                                    onError={() => handleImageError(images[displayedImg])}
                                     onLoad={handleImageLoad}
                                 />
+                                {brokenImages.has(images[displayedImg]) && (
+                                    <div className="id-main-img-placeholder" style={{ 
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center', 
+                                        justifyContent: 'center', height: '100%', background: '#f1f5f9', color: '#94a3b8' 
+                                    }}>
+                                        <FaBoxOpen size={48} />
+                                        <p style={{ marginTop: '12px', fontSize: '0.9rem', fontWeight: 600 }}>Image Not Found</p>
+                                    </div>
+                                )}
                                 {item.is_sold || item.status === 'sold' || item.is_ordered ? (
                                     <div className="id-sold-overlay">
                                         <span>ORDERED</span>
@@ -622,7 +640,18 @@ const ItemDetailContent = () => {
                                                 onMouseLeave={() => setHoveredSide(null)}
                                                 onClick={() => handleThumbClick(idx)}
                                             >
-                                                <img src={getImageSrc(img)} alt={`View ${idx + 1}`} className="id-side-img" onError={handleImageError} />
+                                                {!brokenImages.has(img) ? (
+                                                    <img 
+                                                        src={getImageSrc(img)} 
+                                                        alt={`View ${idx + 1}`} 
+                                                        className="id-side-img" 
+                                                        onError={() => handleImageError(img)} 
+                                                    />
+                                                ) : (
+                                                    <div className="id-side-img id-side-img-fallback" style={{ background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <FaBoxOpen size={20} color="#cbd5e1" />
+                                                    </div>
+                                                )}
                                                 <div className="id-thumb-overlay"><span>{idx + 1}</span></div>
                                             </div>
                                         );
@@ -1056,7 +1085,18 @@ const ItemDetailContent = () => {
                         {/* Product Preview */}
                         <div className="id-share-preview">
                             <div className="id-share-preview-img-wrap">
-                                <img src={getImageSrc(images[0])} alt={item.title} className="id-share-preview-img" />
+                                {!brokenImages.has(images[0]) ? (
+                                    <img 
+                                        src={getImageSrc(images[0])} 
+                                        alt={item.title} 
+                                        className="id-share-preview-img" 
+                                        onError={() => handleImageError(images[0])}
+                                    />
+                                ) : (
+                                    <div className="id-share-preview-img" style={{ background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <FaBoxOpen size={32} color="#cbd5e1" />
+                                    </div>
+                                )}
                             </div>
                             <div className="id-share-preview-info">
                                 <h3 className="id-share-preview-title">{item.title}</h3>
@@ -1077,7 +1117,14 @@ const ItemDetailContent = () => {
                         </div>
 
                         <div className="id-share-grid">
-                            <div className="id-share-item" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(window.location.href)}`)}>
+                            <div 
+                                className="id-share-item" 
+                                onClick={() => {
+                                    const siteName = safeString(settings?.site_name, 'Resale');
+                                    const text = encodeURIComponent(`${t('item_detail.check_out_this')} ${siteName}\n${window.location.href}`);
+                                    window.open(`https://wa.me/?text=${text}`);
+                                }}
+                            >
                                 <div className="id-share-icon whatsapp"><FaWhatsapp /></div>
                                 <span>WhatsApp</span>
                             </div>
@@ -1085,15 +1132,23 @@ const ItemDetailContent = () => {
                                 <div className="id-share-icon facebook"><FaFacebookF /></div>
                                 <span>Facebook</span>
                             </div>
-                            <div className="id-share-item" onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}`)}>
+                            <div 
+                                className="id-share-item" 
+                                onClick={() => {
+                                    const siteName = safeString(settings?.site_name, 'Resale');
+                                    const text = encodeURIComponent(`${t('item_detail.check_out_this')} ${siteName}\n${window.location.href}`);
+                                    window.open(`https://twitter.com/intent/tweet?text=${text}`);
+                                }}
+                            >
                                 <div className="id-share-icon twitter"><FaXTwitter /></div>
                                 <span>X / Twitter</span>
                             </div>
                             <div
                                 className="id-share-item"
                                 onClick={() => {
-                                    const subject = encodeURIComponent(item.title);
-                                    const body = encodeURIComponent(`${t('item_detail.check_out_this')} ${item.title}: ${window.location.href}`);
+                                    const siteName = safeString(settings?.site_name, 'Resale');
+                                    const subject = encodeURIComponent(`${item.title} | ${siteName}`);
+                                    const body = encodeURIComponent(`${t('item_detail.check_out_this')} ${siteName}\n${window.location.href}`);
                                     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${body}`;
                                     window.open(gmailUrl, '_blank');
                                 }}
@@ -1256,15 +1311,23 @@ const ItemDetailContent = () => {
                             onMouseMove={handleLightboxMouseMove}
                             style={{ cursor: lightboxZoom ? 'zoom-out' : 'zoom-in' }}
                         >
-                            <img
-                                src={getImageSrc(images[activeImg])}
-                                alt={item.title}
-                                className="id-lightbox-img"
-                                style={lightboxZoom ? {
-                                    transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                                    transform: 'scale(2.5)'
-                                } : {}}
-                            />
+                            {!brokenImages.has(images[activeImg]) ? (
+                                <img
+                                    src={getImageSrc(images[activeImg])}
+                                    alt={item.title}
+                                    className="id-lightbox-img"
+                                    style={lightboxZoom ? {
+                                        transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                                        transform: 'scale(2.5)'
+                                    } : {}}
+                                    onError={() => handleImageError(images[activeImg])}
+                                />
+                            ) : (
+                                <div className="id-lightbox-error" style={{ color: 'white', textAlign: 'center' }}>
+                                    <FaBoxOpen size={64} />
+                                    <p style={{ marginTop: '20px' }}>This image could not be loaded.</p>
+                                </div>
+                            )}
                         </div>
                         {images.length > 1 && (
                             <div className="id-lightbox-thumbs">
@@ -1274,7 +1337,17 @@ const ItemDetailContent = () => {
                                         className={`id-lb-thumb ${i === activeImg ? 'active' : ''}`}
                                         onClick={() => setActiveImg(i)}
                                     >
-                                        <img src={getImageSrc(img)} alt={`Thumb ${i}`} />
+                                        {!brokenImages.has(img) ? (
+                                            <img 
+                                                src={getImageSrc(img)} 
+                                                alt={`Thumb ${i}`} 
+                                                onError={() => handleImageError(img)}
+                                            />
+                                        ) : (
+                                            <div style={{ width: '100%', height: '100%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <FaBoxOpen size={16} color="#64748b" />
+                                            </div>
+                                        )}
                                         <div className="id-lb-thumb-num">{(i + 1)}</div>
                                     </div>
                                 ))}

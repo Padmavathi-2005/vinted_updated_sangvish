@@ -51,8 +51,9 @@ const DynamicPage = () => {
     return (
         <>
             <Meta 
-                title={safeString(page.title)} 
-                description={safeString(page.content).substring(0, 160).replace(/<[^>]*>?/gm, '')} 
+                title={page.seo_title || safeString(page.title)} 
+                description={page.seo_description || safeString(page.content).substring(0, 160).replace(/<[^>]*>?/gm, '')} 
+                keywords={page.seo_keywords || ''}
             />
 
             <div className="dp-page">

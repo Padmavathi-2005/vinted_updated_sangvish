@@ -67,7 +67,7 @@ const seedDB = async () => {
         await Setting.create({
             type: "admin_settings",
             admin_commission: 2,
-            site_name: "My Marketplace",
+            site_name: "Resale",
             site_logo: "settings/logo.png",
             primary_color: "#0ea5e9",
             default_language_id: language._id,
@@ -79,7 +79,7 @@ const seedDB = async () => {
         // 5. Create Users
         const admin = await Admin.create({
             name: "Main Admin",
-            email: "admin@gmail.com",
+            email: "sangvish21@gmail.com",
             password_hash: await bcrypt.hash('admin', salt),
             role: "admin",
             is_active: true,

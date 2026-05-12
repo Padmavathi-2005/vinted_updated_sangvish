@@ -139,7 +139,7 @@
     },
     "listings": {
         "title": "Listings Management",
-        "subtitle": "Review and manage marketplace products",
+        "subtitle": "Review and manage Resale products",
         "add_new": "Add Listing",
         "search_placeholder": "Search by title or ID...",
         "filter_all": "All Listings",
@@ -185,6 +185,15 @@
             "available": "Available",
             "blocked": "Blocked",
             "active": "Active",
+            "item_type": "Item Type",
+            "item_type_placeholder": "Select item type...",
+            "brand": "Brand",
+            "brand_placeholder": "Enter brand...",
+            "size": "Size",
+            "size_placeholder": "Enter size...",
+            "color": "Color",
+            "color_placeholder": "Enter color...",
+            "specifications": "Specifications",
             "images": "Images",
             "save": "Save",
             "cancel": "Cancel"
@@ -192,7 +201,7 @@
     },
     "orders": {
         "title": "Orders Management",
-        "subtitle": "Review and manage marketplace orders",
+        "subtitle": "Review and manage Resale orders",
         "search_placeholder": "Search by Order # or User...",
         "filter_all": "All Orders",
         "filter_today": "Today's Orders",

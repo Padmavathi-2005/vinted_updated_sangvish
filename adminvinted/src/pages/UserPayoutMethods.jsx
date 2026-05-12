@@ -224,9 +224,6 @@ const UserPayoutMethods = () => {
                     </div>
                 </div>
                 <div className="wallet-header-actions">
-                    <button className="wallet-btn wallet-btn-outline" onClick={() => fetchMethods(true)} disabled={refreshing}>
-                        <FaSync className={refreshing ? 'spin' : ''} /><span>Refresh</span>
-                    </button>
                 </div>
             </div>
 

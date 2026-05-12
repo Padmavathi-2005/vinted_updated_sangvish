@@ -17,7 +17,7 @@ import getSocket from '@/utils/socket';
 const socket = getSocket();
 
 const getMarketplaceName = (siteNameStrOrObj) => {
-    return safeString(siteNameStrOrObj) || 'Marketplace';
+    return safeString(siteNameStrOrObj) || 'Resale';
 };
 
 const MessagesContent = () => {

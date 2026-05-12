@@ -386,7 +386,10 @@ const setItem = asyncHandler(async (req, res) => {
         category_id,
         subcategory_id,
         item_type_id,
-        attributes // JSON string from frontend
+        attributes, // JSON string from frontend
+        seo_title,
+        seo_description,
+        seo_keywords
     } = req.body;
 
     if (!title || !price || !category_id || !subcategory_id) {
@@ -459,6 +462,9 @@ const setItem = asyncHandler(async (req, res) => {
         state: req.body.state || '',
         city: req.body.city || '',
         pincode: req.body.pincode || '',
+        seo_title: seo_title || '',
+        seo_description: seo_description || '',
+        seo_keywords: seo_keywords || ''
     });
 
     res.status(201).json(item);
@@ -500,7 +506,10 @@ const updateItem = asyncHandler(async (req, res) => {
         existingImages, // JSON array from frontend
         attributes, // JSON array from frontend
         status,
-        is_sold
+        is_sold,
+        seo_title,
+        seo_description,
+        seo_keywords
     } = req.body;
 
     // Process images
@@ -560,6 +569,10 @@ const updateItem = asyncHandler(async (req, res) => {
     if (req.body.city !== undefined) updateData.city = req.body.city;
     if (req.body.pincode !== undefined) updateData.pincode = req.body.pincode;
     
+    if (seo_title !== undefined) updateData.seo_title = seo_title;
+    if (seo_description !== undefined) updateData.seo_description = seo_description;
+    if (seo_keywords !== undefined) updateData.seo_keywords = seo_keywords;
+    
     // Always update images if we processed them
     updateData.images = updatedImages;
 
@@ -576,17 +589,18 @@ const updateItem = asyncHandler(async (req, res) => {
     fs.appendFileSync(logPath, `Update Data: ${JSON.stringify(updateData)}\n`);
 
     try {
-        const updatedItem = await Item.findByIdAndUpdate(req.params.id, updateData, {
-            new: true,
-            runValidators: true
-        }).populate('category_id', 'name')
+        Object.assign(item, updateData);
+        const updatedItem = await item.save();
+        
+        const populatedItem = await Item.findById(updatedItem._id)
+          .populate('category_id', 'name')
           .populate('subcategory_id', 'name')
           .populate('item_type_id', 'name')
           .populate('seller_id', 'username email profile_image rating_avg rating_count is_deleted status')
           .populate('currency_id', 'code symbol');
-        
-        fs.appendFileSync(logPath, `SUCCESS: Result Images Count=${updatedItem.images?.length}\n`);
-        res.status(200).json(updatedItem);
+
+        fs.appendFileSync(logPath, `SUCCESS: Result Images Count=${populatedItem.images?.length}\n`);
+        res.status(200).json(populatedItem);
     } catch (error) {
         fs.appendFileSync(logPath, `ERROR: ${error.message}\n`);
         throw error;

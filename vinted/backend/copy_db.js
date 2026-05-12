@@ -4,7 +4,7 @@ import dns from 'dns';
 // Fix DNS for Windows
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
-const oldUri = 'mongodb+srv://abinayashri1985_db_user:Passwd12345678@vinted.ikcxkqu.mongodb.net/vinted_db?appName=vinted';
+const oldUri = 'mongodb+srv://abinayashri1985_db_user:PftqY4RcbGP1g30U@vinted.fndp02j.mongodb.net/vinted_db?appName=vinted';
 const newUri = 'mongodb+srv://support_db_uuser:gyhkuN-jammy8-voxqub@vinted.ek5p4it.mongodb.net/vinted_db?appName=vinted';
 
 async function copyDB() {

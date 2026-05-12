@@ -20,7 +20,19 @@ const pageSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
-    }
+    },
+    seo_title: {
+        type: String,
+        default: '',
+    },
+    seo_description: {
+        type: String,
+        default: '',
+    },
+    seo_keywords: {
+        type: String,
+        default: '',
+    },
 }, { timestamps: true });
 
 export default mongoose.model('Page', pageSchema);

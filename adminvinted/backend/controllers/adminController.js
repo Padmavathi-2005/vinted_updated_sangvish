@@ -920,7 +920,8 @@ const getItemOptions = asyncHandler(async (req, res) => {
 const createItem = asyncHandler(async (req, res) => {
     const { 
         title, price, status, seller_id, category_id, subcategory_id, item_type_id, 
-        condition, description, brand, size, color, currency_id, negotiable, shipping_included, attributes 
+        condition, description, brand, size, color, currency_id, negotiable, shipping_included, attributes,
+        seo_title, seo_description, seo_keywords
     } = req.body;
 
     let images = [];
@@ -953,7 +954,10 @@ const createItem = asyncHandler(async (req, res) => {
         is_sold: req.body.is_sold === 'true' || req.body.is_sold === true,
         negotiable: negotiable === 'true' || negotiable === true,
         shipping_included: shipping_included === 'true' || shipping_included === true,
-        attributes: attributes ? (typeof attributes === 'string' ? JSON.parse(attributes) : attributes) : []
+        attributes: attributes ? (typeof attributes === 'string' ? JSON.parse(attributes) : attributes) : [],
+        seo_title: seo_title || '',
+        seo_description: seo_description || '',
+        seo_keywords: seo_keywords || ''
     });
     res.status(201).json(item);
 });
@@ -1029,6 +1033,10 @@ const updateItem = asyncHandler(async (req, res) => {
         const defaultCurrency = await Currency.findOne({ is_active: true }) || await Currency.findOne({ code: 'INR' });
         if (defaultCurrency) item.currency_id = defaultCurrency._id;
     }
+
+    if (req.body.seo_title !== undefined) item.seo_title = req.body.seo_title;
+    if (req.body.seo_description !== undefined) item.seo_description = req.body.seo_description;
+    if (req.body.seo_keywords !== undefined) item.seo_keywords = req.body.seo_keywords;
 
     const updatedItem = await item.save();
     res.json(updatedItem);

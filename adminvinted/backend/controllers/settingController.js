@@ -38,7 +38,7 @@ const getSettingsByType = asyncHandler(async (req, res) => {
     if (!setting && type === 'site_settings') {
         setting = await Setting.create({
             type: 'site_settings',
-            site_name: { en: 'My Marketplace' },
+            site_name: { en: 'Resale' },
         });
     }
 

@@ -32,4 +32,4 @@ async function checkAdmin(email) {
 }
 
 // Replace with the admin email you are using
-checkAdmin('admin@gmail.com');
+checkAdmin('sangvish21@gmail.com');

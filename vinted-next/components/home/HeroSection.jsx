@@ -27,7 +27,7 @@ const HeroSection = () => {
                 <Row className="align-items-center min-vh-75">
                     <Col lg={9} md={10} className="hero-content">
                         <div className="hero-badge animate-fade-in">
-                            {td('home.hero_badge', 'LOCAL CLASSIFIEDS MARKETPLACE')}
+                            {td('home.hero_badge', 'RESALE MARKETPLACE')}
                         </div>
                         <h1 className="hero-title animate-slide-up">
                             {titleParts[0]} {titleParts[1] && <span className="text-primary">from {titleParts[1]}</span>}

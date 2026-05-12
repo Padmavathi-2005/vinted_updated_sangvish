@@ -19,7 +19,10 @@ const PageEditor = () => {
         title: '',
         slug: '',
         content: '',
-        isActive: true
+        isActive: true,
+        seo_title: '',
+        seo_description: '',
+        seo_keywords: ''
     });
 
     useEffect(() => {
@@ -35,7 +38,10 @@ const PageEditor = () => {
                 title: data.title,
                 slug: data.slug,
                 content: data.content,
-                isActive: data.isActive
+                isActive: data.isActive,
+                seo_title: data.seo_title || '',
+                seo_description: data.seo_description || '',
+                seo_keywords: data.seo_keywords || ''
             });
         } catch (error) {
             Swal.fire('Error', 'Failed to fetch page data', 'error');
@@ -185,6 +191,51 @@ const PageEditor = () => {
                                 If inactive, the page will be saved as a draft and won't be visible to users.
                             </Form.Text>
                         </Form.Group>
+
+                        {/* SEO Section */}
+                        <Card className="mb-4 bg-light border">
+                            <Card.Body className="p-4">
+                                <h5 className="mb-4 d-flex align-items-center gap-2">
+                                    SEO Optimization <Badge bg="secondary" className="fw-normal">Optional</Badge>
+                                </h5>
+                                <Row>
+                                    <Col md={12}>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label className="fw-bold small">SEO Title</Form.Label>
+                                            <Form.Control 
+                                                type="text" 
+                                                placeholder="Custom title for search engines" 
+                                                value={formData.seo_title}
+                                                onChange={e => setFormData({...formData, seo_title: e.target.value})}
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col md={12}>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label className="fw-bold small">SEO Description</Form.Label>
+                                            <Form.Control 
+                                                as="textarea" 
+                                                rows={3}
+                                                placeholder="Short summary for search results" 
+                                                value={formData.seo_description}
+                                                onChange={e => setFormData({...formData, seo_description: e.target.value})}
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col md={12}>
+                                        <Form.Group className="mb-0">
+                                            <Form.Label className="fw-bold small">SEO Keywords</Form.Label>
+                                            <Form.Control 
+                                                type="text" 
+                                                placeholder="e.g. privacy, policy, legal (comma separated)" 
+                                                value={formData.seo_keywords}
+                                                onChange={e => setFormData({...formData, seo_keywords: e.target.value})}
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                </Row>
+                            </Card.Body>
+                        </Card>
 
                         <div className="d-flex justify-content-end gap-3 mt-4 pt-4 border-top">
                             <Button variant="light" onClick={() => navigate('/pages')}>Cancel</Button>

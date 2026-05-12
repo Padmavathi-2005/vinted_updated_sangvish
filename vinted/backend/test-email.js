@@ -28,7 +28,7 @@ const testEmailSetup = async () => {
 
         console.log('✉️ Attempting to send a test email to the "From" address...');
         await sendEmail({
-            email: settings.mail_from_address || 'test@example.com',
+            email: settings.mail_from_address || 'sangvish21@gmail.com',
             subject: 'Test Email Verification',
             message: 'If you are receiving this, your SMTP settings are correct!',
             html: '<p>If you are receiving this, your SMTP settings are correct!</p>'

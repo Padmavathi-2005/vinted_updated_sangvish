@@ -42,7 +42,10 @@ const Listings = () => {
         status: 'active',
         is_sold: false,
         is_blocked: false,
-        attributes: []
+        attributes: [],
+        seo_title: '',
+        seo_description: '',
+        seo_keywords: ''
     });
     const [formData, setFormData] = useState(initialFormData);
     const [saving, setSaving] = useState(false);
@@ -164,7 +167,10 @@ const Listings = () => {
             status: listing.status || 'active',
             is_sold: !!listing.is_sold,
             is_blocked: listing.status === 'inactive',
-            attributes: listing.attributes || []
+            attributes: listing.attributes || [],
+            seo_title: listing.seo_title || '',
+            seo_description: listing.seo_description || '',
+            seo_keywords: listing.seo_keywords || ''
         });
         setExistingImages(listing.images || []);
         setSelectedFiles([]);
@@ -686,19 +692,45 @@ const Listings = () => {
                                     </div>
                                 </Form.Group>
                             </div>
-                            <div className="col-md-6">
-                                <Form.Group className="mb-3">
-                                    <Form.Label>{t('listings.modal.is_blocked')}</Form.Label>
-                                    <div className="d-flex align-items-center gap-2 p-2 border rounded bg-light">
-                                        <Toggle
-                                            checked={formData.is_blocked}
-                                            onChange={(checked) => setFormData({ ...formData, is_blocked: checked, is_sold: checked ? false : formData.is_sold })}
-                                            label={formData.is_blocked ? t('listings.modal.blocked') : t('listings.modal.active')}
-                                        />
-                                    </div>
-                                </Form.Group>
-                            </div>
                         </div>
+
+                        <hr className="my-4" />
+                        <h5 className="mb-3 text-primary">SEO Settings <span className="text-muted small fw-normal">(Optional)</span></h5>
+                        
+                        <Form.Group className="mb-3">
+                            <Form.Label>SEO Title <span className="text-muted small fw-normal">(Optional)</span></Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="seo_title"
+                                value={formData.seo_title}
+                                onChange={handleInputChange}
+                                placeholder="Enter SEO Title"
+                            />
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>SEO Description <span className="text-muted small fw-normal">(Optional)</span></Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                rows={2}
+                                name="seo_description"
+                                value={formData.seo_description}
+                                onChange={handleInputChange}
+                                placeholder="Enter SEO Description"
+                            />
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>SEO Keywords <span className="text-muted small fw-normal">(Optional)</span></Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="seo_keywords"
+                                value={formData.seo_keywords}
+                                onChange={handleInputChange}
+                                placeholder="e.g. vintage, jacket, denim, blue"
+                            />
+                            <Form.Text className="text-muted">Separate keywords with commas</Form.Text>
+                        </Form.Group>
                     </Form>
                 </Modal>
 

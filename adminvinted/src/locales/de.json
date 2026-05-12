@@ -136,7 +136,17 @@
       "is_sold": "Wird verkauft?",
       "is_blocked": "Ist blockiert?",
       "sold": "Verkauft",
-      "available": "Verfügbar"
+      "available": "Verfügbar",
+      "active": "Aktiv",
+      "item_type": "Artikeltyp",
+      "item_type_placeholder": "Artikeltyp auswählen...",
+      "brand": "Marke",
+      "brand_placeholder": "Marke eingeben...",
+      "size": "Größe",
+      "size_placeholder": "Größe eingeben...",
+      "color": "Farbe",
+      "color_placeholder": "Farbe eingeben...",
+      "specifications": "Spezifikationen"
     }
   },
   "orders": {

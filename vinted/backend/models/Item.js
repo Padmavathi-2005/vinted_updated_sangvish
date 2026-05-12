@@ -148,6 +148,18 @@ const itemSchema = mongoose.Schema(
                 value: { type: String, required: true }
             }
         ],
+        seo_title: {
+            type: String,
+            default: '',
+        },
+        seo_description: {
+            type: String,
+            default: '',
+        },
+        seo_keywords: {
+            type: String,
+            default: '',
+        },
     },
     {
         timestamps: {

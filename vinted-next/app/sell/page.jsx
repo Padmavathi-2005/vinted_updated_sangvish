@@ -40,6 +40,9 @@ export default function SellItem() {
     const [commissionRate, setCommissionRate] = useState(0);
     const [isSwappable, setIsSwappable] = useState(false);
     const [shippingIncluded, setShippingIncluded] = useState(false);
+    const [seoTitle, setSeoTitle] = useState('');
+    const [seoDescription, setSeoDescription] = useState('');
+    const [seoKeywords, setSeoKeywords] = useState('');
     const [validationErrors, setValidationErrors] = useState({});
 
     // Category Management
@@ -390,6 +393,9 @@ export default function SellItem() {
         
         formData.append('negotiable', isSwappable ? 'true' : 'false');
         formData.append('shipping_included', shippingIncluded ? 'true' : 'false');
+        formData.append('seo_title', seoTitle.trim());
+        formData.append('seo_description', seoDescription.trim());
+        formData.append('seo_keywords', seoKeywords.trim());
         formData.append('attributes', JSON.stringify(specifications.filter(s => s.key && s.value)));
 
         // Append location data if selected
@@ -806,6 +812,47 @@ export default function SellItem() {
                                 <span className="text-muted small">{t('sell_item.no_specs_added')}</span>
                             </div>
                         )}
+                    </div>
+
+                    {/* SEO Section */}
+                    <div className="si-card">
+                        <div className="si-card-header">
+                            <h2 className="si-section-title">SEO Optimization <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>(Optional)</span></h2>
+                            <span className="si-section-hint">Improve how your item appears in search results.</span>
+                        </div>
+
+                        <div className="si-field">
+                            <label className="si-label">SEO Title <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>(Optional)</span></label>
+                            <input 
+                                type="text" 
+                                className="si-input" 
+                                placeholder="Targeted title for search engines" 
+                                value={seoTitle} 
+                                onChange={e => setSeoTitle(e.target.value)} 
+                            />
+                        </div>
+
+                        <div className="si-field">
+                            <label className="si-label">SEO Description <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>(Optional)</span></label>
+                            <textarea 
+                                className="si-textarea" 
+                                rows={3} 
+                                placeholder="Brief summary for search engine snippets" 
+                                value={seoDescription} 
+                                onChange={e => setSeoDescription(e.target.value)} 
+                            />
+                        </div>
+
+                        <div className="si-field si-field-last">
+                            <label className="si-label">SEO Keywords <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>(Optional)</span></label>
+                            <input 
+                                type="text" 
+                                className="si-input" 
+                                placeholder="e.g. vintage, denim, blue jacket (separate with commas)" 
+                                value={seoKeywords} 
+                                onChange={e => setSeoKeywords(e.target.value)} 
+                            />
+                        </div>
                     </div>
 
                     <div className="si-actions">
