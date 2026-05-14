@@ -261,13 +261,8 @@ const getItems = asyncHandler(async (req, res) => {
         // --- Sorting ---
         if (sort === 'popular') {
             pipeline.push(
-                {
-                    $addFields: {
-                        sellerIdStr: { $toString: "$seller_id" }
-                    }
-                },
-                { $lookup: { from: 'users', localField: 'sellerIdStr', foreignField: '_id', as: 'seller' } },
-                { $unwind: '$seller' },
+                { $lookup: { from: 'users', localField: 'seller_id', foreignField: '_id', as: 'seller' } },
+                { $unwind: { path: '$seller', preserveNullAndEmptyArrays: true } },
                 {
                     $addFields: {
                         popularityScore: {
@@ -330,17 +325,23 @@ const getItems = asyncHandler(async (req, res) => {
         const normalizedResults = results.map(item => {
             if (item.images && Array.isArray(item.images)) {
                 item.images = item.images.map(img => {
+                    let finalImg = img;
+                    
                     // Handle case where image might be stored as an object {0: 'i', 1: 'm', ...}
-                    if (img && typeof img === 'object' && !Array.isArray(img)) {
-                        img = Object.values(img).join('');
+                    if (finalImg && typeof finalImg === 'object' && !Array.isArray(finalImg)) {
+                        try {
+                            finalImg = Object.values(finalImg).join('');
+                        } catch (e) {
+                            finalImg = String(finalImg);
+                        }
                     }
                     
-                    if (img && typeof img === 'string') {
-                        if (img.startsWith('http')) return img;
-                        if (img.startsWith('images/')) return img;
-                        return `images/items/${img}`;
+                    if (finalImg && typeof finalImg === 'string') {
+                        if (finalImg.startsWith('http')) return finalImg;
+                        if (finalImg.startsWith('images/')) return finalImg;
+                        return `images/items/${finalImg}`;
                     }
-                    return img;
+                    return finalImg;
                 });
             }
             return item;
