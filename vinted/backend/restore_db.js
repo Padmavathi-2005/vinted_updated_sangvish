@@ -16,23 +16,27 @@ const BACKUP_DIR = path.join(__dirname, 'db_backup');
 const reviveData = (data) => {
     return data.map(doc => {
         const revived = { ...doc };
-        for (const key in revived) {
-            const value = revived[key];
-            
-            // Handle MongoDB extended JSON or simple strings
-            if (typeof value === 'string') {
-                // Check if it's a 24-char hex string (likely ObjectId)
-                if (/^[0-9a-fA-F]{24}$/.test(value) && (key.endsWith('_id') || key === '_id')) {
+        for (const [key, value] of Object.entries(doc)) {
+            if (typeof value === 'string' && /^[0-9a-fA-F]{24}$/.test(value)) {
+                // Heuristic: if key ends in _id or is common ID field, convert to ObjectId
+                if (key === '_id' || key.endsWith('_id') || ['user', 'sender_id', 'receiver_id', 'item'].includes(key)) {
                     revived[key] = new mongoose.Types.ObjectId(value);
-                } 
-                // Check if it's an ISO date string
-                else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
-                    revived[key] = new Date(value);
                 }
             } else if (value && typeof value === 'object') {
-                // Handle nested objects (like attributes array)
                 if (Array.isArray(value)) {
-                    revived[key] = reviveData(value);
+                    revived[key] = value.map(item => {
+                        if (typeof item === 'string' && /^[0-9a-fA-F]{24}$/.test(item)) {
+                            return new mongoose.Types.ObjectId(item);
+                        }
+                        if (typeof item === 'object' && item !== null) {
+                            // Recursively revive objects in arrays (like attributes)
+                            return reviveData([item])[0];
+                        }
+                        return item;
+                    });
+                } else {
+                    // Recursively revive nested objects
+                    revived[key] = reviveData([value])[0];
                 }
             }
         }
@@ -46,32 +50,39 @@ const restoreDatabase = async () => {
         await mongoose.connect(process.env.MONGO_URI);
         console.log('✅ Connected.');
 
-        if (!fs.existsSync(BACKUP_DIR)) {
-            console.error(`❌ Backup directory not found: ${BACKUP_DIR}`);
-            process.exit(1);
-        }
-
-        const files = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.json'));
+        const files = fs.readdirSync(BACKUP_DIR);
         console.log(`📦 Found ${files.length} backup files.`);
 
         for (const file of files) {
-            const collectionName = file.replace('.json', '');
-            if (collectionName === 'ts') continue; // Skip metadata file if exists
+            if (path.extname(file) === '.json') {
+                const collectionName = path.basename(file, '.json');
+                const filePath = path.join(BACKUP_DIR, file);
 
-            console.log(`⬅️ Restoring: ${collectionName}...`);
-            const rawData = JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, file), 'utf8'));
-            
-            if (rawData.length > 0) {
+                console.log(`➡️ Restoring: ${collectionName}...`);
+                const rawData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+
+                if (rawData.length === 0) {
+                    console.log(`   ⚠️ Skipping ${collectionName} (empty)`);
+                    continue;
+                }
+
                 const revivedData = reviveData(rawData);
-                
-                // Clear collection
+
+                // Clear existing data
                 await mongoose.connection.db.collection(collectionName).deleteMany({});
-                
-                // Insert data
-                await mongoose.connection.db.collection(collectionName).insertMany(revivedData);
-                console.log(`   ✅ Restored ${rawData.length} documents to ${collectionName}`);
-            } else {
-                console.log(`   ⚪ Collection ${collectionName} is empty, skipping.`);
+
+                // Insert revived data with duplicate key handling
+                try {
+                    await mongoose.connection.db.collection(collectionName).insertMany(revivedData, { ordered: false });
+                    console.log(`   ✅ Restored ${revivedData.length} documents to ${collectionName}`);
+                } catch (insertErr) {
+                    if (insertErr.code === 11000) {
+                        const successCount = insertErr.result?.nInserted || 0;
+                        console.log(`   ⚠️ Restored ${successCount} documents to ${collectionName} (skipped duplicates)`);
+                    } else {
+                        throw insertErr;
+                    }
+                }
             }
         }
 

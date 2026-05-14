@@ -21,6 +21,15 @@ const backupDatabase = async () => {
         if (!fs.existsSync(BACKUP_DIR)) {
             fs.mkdirSync(BACKUP_DIR);
             console.log(`📁 Created backup directory: ${BACKUP_DIR}`);
+        } else {
+            // Clean existing backup files to avoid mixing data
+            const existingFiles = fs.readdirSync(BACKUP_DIR);
+            for (const file of existingFiles) {
+                if (file.endsWith('.json')) {
+                    fs.unlinkSync(path.join(BACKUP_DIR, file));
+                }
+            }
+            console.log(`🧹 Cleaned existing backup files in: ${BACKUP_DIR}`);
         }
 
         const collections = await mongoose.connection.db.listCollections().toArray();
