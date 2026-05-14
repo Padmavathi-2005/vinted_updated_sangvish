@@ -177,10 +177,17 @@ const itemSchema = mongoose.Schema(
 
                 if (ret.images && Array.isArray(ret.images)) {
                     ret.images = ret.images.map(img => {
-                        if (img && typeof img === 'string' && !img.startsWith('http')) {
-                            // Unified aggressive normalization
+                        // Handle potential object storage {0: 'i', 1: 'm', ...}
+                        if (img && typeof img === 'object' && !Array.isArray(img)) {
+                            img = Object.values(img).join('');
+                        }
+                        
+                        if (img && typeof img === 'string') {
+                            if (img.startsWith('http')) return img;
+                            if (img.startsWith('images/')) return img;
+                            
+                            // Aggressive clean
                             let clean = img.replace(/\\/g, '/').replace(/^\/+/, '');
-                            // Strip away any possible nested paths to get just the filename
                             const parts = clean.split('/');
                             const filename = parts[parts.length - 1];
                             return `images/items/${filename}`;

@@ -12,8 +12,7 @@ module.exports = {
             },
             env_production: {
                 NODE_ENV: 'production',
-                // Example of adding environment variables dynamically for production
-                // PORT: 5000 
+                PORT: 5004
             }
         }
     ]

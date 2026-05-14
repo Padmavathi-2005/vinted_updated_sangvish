@@ -1,5 +1,11 @@
 import asyncHandler from 'express-async-handler';
 import Setting from '../models/Setting.js';
+import { spawn } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // @desc    Get all unique setting types
 // @route   GET /api/settings/types
@@ -414,9 +420,69 @@ const getSettings = asyncHandler(async (req, res) => {
     res.json(merged);
 });
 
+// @desc    Run database backup (Streaming)
+// @route   GET /api/settings/db/backup
+const backupDB = asyncHandler(async (req, res) => {
+    const scriptPath = path.join(__dirname, '../backup_db.js');
+    console.log(`[Backup] Starting streaming backup at: ${scriptPath}`);
+    
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+
+    const child = spawn('node', [scriptPath]);
+
+    // Send a heartbeat every 2 seconds to keep connection alive
+    const heartbeat = setInterval(() => {
+        res.write(' '); // Space doesn't affect JSON or Logs but keeps socket open
+    }, 2000);
+
+    child.stdout.on('data', (data) => {
+        res.write(data);
+    });
+
+    child.stderr.on('data', (data) => {
+        res.write(`\n[ERROR] ${data}\n`);
+    });
+
+    child.on('close', (code) => {
+        clearInterval(heartbeat);
+        res.write(`\n--- Process finished with code ${code} ---\n`);
+        if (code === 0) res.write('\nBackup completed successfully!\n');
+        res.end();
+    });
+});
+
+// @desc    Run database restore (Streaming)
+// @route   GET /api/settings/db/restore
+const restoreDB = asyncHandler(async (req, res) => {
+    const scriptPath = path.join(__dirname, '../restore_db.js');
+    console.log(`[Restore] Starting streaming restore at: ${scriptPath}`);
+
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Transfer-Encoding', 'chunked');
+
+    const child = spawn('node', [scriptPath]);
+
+    child.stdout.on('data', (data) => {
+        res.write(data);
+    });
+
+    child.stderr.on('data', (data) => {
+        res.write(`[ERROR] ${data}`);
+    });
+
+    child.on('close', (code) => {
+        res.write(`\n--- Process finished with code ${code} ---\n`);
+        res.end();
+    });
+});
+
 export {
     getSettingTypes,
     getSettingsByType,
     updateSettingsByType,
     getSettings,
+    backupDB,
+    restoreDB
 };

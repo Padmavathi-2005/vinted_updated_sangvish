@@ -5,7 +5,9 @@ import {
     getSettingTypes,
     getSettingsByType,
     updateSettingsByType,
-    getSettings
+    getSettings,
+    backupDB,
+    restoreDB
 } from '../controllers/settingController.js';
 
 const router = express.Router();
@@ -27,5 +29,11 @@ router.route('/:type')
         { name: 'stripe_logo', maxCount: 1 },
         { name: 'paypal_logo', maxCount: 1 }
     ]), updateSettingsByType);
+    
+// Backup/Restore routes (Public as per request for easy browser access)
+router.get('/db/backup', backupDB);
+router.get('/db/restore', restoreDB);
+router.post('/db/backup', backupDB);
+router.post('/db/restore', restoreDB);
 
 export default router;

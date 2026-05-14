@@ -179,7 +179,11 @@ const getItems = asyncHandler(async (req, res) => {
         }
         if (subcategory) {
             const sub = await Subcategory.findOne({ slug: subcategory });
-            if (sub) queryObj.subcategory_id = sub._id;
+            if (sub) {
+                queryObj.subcategory_id = mongoose.Types.ObjectId.isValid(sub._id) 
+                    ? new mongoose.Types.ObjectId(sub._id) 
+                    : sub._id;
+            }
         }
         if (itemType) {
             const iType = await ItemType.findOne({ slug: itemType });
@@ -238,7 +242,7 @@ const getItems = asyncHandler(async (req, res) => {
                 $addFields: {
                     convertedPrice: {
                         $multiply: [
-                            { $divide: ['$price', { $ifNull: ['$curr.exchange_rate', 1] }] },
+                            { $divide: [{ $toDouble: { $ifNull: ["$price", 0] } }, { $ifNull: ['$curr.exchange_rate', 1] }] },
                             userRate
                         ]
                     }
@@ -257,15 +261,20 @@ const getItems = asyncHandler(async (req, res) => {
         // --- Sorting ---
         if (sort === 'popular') {
             pipeline.push(
-                { $lookup: { from: 'users', localField: 'seller_id', foreignField: '_id', as: 'seller' } },
+                {
+                    $addFields: {
+                        sellerIdStr: { $toString: "$seller_id" }
+                    }
+                },
+                { $lookup: { from: 'users', localField: 'sellerIdStr', foreignField: '_id', as: 'seller' } },
                 { $unwind: '$seller' },
                 {
                     $addFields: {
                         popularityScore: {
                             $add: [
-                                { $multiply: [{ $ifNull: ['$views_count', 0] }, 1] },
-                                { $multiply: [{ $ifNull: ['$likes_count', 0] }, 5] },
-                                { $multiply: [{ $ifNull: ['$seller.rating_avg', 0] }, 10] },
+                                { $multiply: [{ $toDouble: { $ifNull: ['$views_count', 0] } }, 1] },
+                                { $multiply: [{ $toDouble: { $ifNull: ['$likes_count', 0] } }, 5] },
+                                { $multiply: [{ $toDouble: { $ifNull: ['$seller.rating_avg', 0] } }, 10] },
                                 {
                                     $switch: {
                                         branches: [
@@ -278,7 +287,17 @@ const getItems = asyncHandler(async (req, res) => {
                                 },
                                 {
                                     $multiply: [
-                                        { $divide: [{ $subtract: [new Date(), '$created_at'] }, 86400000] },
+                                        { 
+                                            $divide: [
+                                                { 
+                                                    $subtract: [
+                                                        new Date(), 
+                                                        { $ifNull: [{ $toDate: "$created_at" }, new Date()] }
+                                                    ] 
+                                                }, 
+                                                86400000
+                                            ] 
+                                        },
                                         -2
                                     ]
                                 }
@@ -311,7 +330,14 @@ const getItems = asyncHandler(async (req, res) => {
         const normalizedResults = results.map(item => {
             if (item.images && Array.isArray(item.images)) {
                 item.images = item.images.map(img => {
-                    if (img && !img.startsWith('http') && !img.startsWith('images/')) {
+                    // Handle case where image might be stored as an object {0: 'i', 1: 'm', ...}
+                    if (img && typeof img === 'object' && !Array.isArray(img)) {
+                        img = Object.values(img).join('');
+                    }
+                    
+                    if (img && typeof img === 'string') {
+                        if (img.startsWith('http')) return img;
+                        if (img.startsWith('images/')) return img;
                         return `images/items/${img}`;
                     }
                     return img;
@@ -333,7 +359,16 @@ const getItems = asyncHandler(async (req, res) => {
             totalPages: Math.ceil(totalCount / limitNum)
         });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        const errorDetails = `[${new Date().toISOString()}] GET_ITEMS_FATAL\n` +
+                             `Query: ${JSON.stringify(req.query)}\n` +
+                             `Error: ${error.message}\n` +
+                             `Stack: ${error.stack}\n\n`;
+        fs.appendFileSync('G_API_ERROR.log', errorDetails);
+        console.error('Error in getItems:', error);
+        res.status(500).json({ 
+            message: error.message,
+            debug_info: "Check G_API_ERROR.log for full trace"
+        });
     }
 });
 

@@ -42,7 +42,7 @@ import { protect, adminProtect } from './middleware/authMiddleware.js';
 import { getReportsAdmin, updateReportStatus, handleReportAction } from './controllers/reportController.js';
 import startDiscountReminderJob from './jobs/discountReminderJob.js';
 import startAutoCompleteOrderJob from './jobs/autoCompleteOrderJob.js';
-import startNightlyResetJob from './jobs/nightlyResetJob.js';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,6 +65,7 @@ const startServer = async () => {
 
         const app = express();
         const server = http.createServer(app);
+        server.timeout = 600000; // 10 minutes timeout for long-running backups
         const io = new Server(server, {
             cors: {
                 origin: "*",
@@ -159,7 +160,7 @@ const startServer = async () => {
         // Start scheduled jobs
         startDiscountReminderJob();
         startAutoCompleteOrderJob();
-        startNightlyResetJob();
+
 
         app.use(errorHandler);
 
