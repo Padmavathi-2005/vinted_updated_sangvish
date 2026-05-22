@@ -14,7 +14,7 @@ export const getUserSocket = () => {
         
         userSocket = socketIO(socketUrl, {
             path: '/api/socket.io',
-            transports: ['polling', 'websocket'],
+            transports: ['polling'],
             reconnection: true,
             reconnectionAttempts: 5
         });
@@ -40,7 +40,7 @@ export const getAdminSocket = () => {
         
         adminSocket = socketIO(socketUrl, {
             path: '/api/socket.io',
-            transports: ['polling', 'websocket'],
+            transports: ['polling'],
             reconnection: true,
             reconnectionAttempts: 5
         });
