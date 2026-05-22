@@ -487,6 +487,7 @@
 .pd-msg-item.sent .pd-msg-time {
     text-align: right;
     padding-right: 4px;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .pd-msg-item.received .pd-msg-time {

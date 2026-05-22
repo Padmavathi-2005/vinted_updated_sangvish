@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import Setting from '../models/Setting.js';
+import sendEmail from '../utils/sendEmail.js';
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -478,11 +479,67 @@ const restoreDB = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Test email configuration
+// @route   GET /api/settings/db/mail_check
+const mailCheck = asyncHandler(async (req, res) => {
+    let recipientEmail = req.query.email || req.query.to;
+    
+    if (!recipientEmail) {
+        const settings = await Setting.findOne({ type: 'email_settings' });
+        recipientEmail = settings?.mail_from_address || settings?.mail_username || process.env.EMAIL_USER;
+    }
+    
+    if (!recipientEmail) {
+        return res.status(400).json({
+            success: false,
+            message: "Please provide a recipient email or configure SMTP settings in the database. Usage: ?email=your-email@example.com"
+        });
+    }
+
+    console.log(`[MailCheck] Attempting to send test email to: ${recipientEmail}`);
+
+    await sendEmail({
+        email: recipientEmail,
+        subject: 'Vinted System - Test Email Verification',
+        message: `Hello! This is a test email sent from the Vinted system to verify that your mail configuration is working correctly. Sent at: ${new Date().toLocaleString()}`,
+        html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px;">
+                <h2 style="color: #0ea5e9;">Vinted Mail System Working! ✅</h2>
+                <p>Hello,</p>
+                <p>If you are receiving this email, it means your SMTP configuration in the Vinted platform is set up correctly and working!</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 8px 0; font-weight: bold; width: 120px;">Recipient:</td>
+                        <td style="padding: 8px 0;">${recipientEmail}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; font-weight: bold;">Timestamp:</td>
+                        <td style="padding: 8px 0;">${new Date().toLocaleString()}</td>
+                    </tr>
+                </table>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                <p style="font-size: 12px; color: #777;">This is an automated system check email. Please do not reply directly to this message.</p>
+            </div>
+        `
+    });
+
+    res.json({
+        success: true,
+        message: `Test email successfully sent to ${recipientEmail}! Check your inbox.`,
+        details: {
+            recipient: recipientEmail,
+            timestamp: new Date().toISOString()
+        }
+    });
+});
+
 export {
     getSettingTypes,
     getSettingsByType,
     updateSettingsByType,
     getSettings,
     backupDB,
-    restoreDB
+    restoreDB,
+    mailCheck
 };

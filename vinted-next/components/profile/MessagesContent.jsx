@@ -8,7 +8,7 @@ import AuthContext from '@/context/AuthContext';
 import NotificationContext from '@/context/NotificationContext';
 import CurrencyContext from '@/context/CurrencyContext';
 import { useTranslation } from 'react-i18next';
-import { FaPaperPlane, FaUser, FaClock, FaCheck, FaTimes, FaInbox, FaBan, FaEllipsisV, FaEnvelope, FaShoppingBag, FaArrowLeft, FaPlus, FaBoxOpen } from 'react-icons/fa';
+import { FaPaperPlane, FaUser, FaClock, FaCheck, FaCheckDouble, FaTimes, FaInbox, FaBan, FaEllipsisV, FaEnvelope, FaShoppingBag, FaArrowLeft, FaPlus, FaBoxOpen } from 'react-icons/fa';
 import { getImageUrl, safeString } from '@/utils/constants';
 import '@/app/styles/Messaging.css';
 import getSocket from '@/utils/socket';
@@ -58,9 +58,15 @@ const MessagesContent = () => {
 
     // Socket: Join Conversation Room
     useEffect(() => {
-        if (activeConv && activeConv._id !== 'new' && socket) {
-            socket.emit('join_conversation', activeConv._id);
-        }
+        if (!socket || !activeConv || activeConv._id === 'new') return;
+
+        const joinConv = () => socket.emit('join_conversation', activeConv._id);
+        joinConv();
+        socket.on('connect', joinConv);
+
+        return () => {
+            socket.off('connect', joinConv);
+        };
     }, [activeConv]);
 
     // Socket: Listen for Messages
@@ -83,21 +89,55 @@ const MessagesContent = () => {
                 return newList.sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at));
             });
 
+            // Only update active conversation if it matches OR if we're waiting on a new conversation to be created
+            if (activeConv && (activeConv._id === conversation._id || activeConv._id === 'new')) {
+                // If it was 'new', now we have the real conversation
+                if (activeConv._id === 'new') {
+                    setActiveConv(conversation);
+                    setConversations(prev => {
+                        if (prev.find(c => c._id === conversation._id)) return prev;
+                        return [conversation, ...prev];
+                    });
+                }
+            }
+
             // Update messages in current chat if it is active
             if (message && activeConv && activeConv._id === (message.conversation_id?._id || message.conversation_id)) {
                 setMessages(prev => {
                     if (prev.find(m => m._id === message._id)) return prev; // Avoid duplicate
                     return [...prev, message];
                 });
+
+                // Auto-mark read instantly if chat is active
+                if ((message.receiver_id?._id || message.receiver_id)?.toString() === (user?.id || user?._id)?.toString()) {
+                    socket.emit('mark_read', { conversation_id: activeConv._id, user_id: user._id || user.id });
+                }
+            }
+        };
+
+        const handleMessagesRead = (data) => {
+            if (activeConv && activeConv._id === data.conversation_id) {
+                setMessages(prev => prev.map(m => ({ ...m, is_read: true })));
             }
         };
 
         socket.on('receive_message', handleReceiveMessage);
+        socket.on('messages_read', handleMessagesRead);
 
         return () => {
             socket.off('receive_message', handleReceiveMessage);
+            socket.off('messages_read', handleMessagesRead);
         };
-    }, [activeConv]);
+    }, [activeConv, user]);
+
+    // Failsafe: Automatically mark unread messages as read if chat is active
+    useEffect(() => {
+        if (!activeConv || activeConv._id === 'new' || !user || !socket || messages.length === 0) return;
+        const hasUnread = messages.some(m => !m.is_read && (m.receiver_id?._id || m.receiver_id)?.toString() === (user.id || user._id)?.toString());
+        if (hasUnread) {
+            socket.emit('mark_read', { conversation_id: activeConv._id, user_id: user._id || user.id });
+        }
+    }, [messages, activeConv, user]);
 
     const fetchSettings = async () => {
         try {
@@ -298,7 +338,10 @@ const MessagesContent = () => {
             const returnedMsg = res.data.message || res.data;
 
             if (!isCustom) {
-                setMessages(prev => [...prev, returnedMsg]);
+                setMessages(prev => {
+                    if (prev.find(m => m._id === returnedMsg._id)) return prev;
+                    return [...prev, returnedMsg];
+                });
                 setNewMessage('');
             }
 
@@ -992,7 +1035,11 @@ const MessagesContent = () => {
                                                     <div className="pd-msg-text">{msg.message}</div>
                                                     <div className="pd-msg-time">
                                                         {formatTime(msg.created_at)}
-                                                        {isSent && <FaCheck className="ms-1" style={{ fontSize: '10px' }} />}
+                                                        {isSent && (
+                                                            msg.is_read ? 
+                                                            <FaCheckDouble className="ms-1" style={{ fontSize: '11px', color: '#4ade80' }} title="Read" /> : 
+                                                            <FaCheck className="ms-1" style={{ fontSize: '10px' }} title="Sent" />
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>

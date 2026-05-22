@@ -143,7 +143,7 @@ const Cart = () => {
             showPopup({ type: 'info', title: 'No Items Selected', message: 'Please select at least one item to checkout.' });
             return;
         }
-        router.push('/checkout');
+        navigate.push('/checkout');
     };
 
     if (!user) {

@@ -192,13 +192,13 @@ const Checkout = () => {
                     } else if (m.key === 'stripe') {
                         finalName = 'Stripe';
                         if (!icon || icon.includes('undefined') || icon.includes('null') || icon.endsWith('/')) {
-                            icon = 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg';
+                            icon = null; // Let it fallback to defaultIcon
                         }
                         defaultIcon = <FaCreditCard style={{ color: '#6366f1' }} />;
                     } else if (m.key === 'paypal') {
                         finalName = 'PayPal';
                         if (!icon || icon.includes('undefined') || icon.includes('null') || icon.endsWith('/')) {
-                            icon = 'https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg';
+                            icon = null; // Let it fallback to defaultIcon
                         }
                         defaultIcon = <span style={{ color: '#002f86', fontWeight: 'bold' }}>PayPal</span>;
                     }

@@ -33,9 +33,15 @@ export const NotificationProvider = ({ children }) => {
             
             // Socket logic
             const socket = getSocket();
+            let joinRoom;
             if (socket) {
-                // Join personal room
-                socket.emit('join_user', user._id);
+                joinRoom = () => socket.emit('join_user', user._id || user.id);
+                
+                // Join personal room immediately
+                joinRoom();
+
+                // Re-join automatically if socket reconnects
+                socket.on('connect', joinRoom);
 
                 // Listen for new notifications
                 socket.on('new_notification', (notif) => {
@@ -53,6 +59,7 @@ export const NotificationProvider = ({ children }) => {
             return () => {
                 clearInterval(interval);
                 if (socket) {
+                    if (joinRoom) socket.off('connect', joinRoom);
                     socket.off('new_notification');
                 }
             };

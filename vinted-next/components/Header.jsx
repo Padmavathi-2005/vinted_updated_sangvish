@@ -963,9 +963,13 @@ const Header = () => {
                                                                     width: '34px', height: '34px', borderRadius: '50%',
                                                                     background: `${color}18`, color,
                                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                    fontSize: '0.85rem', flexShrink: 0
+                                                                    fontSize: '0.85rem', flexShrink: 0, overflow: 'hidden'
                                                                 }}>
-                                                                    <FaBell />
+                                                                    {n.image ? (
+                                                                        <img src={getImageUrl(n.image)} alt={n.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                                                                    ) : (
+                                                                        <FaBell />
+                                                                    )}
                                                                 </div>
                                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                                     <div style={{

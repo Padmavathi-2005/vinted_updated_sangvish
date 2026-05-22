@@ -29,6 +29,10 @@ const notificationSchema = mongoose.Schema(
         link: {
             type: String,
         },
+        image: {
+            type: String,
+            default: null,
+        },
         is_read: {
             type: Boolean,
             default: false,
@@ -41,5 +45,12 @@ const notificationSchema = mongoose.Schema(
         },
     }
 );
+
+// Post-save hook to automatically emit socket event
+notificationSchema.post('save', function (doc) {
+    if (global.io && doc.user_id) {
+        global.io.to(doc.user_id.toString()).emit('new_notification', doc);
+    }
+});
 
 export default mongoose.model('Notification', notificationSchema);

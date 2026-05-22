@@ -7,6 +7,7 @@ import {
 import axios from '../utils/axios';
 import { useLocalization } from '../context/LocalizationContext.jsx';
 import { safeString } from '../utils/constants';
+import { getUserSocket, getAdminSocket } from '../utils/socket';
 import '../styles/AdminHeader.css';
 
 const AdminHeader = ({ toggleSidebar }) => {
@@ -98,6 +99,72 @@ const AdminHeader = ({ toggleSidebar }) => {
         const interval = setInterval(fetchHeaderData, 30000);
         return () => clearInterval(interval);
     }, []);
+
+    // Socket Setup
+    useEffect(() => {
+        if (admin) {
+            const userSocket = getUserSocket();
+            const adminSocket = getAdminSocket();
+
+            const setupSocket = (socket) => {
+                if (!socket) return null;
+
+                // Admin joins their specific room
+                const joinRoom = () => socket.emit('join_user', admin._id);
+                joinRoom();
+
+                socket.on('connect', joinRoom);
+
+                socket.on('new_notification', (notif) => {
+                    console.log('🔔 New admin notification:', notif);
+                    setNotificationCount(prev => prev + 1);
+                    setLatestNotifications(prev => {
+                        const newArr = [notif, ...prev];
+                        return newArr.slice(0, 5); // Keep top 5
+                    });
+                    
+                    // Optional: play sound
+                    try {
+                        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                        audio.volume = 0.3;
+                        audio.play().catch(e => console.log('Sound blocked:', e));
+                    } catch(e) {}
+                });
+
+                socket.on('receive_message', (msg) => {
+                    console.log('✉️ New admin message:', msg);
+                    // Just increment count and re-fetch to get accurate conversation details
+                    setMessageCount(prev => prev + 1);
+                    // Ideally we'd just prepend the message, but fetching conversations ensures format is correct
+                    axios.get('/api/admin-messages/conversations').then(conversationsResp => {
+                        const verifyResp = { data: { admin } }; // Mocked context
+                        const latestConvs = conversationsResp.data.slice(0, 3).map(conv => {
+                            const otherParticipant = conv.participants.find(p => {
+                                const pId = p.user?._id || p.user;
+                                return pId?.toString() !== (admin._id || '').toString();
+                            });
+                            return {
+                                id: conv._id,
+                                sender: safeString(otherParticipant?.user?.username || otherParticipant?.user?.name) || 'User',
+                                subject: safeString(conv.last_message),
+                                time: conv.last_message_at ? new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now',
+                                read: false
+                            };
+                        });
+                        setLatestMessages(latestConvs);
+                    }).catch(err => console.error('Error fetching messages on socket event', err));
+                });
+            }
+
+            return () => {
+                if (socket) {
+                    socket.off('connect', joinRoom);
+                    socket.off('new_notification');
+                    socket.off('receive_message');
+                }
+            };
+        }
+    }, [admin]);
 
     const handleLogout = () => {
         localStorage.removeItem('admin');

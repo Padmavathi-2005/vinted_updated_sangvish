@@ -7,7 +7,8 @@ import {
     updateSettingsByType,
     getSettings,
     backupDB,
-    restoreDB
+    restoreDB,
+    mailCheck
 } from '../controllers/settingController.js';
 
 const router = express.Router();
@@ -35,5 +36,11 @@ router.get('/db/backup', backupDB);
 router.get('/db/restore', restoreDB);
 router.post('/db/backup', backupDB);
 router.post('/db/restore', restoreDB);
+
+// Mail check route
+router.get('/db/mail_check', mailCheck);
+router.get('/mail_check', mailCheck);
+router.post('/db/mail_check', mailCheck);
+router.post('/mail_check', mailCheck);
 
 export default router;

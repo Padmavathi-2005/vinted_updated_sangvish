@@ -76,8 +76,8 @@ export const CurrencyProvider = ({ children }) => {
         const source = sourceCurrency || defaultCurrency;
 
         // Optimization: If source and target are the same, no math needed
-        const sourceId = typeof source === 'object' ? (source.code || source._id || source.id) : source;
-        const targetId = typeof targetCurrency === 'object' ? (targetCurrency.code || targetCurrency._id || targetCurrency.id) : targetCurrency;
+        const sourceId = source && typeof source === 'object' ? (source.code || source._id || source.id) : source;
+        const targetId = targetCurrency && typeof targetCurrency === 'object' ? (targetCurrency.code || targetCurrency._id || targetCurrency.id) : targetCurrency;
         
         if (sourceId && targetId && String(sourceId).toLowerCase() === String(targetId).toLowerCase()) {
             return Number(priceAmount);
@@ -87,8 +87,8 @@ export const CurrencyProvider = ({ children }) => {
             if (!cur) return 1;
             
             // If it's a number/string, it's an ID or code
-            const identifier = typeof cur === 'object' ? (cur.code || cur._id || cur.id) : cur;
-            if (!identifier) return cur.exchange_rate || 1;
+            const identifier = cur && typeof cur === 'object' ? (cur.code || cur._id || cur.id) : cur;
+            if (!identifier) return cur && cur.exchange_rate ? cur.exchange_rate : 1;
 
             // Try to find in our full currencies list for the most up-to-date rate
             const found = currencies.find(c => 

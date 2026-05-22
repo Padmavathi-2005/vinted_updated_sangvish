@@ -42,6 +42,8 @@ import { protect, adminProtect } from './middleware/authMiddleware.js';
 import { getReportsAdmin, updateReportStatus, handleReportAction } from './controllers/reportController.js';
 import startDiscountReminderJob from './jobs/discountReminderJob.js';
 import startAutoCompleteOrderJob from './jobs/autoCompleteOrderJob.js';
+import sendEmail from './utils/sendEmail.js';
+import Setting from './models/Setting.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -67,11 +69,15 @@ const startServer = async () => {
         const server = http.createServer(app);
         server.timeout = 600000; // 10 minutes timeout for long-running backups
         const io = new Server(server, {
+            path: '/api/socket.io',
             cors: {
                 origin: "*",
                 methods: ["GET", "POST"]
             }
         });
+
+        // Export io globally for Mongoose middleware
+        global.io = io;
 
         // CORS — allow all origins with proper headers
         app.use(cors({
@@ -98,6 +104,31 @@ const startServer = async () => {
                 if (userId) {
                     socket.join(userId.toString());
                     console.log(`User joined personal room: ${userId}`);
+                }
+            });
+            socket.on('mark_read', async ({ conversation_id, user_id }) => {
+                if (!conversation_id || !user_id) return;
+                try {
+                    const Message = (await import('./models/Message.js')).default;
+                    const Conversation = (await import('./models/Conversation.js')).default;
+                    const updateResult = await Message.updateMany(
+                        { conversation_id, receiver_id: user_id, is_read: false },
+                        { is_read: true }
+                    );
+                    // Even if modifiedCount is 0, we still broadcast just in case of race conditions
+                    setTimeout(async () => {
+                        io.to(conversation_id).emit('messages_read', { conversation_id });
+                        const conversation = await Conversation.findById(conversation_id);
+                        if (conversation) {
+                            const otherParticipant = conversation.participants.find(p => (p.user?._id || p.user)?.toString() !== user_id.toString());
+                            if (otherParticipant) {
+                                const otherUserId = (otherParticipant.user?._id || otherParticipant.user).toString();
+                                io.to(otherUserId).emit('messages_read', { conversation_id });
+                            }
+                        }
+                    }, 500);
+                } catch (error) {
+                    console.error('Socket mark_read error:', error);
                 }
             });
             socket.on('disconnect', () => {
@@ -156,6 +187,72 @@ const startServer = async () => {
         app.use('/api/moderation-reports', adminProtect, getReportsAdmin);
         app.use('/api/reports', reportRoutes);
         app.use('/api/contact', contactRoutes);
+
+        // Root Mail Check Endpoints
+        app.get(['/mail_check', '/api/mail_check'], async (req, res) => {
+            try {
+                let recipientEmail = req.query.email || req.query.to;
+                
+                // Fallback: If no recipient email was passed in URL, load the default recipient from database
+                if (!recipientEmail) {
+                    const settings = await Setting.findOne({ type: 'email_settings' });
+                    recipientEmail = settings?.mail_from_address || settings?.mail_username || process.env.EMAIL_USER;
+                }
+
+                if (!recipientEmail) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Please provide a recipient email or configure SMTP settings in the database. Usage: /mail_check?email=your-email@example.com"
+                    });
+                }
+
+                console.log(`[MailCheck] Attempting to send test email to: ${recipientEmail}`);
+
+                await sendEmail({
+                    email: recipientEmail,
+                    subject: 'Vinted System - Test Email Verification',
+                    message: `Hello! This is a test email sent from the Vinted system to verify that your mail configuration is working correctly. Sent at: ${new Date().toLocaleString()}`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px;">
+                            <h2 style="color: #0ea5e9;">Vinted Mail System Working! ✅</h2>
+                            <p>Hello,</p>
+                            <p>If you are receiving this email, it means your SMTP configuration in the Vinted platform is set up correctly and working!</p>
+                            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding: 8px 0; font-weight: bold; width: 120px;">Recipient:</td>
+                                    <td style="padding: 8px 0;">${recipientEmail}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; font-weight: bold;">Timestamp:</td>
+                                    <td style="padding: 8px 0;">${new Date().toLocaleString()}</td>
+                                </tr>
+                            </table>
+                            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                            <p style="font-size: 12px; color: #777;">This is an automated system check email. Please do not reply directly to this message.</p>
+                        </div>
+                    `
+                });
+
+                console.log(`[MailCheck] Test email successfully sent to: ${recipientEmail}`);
+
+                return res.status(200).json({
+                    success: true,
+                    message: `Test email successfully sent to ${recipientEmail}! Check your inbox.`,
+                    details: {
+                        recipient: recipientEmail,
+                        timestamp: new Date().toISOString()
+                    }
+                });
+            } catch (error) {
+                console.error('[MailCheck] Failed to send test email:', error);
+                return res.status(500).json({
+                    success: false,
+                    message: "Failed to send email. SMTP configuration is invalid or connection failed.",
+                    error: error.message
+                });
+            }
+        });
 
         // Start scheduled jobs
         startDiscountReminderJob();

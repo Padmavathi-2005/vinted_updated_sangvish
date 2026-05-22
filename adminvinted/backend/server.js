@@ -9,6 +9,8 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import http from 'http';
+import { Server } from 'socket.io';
 
 // Admin API Routes
 import adminRoutes from './routes/adminRoutes.js';
@@ -96,7 +98,31 @@ const startServer = async () => {
 
         app.use(errorHandler);
 
-        app.listen(port, () => {
+        const server = http.createServer(app);
+        const io = new Server(server, {
+            path: '/api/socket.io',
+            cors: {
+                origin: "*",
+                methods: ["GET", "POST"]
+            }
+        });
+
+        global.io = io;
+
+        io.on('connection', (socket) => {
+            console.log('Admin Socket connected:', socket.id);
+            socket.on('join_user', (userId) => {
+                if (userId) {
+                    socket.join(userId.toString());
+                    console.log(`Admin joined personal room: ${userId}`);
+                }
+            });
+            socket.on('disconnect', () => {
+                console.log('Admin Socket disconnected:', socket.id);
+            });
+        });
+
+        server.listen(port, () => {
             console.log(`\n🚀 Admin Server started on port ${port}`.green.bold);
             console.log(`🔗 Listening on: http://localhost:${port}`.cyan);
             console.log('---------------------------------'.gray);

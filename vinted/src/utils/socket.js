@@ -4,9 +4,8 @@ let socket;
 
 const getSocket = () => {
     if (!socket && typeof window !== 'undefined') {
-        // Backend URL is usually the same host but different port or proxied
-        // In this project, backend is on 5003, frontend on 3000
-        const socketUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5003';
+        // Use the defined Vite API base URL or fallback
+        const socketUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5004';
         
         socket = socketIO(socketUrl, {
             path: '/api/socket.io',

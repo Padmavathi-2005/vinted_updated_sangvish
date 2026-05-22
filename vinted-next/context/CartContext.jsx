@@ -1,31 +1,45 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import AuthContext from '@/context/AuthContext';
 
 const CartContext = createContext();
 
-const CART_KEY = 'vinted_cart';
-
 export const CartProvider = ({ children }) => {
+    const { user } = useContext(AuthContext);
     const [cartItems, setCartItems] = useState([]);
+    
+    const cartKey = user ? `vinted_cart_${user._id || user.id}` : 'vinted_cart_guest';
+    const prevCartKey = useRef(cartKey);
 
     useEffect(() => {
+        let initialItems = [];
         try {
-            const stored = localStorage.getItem(CART_KEY);
+            const stored = localStorage.getItem(cartKey);
             if (stored) {
-                setCartItems(JSON.parse(stored));
+                initialItems = JSON.parse(stored);
+            } else if (user) {
+                const guestStored = localStorage.getItem('vinted_cart_guest');
+                if (guestStored) {
+                    initialItems = JSON.parse(guestStored);
+                    localStorage.removeItem('vinted_cart_guest');
+                }
             }
         } catch (e) {
             console.error('Failed to parse cart items:', e);
         }
-    }, []);
+        setCartItems(initialItems);
+    }, [cartKey, user]);
 
     // Persist on every change
     useEffect(() => {
-        if (cartItems.length > 0 || localStorage.getItem(CART_KEY)) {
-            localStorage.setItem(CART_KEY, JSON.stringify(cartItems));
+        if (prevCartKey.current === cartKey) {
+            if (cartItems.length > 0 || localStorage.getItem(cartKey)) {
+                localStorage.setItem(cartKey, JSON.stringify(cartItems));
+            }
         }
-    }, [cartItems]);
+        prevCartKey.current = cartKey;
+    }, [cartItems, cartKey]);
 
     const isInCart = (itemId) => cartItems.some(i => i._id === itemId);
 

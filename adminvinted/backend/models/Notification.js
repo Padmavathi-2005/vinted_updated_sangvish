@@ -42,4 +42,11 @@ const notificationSchema = mongoose.Schema(
     }
 );
 
+// Post-save hook to automatically emit socket event
+notificationSchema.post('save', function (doc) {
+    if (global.io && doc.user_id) {
+        global.io.to(doc.user_id.toString()).emit('new_notification', doc);
+    }
+});
+
 export default mongoose.model('Notification', notificationSchema);

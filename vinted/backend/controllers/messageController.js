@@ -118,7 +118,7 @@ const getMessages = asyncHandler(async (req, res) => {
         .sort({ created_at: 1 });
 
     // Mark messages as read for the receiver
-    await Message.updateMany(
+    const updateResult = await Message.updateMany(
         { 
             conversation_id: req.params.id, 
             receiver_id: req.user._id, 
@@ -126,6 +126,15 @@ const getMessages = asyncHandler(async (req, res) => {
         },
         { is_read: true }
     );
+
+    if (updateResult.modifiedCount > 0 && req.io) {
+        req.io.to(req.params.id).emit('messages_read', { conversation_id: req.params.id });
+        const otherParticipant = conversation.participants.find(p => (p.user?._id || p.user)?.toString() !== req.user._id.toString());
+        if (otherParticipant) {
+            const otherUserId = (otherParticipant.user?._id || otherParticipant.user).toString();
+            req.io.to(otherUserId).emit('messages_read', { conversation_id: req.params.id });
+        }
+    }
 
     res.status(200).json({
         conversation: { ...conversation.toObject(), unread_count: 0 },
@@ -248,19 +257,21 @@ const sendMessage = asyncHandler(async (req, res) => {
         await Notification.create({
             user_id: receiver_id,
             on_model: receiver_model,
-            title: 'New Message Request',
-            message: `${req.user.role === 'admin' ? 'Admin' : (req.user.username || req.user.name)} wants to start a conversation with you.`,
+            title: req.user.role === 'admin' ? 'Admin' : (req.user.username || req.user.name),
+            message: message,
             type: 'request',
             link: receiver_model === 'Admin' ? `/messages` : `/profile?tab=messages&conversation=${conversation._id}`,
+            image: req.user.profile_image
         });
     } else if (conversation.status === 'accepted') {
         await Notification.create({
             user_id: receiver_id,
             on_model: receiver_model,
-            title: 'New Message',
-            message: `You have a new message from ${req.user.role === 'admin' ? 'Admin' : (req.user.username || req.user.name)}`,
+            title: req.user.role === 'admin' ? 'Admin' : (req.user.username || req.user.name),
+            message: message,
             type: 'message',
             link: receiver_model === 'Admin' ? `/messages` : `/profile?tab=messages&conversation=${conversation._id}`,
+            image: req.user.profile_image
         });
     }
 
@@ -317,14 +328,23 @@ const sendMessage = asyncHandler(async (req, res) => {
         console.error('Messaging email notification failed:', err);
     }
 
+    const populatedConversation = await Conversation.findById(conversation._id).populate({
+        path: 'participants.user',
+        select: 'name username profile_image last_login'
+    });
+
     if (req.io) {
-        req.io.to(conversation._id.toString()).emit('receive_message', {
+        const payload = {
             message: populatedMessage,
-            conversation: conversation
-        });
+            conversation: populatedConversation || conversation
+        };
+        let emitter = req.io.to(conversation._id.toString());
+        if (receiver_id) emitter = emitter.to(receiver_id.toString());
+        if (sender_id) emitter = emitter.to(sender_id.toString());
+        emitter.emit('receive_message', payload);
     }
 
-    res.status(201).json({ message: populatedMessage, conversation });
+    res.status(201).json({ message: populatedMessage, conversation: populatedConversation || conversation });
 });
 
 // @desc    Respond to message request
@@ -366,10 +386,16 @@ const respondToRequest = asyncHandler(async (req, res) => {
     });
 
     if (req.io) {
-        req.io.to(conversation._id.toString()).emit('receive_message', {
+        const payload = {
             message: null,
             conversation: conversation
+        };
+        let emitter = req.io.to(conversation._id.toString()).to(conversation.initiator_id.toString());
+        // participant 0 and 1 user ids
+        conversation.participants.forEach(p => {
+            if (p.user) emitter = emitter.to((p.user._id || p.user).toString());
         });
+        emitter.emit('receive_message', payload);
     }
 
     res.status(200).json(conversation);
@@ -499,10 +525,14 @@ const respondToOffer = asyncHandler(async (req, res) => {
 
     const populatedMessage = await Message.findById(systemMsg._id).populate('sender_id', 'name username profile_image');
     if (req.io) {
-        req.io.to(message.conversation_id.toString()).emit('receive_message', {
+        const payload = {
             message: populatedMessage,
             conversation: conversation
-        });
+        };
+        let emitter = req.io.to(message.conversation_id.toString());
+        if (message.receiver_id) emitter = emitter.to(message.receiver_id.toString());
+        if (message.sender_id) emitter = emitter.to(message.sender_id.toString());
+        emitter.emit('receive_message', payload);
     }
 
     res.status(200).json({ offerMessage: message, systemMessage: populatedMessage, conversation });

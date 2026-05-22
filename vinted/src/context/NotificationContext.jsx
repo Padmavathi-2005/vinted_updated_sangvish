@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import axios from '../utils/axios';
 import AuthContext from './AuthContext';
+import getSocket from '../utils/socket';
 
 const NotificationContext = createContext();
 
@@ -27,9 +28,36 @@ export const NotificationProvider = ({ children }) => {
     useEffect(() => {
         if (user) {
             fetchNotifications();
-            // Optional: poll every 30 seconds
+            
+            // Socket logic
+            const socket = getSocket();
+            let joinRoom;
+            if (socket) {
+                joinRoom = () => socket.emit('join_user', user._id || user.id);
+                
+                // Join personal room immediately
+                joinRoom();
+
+                // Re-join automatically if socket reconnects
+                socket.on('connect', joinRoom);
+
+                // Listen for new notifications
+                socket.on('new_notification', (notif) => {
+                    console.log('🔔 New real-time notification received:', notif);
+                    setNotifications(prev => [notif, ...prev]);
+                    setUnreadCount(prev => prev + 1);
+                });
+            }
+
+            // Optional: poll every 30 seconds as fallback
             const interval = setInterval(fetchNotifications, 30000);
-            return () => clearInterval(interval);
+            return () => {
+                clearInterval(interval);
+                if (socket) {
+                    if (joinRoom) socket.off('connect', joinRoom);
+                    socket.off('new_notification');
+                }
+            };
         } else {
             setNotifications([]);
             setUnreadCount(0);

@@ -8,14 +8,9 @@ import { useTranslation } from 'react-i18next';
 import { FaPaperPlane, FaUser, FaClock, FaCheck, FaTimes, FaInbox, FaBan, FaEllipsisV, FaEnvelope, FaShoppingBag, FaArrowLeft, FaPlus } from 'react-icons/fa';
 import { getImageUrl, safeString } from '../../utils/constants';
 import '../../styles/Messaging.css';
-import { io as socketIO } from 'socket.io-client';
+import getSocket from '../../utils/socket';
 
-const socket = socketIO('/', {
-    path: '/socket.io/',
-    transports: ['polling', 'websocket'],
-    reconnection: true,
-    reconnectionAttempts: 5
-});
+const socket = getSocket();
 
 const getMarketplaceName = (siteNameStrOrObj) => {
     return safeString(siteNameStrOrObj) || 'Marketplace';
@@ -58,9 +53,15 @@ const MessagesContent = () => {
 
     // Socket: Join Conversation Room
     useEffect(() => {
-        if (activeConv && activeConv._id !== 'new') {
-            socket.emit('join_conversation', activeConv._id);
-        }
+        if (!socket || !activeConv || activeConv._id === 'new') return;
+
+        const joinConv = () => socket.emit('join_conversation', activeConv._id);
+        joinConv();
+        socket.on('connect', joinConv);
+
+        return () => {
+            socket.off('connect', joinConv);
+        };
     }, [activeConv]);
 
     // Socket: Listen for Messages

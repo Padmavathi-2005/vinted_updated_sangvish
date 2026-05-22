@@ -212,17 +212,7 @@ const createOrder = asyncHandler(async (req, res) => {
             link: `/profile?tab=orders&orderId=${order._id}`
         });
 
-        // Emit real-time notification to seller
-        if (req.io) {
-            req.io.to(sellerId.toString()).emit('new_notification', {
-                _id: notification._id,
-                title: notification.title,
-                message: notification.message,
-                type: notification.type,
-                link: notification.link,
-                created_at: notification.created_at
-            });
-        }
+        // Real-time notification is now handled globally by Notification.js Mongoose middleware
 
         // Send Order Confirmation to Buyer
         try {
