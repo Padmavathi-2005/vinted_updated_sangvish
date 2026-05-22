@@ -106,16 +106,15 @@ const AdminHeader = ({ toggleSidebar }) => {
             const userSocket = getUserSocket();
             const adminSocket = getAdminSocket();
 
-            const setupSocket = (socket) => {
-                if (!socket) return null;
+            const setupSocket = (socketInstance) => {
+                if (!socketInstance) return null;
 
-                // Admin joins their specific room
-                const joinRoom = () => socket.emit('join_user', admin._id);
+                const joinRoom = () => socketInstance.emit('join_user', admin._id);
                 joinRoom();
 
-                socket.on('connect', joinRoom);
+                socketInstance.on('connect', joinRoom);
 
-                socket.on('new_notification', (notif) => {
+                const handleNotification = (notif) => {
                     console.log('🔔 New admin notification:', notif);
                     setNotificationCount(prev => prev + 1);
                     setLatestNotifications(prev => {
@@ -123,21 +122,18 @@ const AdminHeader = ({ toggleSidebar }) => {
                         return newArr.slice(0, 5); // Keep top 5
                     });
                     
-                    // Optional: play sound
                     try {
                         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
                         audio.volume = 0.3;
                         audio.play().catch(e => console.log('Sound blocked:', e));
                     } catch(e) {}
-                });
+                };
 
-                socket.on('receive_message', (msg) => {
+                const handleMessage = (msg) => {
                     console.log('✉️ New admin message:', msg);
-                    // Just increment count and re-fetch to get accurate conversation details
                     setMessageCount(prev => prev + 1);
-                    // Ideally we'd just prepend the message, but fetching conversations ensures format is correct
+                    // Refresh conversation list to get latest message format
                     axios.get('/api/admin-messages/conversations').then(conversationsResp => {
-                        const verifyResp = { data: { admin } }; // Mocked context
                         const latestConvs = conversationsResp.data.slice(0, 3).map(conv => {
                             const otherParticipant = conv.participants.find(p => {
                                 const pId = p.user?._id || p.user;
@@ -153,15 +149,24 @@ const AdminHeader = ({ toggleSidebar }) => {
                         });
                         setLatestMessages(latestConvs);
                     }).catch(err => console.error('Error fetching messages on socket event', err));
-                });
-            }
+                };
+
+                socketInstance.on('new_notification', handleNotification);
+                socketInstance.on('receive_message', handleMessage);
+
+                return () => {
+                    socketInstance.off('connect', joinRoom);
+                    socketInstance.off('new_notification', handleNotification);
+                    socketInstance.off('receive_message', handleMessage);
+                };
+            };
+
+            const cleanupUserSocket = setupSocket(userSocket);
+            const cleanupAdminSocket = setupSocket(adminSocket);
 
             return () => {
-                if (socket) {
-                    socket.off('connect', joinRoom);
-                    socket.off('new_notification');
-                    socket.off('receive_message');
-                }
+                if (cleanupUserSocket) cleanupUserSocket();
+                if (cleanupAdminSocket) cleanupAdminSocket();
             };
         }
     }, [admin]);
