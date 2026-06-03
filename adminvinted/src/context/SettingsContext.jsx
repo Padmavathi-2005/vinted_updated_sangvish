@@ -138,11 +138,7 @@ export const SettingsProvider = ({ children }) => {
 
     const updateSettingsByType = async (type, formData) => {
         try {
-            const { data } = await axios.put(`/api/settings/${type}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            const { data } = await axios.put(`/api/settings/${type}`, formData);
 
             // If we updated global ones, update global state too
             if (type === 'general_settings' || type === 'site_settings') {
@@ -159,6 +155,8 @@ export const SettingsProvider = ({ children }) => {
                     emptyTableImage: data.empty_table_image || prev.emptyTableImage
                 }));
                 applyTheme(data);
+                if (data.pagination_limit) localStorage.setItem('adminPaginationLimit', data.pagination_limit);
+                if (data.pagination_mode) localStorage.setItem('adminPaginationMode', data.pagination_mode);
             }
 
             return { success: true, data };

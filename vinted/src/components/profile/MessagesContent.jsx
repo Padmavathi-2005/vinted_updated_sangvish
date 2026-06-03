@@ -66,6 +66,8 @@ const MessagesContent = () => {
 
     // Socket: Listen for Messages
     useEffect(() => {
+        if (!socket) return;
+        
         const handleReceiveMessage = (data) => {
             const { message, conversation } = data;
 

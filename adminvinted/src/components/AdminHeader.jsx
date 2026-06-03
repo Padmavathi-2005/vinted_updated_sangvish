@@ -102,73 +102,72 @@ const AdminHeader = ({ toggleSidebar }) => {
 
     // Socket Setup
     useEffect(() => {
-        if (admin) {
-            const userSocket = getUserSocket();
-            const adminSocket = getAdminSocket();
+        if (!admin) return;
 
-            const setupSocket = (socketInstance) => {
-                if (!socketInstance) return null;
+        const userSocket = getUserSocket();
+        const adminSocket = getAdminSocket();
 
-                const joinRoom = () => socketInstance.emit('join_user', admin._id);
-                joinRoom();
+        const sockets = [userSocket, adminSocket].filter(Boolean);
+        let joinRooms = [];
 
-                socketInstance.on('connect', joinRoom);
+        sockets.forEach((sock) => {
+            const joinRoom = () => sock.emit('join_user', admin._id);
+            joinRoom();
+            sock.on('connect', joinRoom);
+            joinRooms.push({ sock, joinRoom });
 
-                const handleNotification = (notif) => {
-                    console.log('🔔 New admin notification:', notif);
-                    setNotificationCount(prev => prev + 1);
-                    setLatestNotifications(prev => {
-                        const newArr = [notif, ...prev];
-                        return newArr.slice(0, 5); // Keep top 5
-                    });
-                    
-                    try {
-                        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                        audio.volume = 0.3;
-                        audio.play().catch(e => console.log('Sound blocked:', e));
-                    } catch(e) {}
-                };
+            const handleNotification = (notif) => {
+                console.log('🔔 New admin notification:', notif);
+                setNotificationCount(prev => prev + 1);
+                setLatestNotifications(prev => {
+                    const newArr = [notif, ...prev];
+                    return newArr.slice(0, 5); // Keep top 5
+                });
+                
+                try {
+                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                    audio.volume = 0.3;
+                    audio.play().catch(e => console.log('Sound blocked:', e));
+                } catch(e) {}
+            };
 
-                const handleMessage = (msg) => {
-                    console.log('✉️ New admin message:', msg);
-                    setMessageCount(prev => prev + 1);
-                    // Refresh conversation list to get latest message format
-                    axios.get('/api/admin-messages/conversations').then(conversationsResp => {
-                        const latestConvs = conversationsResp.data.slice(0, 3).map(conv => {
-                            const otherParticipant = conv.participants.find(p => {
-                                const pId = p.user?._id || p.user;
-                                return pId?.toString() !== (admin._id || '').toString();
-                            });
-                            return {
-                                id: conv._id,
-                                sender: safeString(otherParticipant?.user?.username || otherParticipant?.user?.name) || 'User',
-                                subject: safeString(conv.last_message),
-                                time: conv.last_message_at ? new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now',
-                                read: false
-                            };
+            const handleMessage = (msg) => {
+                console.log('✉️ New admin message:', msg);
+                setMessageCount(prev => prev + 1);
+                // Refresh conversation list to get latest message format
+                axios.get('/api/admin-messages/conversations').then(conversationsResp => {
+                    const latestConvs = conversationsResp.data.slice(0, 3).map(conv => {
+                        const otherParticipant = conv.participants.find(p => {
+                            const pId = p.user?._id || p.user;
+                            return pId?.toString() !== (admin._id || '').toString();
                         });
-                        setLatestMessages(latestConvs);
-                    }).catch(err => console.error('Error fetching messages on socket event', err));
-                };
-
-                socketInstance.on('new_notification', handleNotification);
-                socketInstance.on('receive_message', handleMessage);
-
-                return () => {
-                    socketInstance.off('connect', joinRoom);
-                    socketInstance.off('new_notification', handleNotification);
-                    socketInstance.off('receive_message', handleMessage);
-                };
+                        return {
+                            id: conv._id,
+                            sender: safeString(otherParticipant?.user?.username || otherParticipant?.user?.name) || 'User',
+                            subject: safeString(conv.last_message),
+                            time: conv.last_message_at ? new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now',
+                            read: false
+                        };
+                    });
+                    setLatestMessages(latestConvs);
+                }).catch(err => console.error('Error fetching messages on socket event', err));
             };
 
-            const cleanupUserSocket = setupSocket(userSocket);
-            const cleanupAdminSocket = setupSocket(adminSocket);
+            sock.on('new_notification', handleNotification);
+            sock.on('receive_message', handleMessage);
 
-            return () => {
-                if (cleanupUserSocket) cleanupUserSocket();
-                if (cleanupAdminSocket) cleanupAdminSocket();
-            };
-        }
+            sock._cleanupHandlers = { joinRoom, handleNotification, handleMessage };
+        });
+
+        return () => {
+            sockets.forEach((sock) => {
+                if (sock._cleanupHandlers) {
+                    sock.off('connect', sock._cleanupHandlers.joinRoom);
+                    sock.off('new_notification', sock._cleanupHandlers.handleNotification);
+                    sock.off('receive_message', sock._cleanupHandlers.handleMessage);
+                }
+            });
+        };
     }, [admin]);
 
     const handleLogout = () => {

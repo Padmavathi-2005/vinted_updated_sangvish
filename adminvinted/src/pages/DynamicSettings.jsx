@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    FaCloudUploadAlt, FaSave, FaUndo, FaImage, FaChevronDown, 
-    FaCcStripe, FaPaypal, FaChevronRight, FaPlus, FaTrash, 
+import {
+    FaCloudUploadAlt, FaSave, FaUndo, FaImage, FaChevronDown,
+    FaCcStripe, FaPaypal, FaChevronRight, FaPlus, FaTrash,
     FaGoogle, FaFacebookSquare, FaApple, FaGlobe, FaShieldAlt,
     FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube, FaTiktok, FaExternalLinkAlt,
     FaMapMarkerAlt, FaTruck, FaBox
@@ -123,7 +123,6 @@ const DynamicSettings = () => {
         const skipFields = ['_id', '__v', 'created_at', 'updated_at', 'type', 'general_settings', 'admin_settings'];
 
         const allowedFields = getFieldsForType(type);
-
         Object.keys(formData).forEach(key => {
             // Include social link files even if not in allowedFields directly (they are nested in social_links in the model)
             if ((allowedFields.includes(key) || key.startsWith('social_icon_')) && !skipFields.includes(key) && formData[key] !== null && formData[key] !== undefined) {
@@ -464,14 +463,14 @@ const DynamicSettings = () => {
                                     </Form.Group>
                                 </Col>
                             </Row>
-                            
+
                             <div className="ds-help-box mt-4 bg-light p-3 rounded border">
                                 <div className="d-flex align-items-center gap-2 mb-2">
                                     <FaSave className="text-primary small" />
                                     <h6 className="fw-bold m-0 small text-uppercase">Quick Setup Guide</h6>
                                 </div>
                                 <p className="xx-small text-muted mb-3">
-                                    reCAPTCHA v3 operates in the background and returns a score for each request. 
+                                    reCAPTCHA v3 operates in the background and returns a score for each request.
                                     A score of 1.0 indicates a likely human, while 0.0 indicates a likely bot.
                                 </p>
                                 <div className="recaptcha-steps">
@@ -564,6 +563,9 @@ const DynamicSettings = () => {
                                                     placeholder={`Enter ${platform.name} Client Secret`}
                                                     autoComplete="new-password"
                                                 />
+                                                <Form.Text className="text-muted d-block mt-1" style={{ fontSize: '0.8rem' }}>
+                                                    🔒 For security, saved secrets are hidden. Leave empty to keep your existing secret.
+                                                </Form.Text>
                                             </Form.Group>
                                         </Col>
                                     </Row>
@@ -641,7 +643,7 @@ const DynamicSettings = () => {
 
         const renderIcon = (iconName) => {
             if (!iconName) return <FaImage size={14} />;
-            
+
             const iconProps = { size: 18 };
             switch (iconName) {
                 case 'FaFacebookF': return <FaFacebookF {...iconProps} style={{ color: '#1877F2' }} />;
@@ -735,10 +737,10 @@ const DynamicSettings = () => {
                                                                 style={{ minWidth: '40px', minHeight: '40px' }}
                                                             >
                                                                 {previews[`social_icon_${idx}`] || (link.icon && link.icon.startsWith('images/')) ? (
-                                                                    <img 
-                                                                        src={previews[`social_icon_${idx}`] || `${imageBaseURL}/${link.icon}`} 
-                                                                        alt="" 
-                                                                        style={{ width: '22px', height: '22px', objectFit: 'cover' }} 
+                                                                    <img
+                                                                        src={previews[`social_icon_${idx}`] || `${imageBaseURL}/${link.icon}`}
+                                                                        alt=""
+                                                                        style={{ width: '22px', height: '22px', objectFit: 'cover' }}
                                                                     />
                                                                 ) : renderIcon(link.icon)}
                                                             </label>
@@ -803,7 +805,7 @@ const DynamicSettings = () => {
                                 )}
                             </div>
                             <p className="xx-small text-muted mb-0">
-                                Powered by Leaflet.js + OpenStreetMap tiles. Free to use, no account required. 
+                                Powered by Leaflet.js + OpenStreetMap tiles. Free to use, no account required.
                                 Geocoding via Nominatim API.
                             </p>
                         </div>
@@ -884,7 +886,7 @@ const DynamicSettings = () => {
 
     const renderShippingSettings = () => {
         const provider = formData.shipping_provider || 'manual';
-        
+
         return (
             <div className="shipping-settings-section">
                 <div className="ds-section-title mb-1">SHIPPING INTEGRATION</div>
@@ -933,7 +935,7 @@ const DynamicSettings = () => {
                                 )}
                             </div>
                             <p className="xx-small text-muted mb-0">
-                                Seller manually enters tracking IDs. No API required. 
+                                Seller manually enters tracking IDs. No API required.
                             </p>
                         </div>
                     </Col>
@@ -1119,7 +1121,7 @@ const DynamicSettings = () => {
                 <div className="ds-gateway-card border rounded shadow-sm p-4 bg-light">
                     <div className="fw-bold small mb-2"><FaTruck className="text-primary me-2" />Status</div>
                     <p className="xx-small text-muted mb-0">
-                        {provider === 'manual' 
+                        {provider === 'manual'
                             ? 'Currently using Manual Shipping. Sellers must provide tracking URLs themselves.'
                             : `Configuring ${provider.charAt(0).toUpperCase() + provider.slice(1)} integration. This will enable automated tracking and label generation.`}
                     </p>
@@ -1148,7 +1150,7 @@ const DynamicSettings = () => {
                 'paypal_live_client_id', 'paypal_live_client_secret'
             ],
             api_settings: [
-                'gemini_api_key', 'huggingface_api_key'
+                'visual_search_enabled', 'gemini_api_key', 'huggingface_api_key'
             ],
             email_settings: [
                 'mail_driver', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption', 'mail_from_address', 'mail_from_name'
@@ -1163,7 +1165,7 @@ const DynamicSettings = () => {
                 'google_enabled', 'google_client_id', 'google_client_secret',
                 'facebook_enabled', 'facebook_client_id', 'facebook_client_secret',
                 'twitter_enabled', 'twitter_client_id', 'twitter_client_secret',
-                'apple_enabled', 'apple_client_id', 'apple_client_secret'
+                'apple_enabled', 'apple_client_id', 'apple_client_secret', 'apple_team_id', 'apple_key_id', 'apple_private_key'
             ],
             social_settings: [
                 'social_links'
@@ -1172,7 +1174,7 @@ const DynamicSettings = () => {
                 'map_provider', 'google_maps_api_key'
             ],
             shipping_settings: [
-                'shipping_provider', 'shiprocket_email', 'shiprocket_password', 'easypost_api_key', 
+                'shipping_provider', 'shiprocket_email', 'shiprocket_password', 'easypost_api_key',
                 'dhl_api_key', 'dhl_api_secret', 'dhl_account_number', 'flat_shipping_rate'
             ]
         };
@@ -1374,7 +1376,7 @@ const DynamicSettings = () => {
             return renderSocialLinks();
         }
 
-        if (typeof value === 'number') {
+        if (typeof value === 'number' || ['pagination_limit', 'flat_shipping_rate', 'admin_commission'].includes(key)) {
             return (
                 <Col key={key} md={6} className="mb-3">
                     <Form.Group>
@@ -1382,7 +1384,7 @@ const DynamicSettings = () => {
                         <Form.Control
                             type="number"
                             name={key}
-                            value={formData[key] || 0}
+                            value={formData[key] === '' ? '' : (formData[key] || 0)}
                             onChange={handleInputChange}
                         />
                     </Form.Group>
@@ -1529,7 +1531,7 @@ const DynamicSettings = () => {
                                     <div className="p-3 bg-light rounded border h-100">
                                         <h6 className="fw-bold mb-2"><FaGoogle className="text-primary me-2" /> Gemini AI Integration</h6>
                                         <p className="small text-muted mb-0">
-                                            Enter your Google Gemini API key to enable AI-powered chat and visual search features. 
+                                            Enter your Google Gemini API key to enable AI-powered chat and visual search features.
                                             You can get a key from the <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">Google AI Studio</a>.
                                         </p>
                                     </div>
@@ -1538,7 +1540,7 @@ const DynamicSettings = () => {
                                     <div className="p-3 bg-light rounded border h-100">
                                         <h6 className="fw-bold mb-2"><span className="me-2">🤗</span> Hugging Face Integration</h6>
                                         <p className="small text-muted mb-0">
-                                            Enter your Hugging Face Access Token to enable fallback AI features and advanced image guardrails. 
+                                            Enter your Hugging Face Access Token to enable fallback AI features and advanced image guardrails.
                                             You can get a token from your <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noreferrer">Hugging Face Settings</a>.
                                         </p>
                                     </div>
