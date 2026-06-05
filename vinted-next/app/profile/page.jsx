@@ -8,6 +8,7 @@ import AuthContext from '@/context/AuthContext';
 import CurrencyContext from '@/context/CurrencyContext';
 import { FaListAlt, FaBoxOpen, FaHeart, FaWallet, FaCheckCircle, FaExclamationTriangle, FaUserEdit, FaAngleLeft, FaAngleRight, FaEnvelope, FaBell, FaTruck, FaClock, FaCreditCard, FaMoneyBillWave, FaBars, FaTimes, FaStar, FaTag, FaLightbulb, FaPlusCircle, FaMapMarkerAlt, FaSpinner } from 'react-icons/fa';
 import '@/app/styles/Profile.css';
+import '@/app/styles/Messaging.css';
 import EditProfileModal from '@/components/common/EditProfileModal';
 import EditItemModal from '@/components/common/EditItemModal';
 import ItemCard from '@/components/common/ItemCard';
@@ -23,6 +24,8 @@ import { getImageUrl, getItemImageUrl, safeString } from '@/utils/constants';
 import { validateTextField, getTextFieldError, validateAlphaField, getAlphaError } from '@/utils/validation';
 import OrderTimeline from '@/components/profile/OrderTimeline';
 import { printShippingLabel } from '@/utils/shippingLabel';
+import LocationPickerMap from '@/components/common/LocationPickerMap';
+
 
 const ProfileContent = () => {
     const { user, loading, updateUser, logout, mode, toggleMode, setMode } = useContext(AuthContext);
@@ -33,11 +36,13 @@ const ProfileContent = () => {
 
     // Tab derivation (URL is Source of Truth)
     // searchParams is already similar to URLSearchParams
-    const urlTab = searchParams.get('tab');
+    let urlTab = searchParams.get('tab');
+    if (urlTab === 'wallet') urlTab = 'payments'; // Fix for old notifications
+    
     const urlMode = searchParams.get('mode');
     
     // Fallback logic for initial load or missing params
-    const activeTab = urlTab || localStorage.getItem('profileActiveTab') || 'dashboard';
+    const activeTab = urlTab || (typeof window !== 'undefined' ? localStorage.getItem('profileActiveTab') : null) || 'dashboard';
 
     // Refs to track previous values to distinguish change sources
     const lastUrlModeRef = React.useRef(urlMode);
@@ -80,12 +85,15 @@ const ProfileContent = () => {
         // 3. Official URL Synchronization
         // If we don't have a mode in URL, or it doesn't match the determined target
         if (targetTab !== urlTab || targetMode !== urlMode) {
-            router.replace(`/profile?tab=${targetTab}&mode=${targetMode}`);
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('tab', targetTab);
+            params.set('mode', targetMode);
+            router.replace(`/profile?${params.toString()}`);
         }
 
         // 4. Always persist valid tab
         localStorage.setItem('profileActiveTab', targetTab);
-    }, [urlTab, urlMode, mode, router, activeTab, setMode]);
+    }, [urlTab, urlMode, mode, router, activeTab, setMode, searchParams]);
 
     // Reset pagination on tab change
     useEffect(() => {
@@ -133,13 +141,6 @@ const ProfileContent = () => {
     const [addressForm, setAddressForm] = useState({ full_name: '', address_line: '', city: '', pincode: '', phone: '', state: '', country: '', lat: null, lng: null });
     const [isEditingAddress, setIsEditingAddress] = useState(false);
     
-    // Address Autocomplete states for order address edit
-    const [addressSuggestions, setAddressSuggestions] = useState([]);
-    const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
-    const [loadingAddressSuggestions, setLoadingAddressSuggestions] = useState(false);
-    const addressSuggestionsRef = React.useRef(null);
-    const addressDebounceRef = React.useRef(null);
-
     const [orderSubTab, setOrderSubTab] = useState('all');
     const [listingsSubTab, setListingsSubTab] = useState('all');
     const [paymentSubTab, setPaymentSubTab] = useState('wallet');
@@ -147,11 +148,27 @@ const ProfileContent = () => {
 
     // Deep link support for payment subtabs
     const urlSub = searchParams.get('sub');
+    const urlOrderId = searchParams.get('orderId');
+    const paramTab = searchParams.get('tab');
+
     useEffect(() => {
         if (urlSub) {
             setPaymentSubTab(urlSub);
         }
     }, [urlSub]);
+
+    useEffect(() => {
+        if (urlOrderId && (boughtOrders.length > 0 || soldOrders.length > 0)) {
+            const allOrders = [...boughtOrders, ...soldOrders];
+            const order = allOrders.find(o => o._id === urlOrderId);
+            if (order) {
+                setSelectedOrder(order);
+                setShowOrderModal(true);
+                // Clean up URL so it doesn't reopen on refresh
+                router.replace(`/profile?tab=${paramTab || 'orders'}&mode=${mode}`);
+            }
+        }
+    }, [urlOrderId, boughtOrders, soldOrders, paramTab, mode, router]);
 
     // Review state
     const [reviewRating, setReviewRating] = useState(0);
@@ -179,11 +196,12 @@ const ProfileContent = () => {
         inputValue2: '', // for partial refund amount
         isLoading: false
     });
+    const [actionSubmitting, setActionSubmitting] = useState(false);
 
     // Tab label helper
     const getTabLabel = (tab) => {
         const labels = {
-            dashboard: t('profile.dashboard'),
+            dashboard: t('profile.dashboard', 'Dashboard'),
             profile_settings: t('user_menu.my_profile'),
             orders: mode === 'seller' ? t('profile.orders_received', 'Orders Received') : t('user_menu.my_orders', 'My orders'),
             listings: t('user_menu.manage_listings', 'Manage listings'),
@@ -230,19 +248,6 @@ const ProfileContent = () => {
         }
     }, [user, loading, router]);
 
-    if (loading || !user) {
-        return (
-            <div className="d-flex align-items-center justify-content-center vh-100 bg-white">
-                <div className="text-center">
-                    <div className="spinner-border text-primary mb-3" role="status" style={{ width: '3rem', height: '3rem' }}>
-                        <span className="visually-hidden">Loading...</span>
-                    </div>
-                    <div className="text-muted fw-500">Syncing your profile...</div>
-                </div>
-            </div>
-        );
-    }
-
     // Body scroll lock
     useEffect(() => {
         if (showOrderModal) {
@@ -252,6 +257,23 @@ const ProfileContent = () => {
         }
         return () => document.body.classList.remove('modal-open');
     }, [showOrderModal]);
+
+    // Helper to safely update selected order without losing populated fields
+    const safeUpdateOrder = (newData) => {
+        setSelectedOrder(prev => {
+            if (!prev) return newData;
+            const orderData = newData.order || newData;
+            return {
+                ...prev,
+                ...orderData,
+                item_id: orderData.item_id && orderData.item_id.images ? orderData.item_id : prev.item_id,
+                seller_id: orderData.seller_id && orderData.seller_id.username ? orderData.seller_id : prev.seller_id,
+                buyer_id: orderData.buyer_id && orderData.buyer_id.username ? orderData.buyer_id : prev.buyer_id,
+                currency_id: orderData.currency_id && orderData.currency_id.code ? orderData.currency_id : prev.currency_id,
+                shipping_company_id: orderData.shipping_company_id && orderData.shipping_company_id.company_name ? orderData.shipping_company_id : prev.shipping_company_id
+            };
+        });
+    };
 
 
     // Fetch Listings
@@ -346,74 +368,18 @@ const ProfileContent = () => {
         }
     }, [user, mode, boughtPage, soldPage]); // Restored dependencies for correct page tracking
 
-    const handleOrderAddressSearch = (query) => {
-        if (!query || query.length < 3) {
-            setAddressSuggestions([]);
-            setShowAddressSuggestions(false);
-            return;
-        }
-
-        clearTimeout(addressDebounceRef.current);
-        addressDebounceRef.current = setTimeout(async () => {
-            setLoadingAddressSuggestions(true);
-            try {
-                const res = await fetch(
-                    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`,
-                    {
-                        headers: {
-                            'User-Agent': 'VintedClone/1.0'
-                        }
-                    }
-                );
-                const data = await res.json();
-                setAddressSuggestions(data || []);
-                setShowAddressSuggestions(true);
-            } catch (err) {
-                console.error("Address search failed:", err);
-                setAddressSuggestions([]);
-            } finally {
-                setLoadingAddressSuggestions(false);
-            }
-        }, 500);
-    };
-
-    const handleAddressSuggestionClick = (suggestion) => {
-        const lat = parseFloat(suggestion.lat);
-        const lng = parseFloat(suggestion.lon);
-        const label = suggestion.display_name;
-
-        const addrComp = {
-            city: suggestion.address?.city || suggestion.address?.town || suggestion.address?.village || '',
-            state: suggestion.address?.state || '',
-            country: suggestion.address?.country || '',
-            pincode: suggestion.address?.postcode || ''
-        };
-
+    const handleLocationSelect = (location) => {
         setAddressForm(prev => ({
             ...prev,
-            address_line: label,
-            city: addrComp.city || prev.city,
-            state: addrComp.state || prev.state,
-            country: addrComp.country || prev.country,
-            pincode: addrComp.pincode || prev.pincode,
-            lat,
-            lng
+            address_line: location.label || prev.address_line,
+            city: location.city || prev.city,
+            state: location.state || prev.state,
+            country: location.country || prev.country,
+            pincode: location.postcode || prev.pincode,
+            lat: location.lat,
+            lng: location.lng
         }));
-
-        setAddressSuggestions([]);
-        setShowAddressSuggestions(false);
     };
-
-    // Close address suggestions on outside click
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (addressSuggestionsRef.current && !addressSuggestionsRef.current.contains(e.target)) {
-                setShowAddressSuggestions(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const handleAddressUpdate = async (e) => {
         if (e) e.preventDefault();
@@ -424,12 +390,14 @@ const ProfileContent = () => {
             if (addressForm.state && !validateAlphaField(addressForm.state)) return alert(getAlphaError('State'));
             if (addressForm.country && !validateAlphaField(addressForm.country)) return alert(getAlphaError('Country'));
             if (addressForm.pincode && addressForm.pincode.length < 4) return alert('Pincode should be at least 4 digits');
+            if (addressForm.phone && !/^\+?[0-9]{10,15}$/.test(addressForm.phone)) return alert('Invalid phone format (e.g. +919876543210)');
+            if (!addressForm.phone) return alert('Phone number is required');
 
             // Update order address
             const res = await axios.put(`/api/orders/${selectedOrder._id}/address`, {
                 shipping_address: addressForm
             });
-            setSelectedOrder(res.data);
+            safeUpdateOrder(res.data);
             setIsEditingAddress(false);
             fetchMyOrders();
 
@@ -445,6 +413,7 @@ const ProfileContent = () => {
                 lat: addressForm.lat,
                 lng: addressForm.lng
             }));
+            profilePayload.append('phone', addressForm.phone);
             
             await axios.put('/api/users/profile', profilePayload, {
                 headers: { Authorization: `Bearer ${user.token}` }
@@ -546,7 +515,7 @@ const ProfileContent = () => {
                 setReturningOrderId(selectedOrder._id);
                 try {
                     const res = await axios.post(`/api/orders/${selectedOrder._id}/return`, { reason });
-                    setSelectedOrder(res.data.order);
+                    safeUpdateOrder(res.data.order || res.data);
                     fetchMyOrders();
                     setActionModal(prev => ({ ...prev, show: false }));
                     // Success pop
@@ -588,7 +557,7 @@ const ProfileContent = () => {
 
                     try {
                         const res = await axios.post(`/api/orders/${selectedOrder._id}/process-return`, { refundType, amount, reason });
-                        setSelectedOrder(res.data.order);
+                        safeUpdateOrder(res.data.order || res.data);
                         fetchMyOrders();
                         setActionModal(prev => ({ ...prev, show: false }));
 
@@ -616,7 +585,7 @@ const ProfileContent = () => {
                 onConfirm: async () => {
                     try {
                         const res = await axios.post(`/api/orders/${selectedOrder._id}/process-return`, { refundType: 'full', amount: selectedOrder.total_amount, reason: 'Full Refund processed' });
-                        setSelectedOrder(res.data.order);
+                        safeUpdateOrder(res.data.order || res.data);
                         fetchMyOrders();
                         setActionModal(prev => ({ ...prev, show: false }));
 
@@ -655,7 +624,7 @@ const ProfileContent = () => {
                             status: newStatus,
                             cancel_reason
                         });
-                        setSelectedOrder(res.data);
+                        safeUpdateOrder(res.data);
                         fetchMyOrders();
                         setActionModal(prev => ({ ...prev, show: false }));
 
@@ -680,8 +649,11 @@ const ProfileContent = () => {
             const res = await axios.put(`/api/orders/${selectedOrder._id}/status`, {
                 status: newStatus
             });
-            setSelectedOrder(res.data);
+            safeUpdateOrder(res.data);
             fetchMyOrders();
+            if (newStatus === 'packed') {
+                alert('Notification: Order has been marked as packed/dispatched.');
+            }
         } catch (err) {
             console.error('Error updating status:', err);
             alert(err.response?.data?.message || 'Failed to update status');
@@ -691,13 +663,15 @@ const ProfileContent = () => {
     const handleDispatchOrder = async (e) => {
         if (e) e.preventDefault();
 
+        if (isDispatching) return;
+
         if (!dispatchForm.shipping_company_id) return alert('Please select a shipping company');
         if (!dispatchForm.tracking_id) return alert('Please enter a tracking ID');
 
         setIsDispatching(true);
         try {
             const res = await axios.put(`/api/shipping/dispatch/${selectedOrder._id}`, dispatchForm);
-            setSelectedOrder(res.data);
+            safeUpdateOrder(res.data);
             fetchMyOrders();
             alert('Tracking information updated successfully!');
         } catch (err) {
@@ -715,8 +689,8 @@ const ProfileContent = () => {
                 .then(res => setAllListingsCount(res.data.totalCount || res.data.total_count || 0))
                 .catch(() => {});
 
-            axios.get('/api/favorites', { params: { limit: 1 } })
-                .then(res => setFavoritesTotalCount(res.data.totalCount || res.data.total_count || 0))
+            axios.get('/api/favorites', { params: { limit: 1, populate: 'true' } })
+                .then(res => setFavoritesTotalCount(res.data.totalCount || res.data.total_count || res.data.length || 0))
                 .catch(() => {});
         }
     }, [user, activeTab, mode]);
@@ -957,7 +931,7 @@ const ProfileContent = () => {
                 <div className="pd-header-full">
                     <div className="pd-nav">
                         <div className="pd-nav-items">
-                            <div className={`pd-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => handleTabChange('dashboard')}>{t('profile.dashboard')}</div>
+                            <div className={`pd-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => handleTabChange('dashboard')}>{t('profile.dashboard', 'Dashboard')}</div>
                             <div className={`pd-nav-item ${activeTab === 'profile_settings' ? 'active' : ''}`} onClick={() => handleTabChange('profile_settings')}>{t('user_menu.my_profile')}</div>
 
                             {mode === 'buyer' && (
@@ -1082,7 +1056,7 @@ const ProfileContent = () => {
                                         <li className="mt-1">All bundle items are shipped in a single package.</li>
                                     </ul>
                                 </div>
-                                <div className="pd-bundle-preview-mini p-3 rounded-3" style={{ background: '#eff6ff', border: '1px solid #dbeafe' }}>
+                                <div className="pd-bundle-preview-mini p-3 rounded-3" style={{ background: 'color-mix(in srgb, var(--primary-color) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--primary-color) 20%, transparent)' }}>
                                     <div className="d-flex align-items-center gap-2">
                                         <FaCheckCircle className="text-primary" />
                                         <span className="fw-bold small text-primary">Live Now</span>
@@ -1094,9 +1068,9 @@ const ProfileContent = () => {
 
                         {activeTab === 'favorites' && (
                             <div className="mt-3 pt-3 border-top text-start">
-                                <p className="extra-small mb-2 fw-bold text-uppercase" style={{ letterSpacing: '0.05em', color: '#64748b' }}>FAVORITES SCORE</p>
+                                <p className="extra-small mb-2 fw-bold text-uppercase" style={{ letterSpacing: '0.05em', color: '#64748b' }}>{t('profile.favorites_score', 'FAVORITES SCORE')}</p>
                                 <div className="small d-flex justify-content-between">
-                                    <span>Items Saved</span>
+                                    <span>{t('profile.items_saved', 'Items Saved')}</span>
                                     <span className="fw-bold text-primary">{favoritesTotalCount}</span>
                                 </div>
                             </div>
@@ -1338,7 +1312,7 @@ const ProfileContent = () => {
                             <div className="pd-section-header mb-4">
                                 <div className="pd-section-title-wrap">
                                     <h2 className="fw-bold m-0" style={{ fontSize: '1.4rem' }}>{t('profile.favorites')}</h2>
-                                    <span className="pd-badge-count">{favoritesTotalCount || 0} items</span>
+                                    <span className="pd-badge-count">{t('profile.items_count', '{{count}} items').replace('{{count}}', favoritesTotalCount || 0)}</span>
                                 </div>
                                 <div className="d-flex gap-2">
                                     <button 
@@ -1397,7 +1371,7 @@ const ProfileContent = () => {
                                         {mode === 'buyer' ? t('user_menu.my_orders', 'My orders') : t('profile.orders_received', 'Orders Received')}
                                         <span className="pd-badge-count">{mode === 'buyer' ? boughtTotalCount : soldTotalCount}</span>
                                     </h2>
-                                    <p className="text-muted small m-0">{mode === 'buyer' ? 'Track and manage your purchases' : 'Manage your sales and shipments'}</p>
+                                    <p className="text-muted small m-0">{mode === 'buyer' ? t('profile.track_purchases', 'Track and manage your purchases') : t('profile.manage_sales', 'Manage your sales and shipments')}</p>
                                 </div>
                                 <div className="pd-orders-header-actions">
                                     <div className="pd-orders-filter-wrap">
@@ -1448,7 +1422,7 @@ const ProfileContent = () => {
                                         >
                                             <div className="pd-oic-header">
                                                 <div className="pd-oic-order-ref">
-                                                    <span className="pd-oic-ref-label">Order</span>
+                                                    <span className="pd-oic-ref-label">{t('profile.order', 'Order')}</span>
                                                     <span className="pd-oic-ref-value">#{order.order_number?.split('-')[1]}</span>
                                                 </div>
                                                 <div className="pd-oic-order-date">
@@ -1470,7 +1444,14 @@ const ProfileContent = () => {
                                                 <div className="pd-oic-body">
                                                     <div className="pd-oic-info">
                                                         <div className="d-flex justify-content-between align-items-start mb-1">
-                                                            <h3 className="pd-oic-title">{safeString(order.item_id?.title) || 'Unknown Item'}</h3>
+                                                            <h3 className="pd-oic-title">
+                                                                {safeString(order.item_id?.title) || 'Unknown Item'}
+                                                                {order.is_bundle && order.items && order.items.length > 1 && (
+                                                                    <span className="ms-2 badge bg-secondary" style={{ fontSize: '0.75rem' }}>
+                                                                        +{order.items.length - 1} more
+                                                                    </span>
+                                                                )}
+                                                            </h3>
                                                             <div className={`pd-oic-mobile-status ${order.order_status || 'placed'}`}>
                                                                 {getStatusLabel(order.order_status)}
                                                             </div>
@@ -1479,12 +1460,12 @@ const ProfileContent = () => {
                                                             {mode === 'buyer' ? (
                                                                 <>
                                                                     <div className="pd-oic-participant-icon buyer"><FaUserEdit /></div>
-                                                                    <span>Seller: <strong>{safeString(order.seller_id?.username)}</strong></span>
+                                                                    <span>{t('profile.seller', 'Seller')}: <strong>{safeString(order.seller_id?.username)}</strong></span>
                                                                 </>
                                                             ) : (
                                                                 <>
                                                                     <div className="pd-oic-participant-icon seller"><FaCheckCircle /></div>
-                                                                    <span>Buyer: <strong>{safeString(order.buyer_id?.username)}</strong></span>
+                                                                    <span>{t('profile.buyer', 'Buyer')}: <strong>{safeString(order.buyer_id?.username)}</strong></span>
                                                                 </>
                                                             )}
                                                         </div>
@@ -1497,7 +1478,7 @@ const ProfileContent = () => {
                                                         </div>
                                                         {order.payment_status === 'paid' && (
                                                             <div className="pd-oic-payment-status paid">
-                                                                <FaCheckCircle /> <span>PAID</span>
+                                                                <FaCheckCircle /> <span>{t('profile.paid', 'PAID')}</span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -1506,7 +1487,7 @@ const ProfileContent = () => {
 
                                             <div className="pd-oic-footer">
                                                 <button className="pd-oic-view-btn">
-                                                    <span>View Details</span>
+                                                    <span>{t('profile.view_details', 'View Details')}</span>
                                                     <FaAngleRight />
                                                 </button>
                                             </div>
@@ -1611,48 +1592,23 @@ const ProfileContent = () => {
                                                                             required
                                                                         />
                                                                     </div>
-                                                                    <div className="col-12">
-                                                                        <div className="position-relative" ref={addressSuggestionsRef}>
-                                                                            <input
-                                                                                type="text"
-                                                                                className="form-control form-control-sm"
-                                                                                placeholder={t('profile.address_line', 'Address Line')}
-                                                                                value={addressForm.address_line}
-                                                                                onChange={(e) => {
-                                                                                    const val = e.target.value;
-                                                                                    setAddressForm({ ...addressForm, address_line: val });
-                                                                                    handleOrderAddressSearch(val);
-                                                                                }}
-                                                                                required
-                                                                                autoComplete="off"
-                                                                            />
-                                                                            {loadingAddressSuggestions && (
-                                                                                <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 5 }}>
-                                                                                    <FaSpinner className="fa-spin" />
-                                                                                </div>
-                                                                            )}
-                                                                            {showAddressSuggestions && addressSuggestions.length > 0 && (
-                                                                                <ul className="address-suggestions-dropdown" style={{ 
-                                                                                    position: 'absolute', top: '100%', left: 0, right: 0, 
-                                                                                    backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '4px',
-                                                                                    listStyle: 'none', padding: 0, margin: '2px 0 0 0', zIndex: 1000,
-                                                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: '200px', overflowY: 'auto'
-                                                                                }}>
-                                                                                    {addressSuggestions.map((s, i) => (
-                                                                                        <li 
-                                                                                            key={i} 
-                                                                                            onClick={() => handleAddressSuggestionClick(s)}
-                                                                                            style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '0.8rem', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'flex-start', gap: '8px' }}
-                                                                                            onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
-                                                                                            onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
-                                                                                        >
-                                                                                            <FaMapMarkerAlt style={{ marginTop: '3px', color: '#64748b', flexShrink: 0 }} />
-                                                                                            <span>{s.display_name}</span>
-                                                                                        </li>
-                                                                                    ))}
-                                                                                </ul>
-                                                                            )}
-                                                                        </div>
+                                                                    <div className="col-12" style={{ zIndex: 10 }}>
+                                                                        <LocationPickerMap 
+                                                                            showMap={false} 
+                                                                            initialLabel={addressForm.address_line}
+                                                                            onLocationSelect={(loc) => {
+                                                                                setAddressForm(prev => ({
+                                                                                    ...prev,
+                                                                                    address_line: loc.label || prev.address_line,
+                                                                                    city: loc.city || prev.city,
+                                                                                    state: loc.state || prev.state,
+                                                                                    pincode: loc.pincode || prev.pincode,
+                                                                                    country: loc.country || prev.country,
+                                                                                    lat: loc.lat,
+                                                                                    lng: loc.lng
+                                                                                }));
+                                                                            }} 
+                                                                        />
                                                                     </div>
                                                                     <div className="col-6">
                                                                         <input
@@ -1740,7 +1696,7 @@ const ProfileContent = () => {
                                                                         {mode === 'buyer' ? `${t('profile.sold_by', 'Sold by:')} ${safeString(selectedOrder.seller_id?.username)}` : `${t('profile.bought_by', 'Bought by:')} ${safeString(selectedOrder.buyer_id?.username)}`}
                                                                     </p>
                                                                     <div className="d-flex align-items-center gap-2">
-                                                                        <span className="badge bg-primary-soft text-primary px-2 py-1 rounded-pill extra-small">Item Price</span>
+                                                                        <span className="badge bg-primary-soft text-primary px-2 py-1 rounded-pill extra-small">{t('profile.item_price', 'Item Price')}</span>
                                                                         <span className="fw-bold text-dark small">{formatPrice(selectedOrder.item_price, selectedOrder.currency_id)}</span>
                                                                     </div>
                                                                 </div>
@@ -1752,12 +1708,12 @@ const ProfileContent = () => {
                                                             <h4 className="detail-section-title mb-3">{t('profile.tracking_info', 'Courier Details')}</h4>
                                                             <div className="p-4 bg-white border rounded-3 shadow-sm tracker-history-box">
                                                                 <div className="d-flex justify-content-between mb-2">
-                                                                    <span className="text-muted small">Shipping Partner</span>
-                                                                    <span className="small fw-bold text-dark">{selectedOrder.shipping_company_id?.company_name || 'Standard Shipping'}</span>
+                                                                    <span className="text-muted small">{t('profile.shipping_partner', 'Shipping Partner')}</span>
+                                                                    <span className="small fw-bold text-dark">{selectedOrder.shipping_company_id?.company_name || t('profile.standard_shipping', 'Standard Shipping')}</span>
                                                                 </div>
                                                                 <div className="d-flex justify-content-between mb-4">
-                                                                    <span className="text-muted small">Tracking Number</span>
-                                                                    <span className="small fw-bold text-dark text-uppercase">{selectedOrder.tracking_id || 'N/A'}</span>
+                                                                    <span className="text-muted small">{t('profile.tracking_number', 'Tracking Number')}</span>
+                                                                    <span className="small fw-bold text-dark text-uppercase">{selectedOrder.tracking_id || t('profile.na', 'N/A')}</span>
                                                                 </div>
 
                                                                 {selectedOrder.shipping_company_id?.tracking_url && selectedOrder.tracking_id && (
@@ -1786,7 +1742,7 @@ const ProfileContent = () => {
                                                             <span>{t('profile.status', 'Status')}</span>
                                                             <span className={`status-pill ${selectedOrder.payment_status}`}>
                                                                 {selectedOrder.payment_status === 'paid' ? <FaCheckCircle /> : <FaClock />}
-                                                                {selectedOrder.payment_status?.toUpperCase()}
+                                                                {selectedOrder.payment_status === 'paid' ? t('profile.paid', 'PAID') : selectedOrder.payment_status?.toUpperCase()}
                                                             </span>
                                                         </div>
                                                         <div className="payment-row">
@@ -1815,8 +1771,8 @@ const ProfileContent = () => {
 
                                                     {selectedOrder.order_status === 'cancelled' && (
                                                         <div className="pd-section-card mt-3 p-3 bg-danger-soft border-danger" style={{ borderLeft: '4px solid #ef4444' }}>
-                                                            <h4 className="detail-section-title text-danger mb-2">Order Cancelled</h4>
-                                                            <p className="small mb-1"><strong>Reason:</strong> {selectedOrder.cancel_reason || 'N/A'}</p>
+                                                            <h4 className="detail-section-title text-danger mb-2">{t('profile.order_cancelled', 'Order Cancelled')}</h4>
+                                                            <p className="small mb-1"><strong>{t('profile.reason', 'Reason')}:</strong> {selectedOrder.cancel_reason || 'N/A'}</p>
                                                             <p className="extra-small text-muted mb-0">Refund of {formatPrice(selectedOrder.total_amount, selectedOrder.currency_id)} has been credited back to the buyer's wallet.</p>
                                                         </div>
                                                     )}
@@ -1854,14 +1810,14 @@ const ProfileContent = () => {
                                                     {mode === 'buyer' && selectedOrder.order_status === 'return_requested' && (
                                                         <div className="pd-section-card mt-3 p-3 bg-warning-soft border-warning" style={{ borderLeft: '4px solid #f59e0b' }}>
                                                             <h4 className="detail-section-title text-warning mb-2">Return Request Sent</h4>
-                                                            <p className="small mb-1"><strong>Reason:</strong> {selectedOrder.return_reason || 'N/A'}</p>
+                                                            <p className="small mb-1"><strong>{t('profile.reason', 'Reason')}:</strong> {selectedOrder.return_reason || 'N/A'}</p>
                                                             <p className="extra-small text-muted mb-0">The seller has been notified of your return request. Please wait for their approval.</p>
                                                         </div>
                                                     )}
 
                                                     {mode === 'seller' && selectedOrder.order_status === 'return_requested' && (
                                                         <div className="pd-section-card mt-3 p-3 bg-light border shadow-sm">
-                                                            <h4 className="detail-section-title mb-3">Process Return Request</h4>
+                                                            <h4 className="detail-section-title mb-3">{t('profile.process_return_request', 'Process Return Request')}</h4>
                                                             <div className="p-3 bg-warning-soft rounded-3 mb-3" style={{ border: '1px solid #fbbf24' }}>
                                                                 <p className="small fw-bold mb-1">Buyer's Return Reason:</p>
                                                                 <p className="small mb-0 italic">"{selectedOrder.return_reason || 'No reason provided'}"</p>
@@ -1876,8 +1832,8 @@ const ProfileContent = () => {
 
                                                     {selectedOrder.order_status === 'returned' && (
                                                         <div className="pd-section-card mt-3 p-3 bg-success-soft border-success" style={{ borderLeft: '4px solid #10b981' }}>
-                                                            <h4 className="detail-section-title text-success mb-2">Return Completed</h4>
-                                                            <p className="small mb-1"><strong>Refunded:</strong> {formatPrice(selectedOrder.refund_amount)}</p>
+                                                            <h4 className="detail-section-title text-success mb-2">{t('profile.return_completed', 'Return Completed')}</h4>
+                                                            <p className="small mb-1"><strong>{t('profile.refunded', 'Refunded')}:</strong> {formatPrice(selectedOrder.refund_amount)}</p>
                                                             <p className="small mb-1"><strong>Processing Note:</strong> {selectedOrder.partial_refund_reason || 'N/A'}</p>
                                                             <p className="extra-small text-muted mb-0">The item has been successfully returned and payment settled.</p>
                                                         </div>
@@ -1897,7 +1853,7 @@ const ProfileContent = () => {
                                                             <div className="mb-4">
                                                                 <button 
                                                                     className="btn btn-light border w-100 d-flex align-items-center justify-content-center gap-2 py-2 fw-bold"
-                                                                    onClick={() => printShippingLabel(selectedOrder, user)}
+                                                                    onClick={() => printShippingLabel(selectedOrder, user, t)}
                                                                 >
                                                                     🖨️ {t('profile.print_label', 'Print Shipping Label')}
                                                                 </button>
@@ -1915,7 +1871,7 @@ const ProfileContent = () => {
                                                                 {/* Step: Update Tracking Information (Required before Shipping) */}
                                                                 {['confirmed', 'packed'].includes(selectedOrder.order_status) && (
                                                                     <div className="mt-1 p-3 bg-light rounded-3 border">
-                                                                        <p className="extra-small fw-bold text-primary mb-2 text-uppercase">1. Set Tracking Details</p>
+                                                                        <p className="extra-small fw-bold text-primary mb-2 text-uppercase">{t('profile.set_tracking_details', '1. Set Tracking Details')}</p>
                                                                         <label className="form-label mb-1 extra-small text-muted">{t('profile.courier_company', 'Courier Company')}</label>
                                                                         <CustomSelect
                                                                             options={shippingCompanies.map(comp => ({ value: comp._id, label: comp.company_name }))}
@@ -2126,14 +2082,33 @@ const ProfileContent = () => {
 
                             <div className="d-flex gap-2 mt-4">
                                 {!['success', 'error'].includes(actionModal.type) && (
-                                    <button className="btn btn-light flex-fill fw-bold py-2 border" onClick={() => setActionModal({ ...actionModal, show: false })}>
+                                    <button 
+                                        className="btn btn-light flex-fill fw-bold py-2 border" 
+                                        onClick={() => setActionModal({ ...actionModal, show: false })}
+                                        disabled={actionSubmitting}
+                                    >
                                         {t('common.cancel', 'Back')}
                                     </button>
                                 )}
                                 <button
                                     className={`btn btn-${['cancel', 'error'].includes(actionModal.type) ? 'danger' : (['success'].includes(actionModal.type) ? 'success' : 'primary')} flex-fill fw-bold py-2`}
-                                    onClick={() => actionModal.onConfirm ? actionModal.onConfirm(actionModal.inputValue, actionModal.inputValue2) : setActionModal({ ...actionModal, show: false })}
+                                    disabled={actionSubmitting}
+                                    onClick={async (e) => {
+                                        if (e.currentTarget.disabled || actionSubmitting) return;
+                                        e.currentTarget.disabled = true;
+                                        if (actionModal.onConfirm) {
+                                            setActionSubmitting(true);
+                                            try {
+                                                await actionModal.onConfirm(actionModal.inputValue, actionModal.inputValue2);
+                                            } finally {
+                                                setActionSubmitting(false);
+                                            }
+                                        } else {
+                                            setActionModal({ ...actionModal, show: false });
+                                        }
+                                    }}
                                 >
+                                    {actionSubmitting ? <span className="spinner-border spinner-border-sm me-2" /> : null}
                                     {actionModal.confirmLabel}
                                 </button>
                             </div>
@@ -2147,9 +2122,11 @@ const ProfileContent = () => {
                 <EditItemModal
                     item={editingItem}
                     onClose={() => setEditingItem(null)}
-                    onUpdate={(updatedItem) => {
+                    onUpdate={(updatedItem, close = false) => {
                         setMyListings(prev => prev.map(it => it._id === updatedItem._id ? updatedItem : it));
-                        setEditingItem(null); // Close the modal after successful update
+                        if (close) {
+                            setEditingItem(null);
+                        }
                     }}
                 />
             )}

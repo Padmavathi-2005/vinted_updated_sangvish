@@ -571,7 +571,24 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
                                     <p className="si-swap-hint small">Hides the item from search while keeping it in your collection.</p>
                                 </div>
                                 <label className="si-toggle">
-                                    <input type="checkbox" checked={isSold} onChange={e => setIsSold(e.target.checked)} />
+                                    <input 
+                                        type="checkbox" 
+                                        checked={isSold} 
+                                        onChange={async (e) => {
+                                            const newIsSold = e.target.checked;
+                                            setIsSold(newIsSold);
+                                            try {
+                                                const formData = new FormData();
+                                                formData.append('is_sold', newIsSold);
+                                                await axios.put(`/api/items/${item._id}`, formData, {
+                                                    headers: { 'Content-Type': 'multipart/form-data' }
+                                                });
+                                            } catch (err) {
+                                                console.error("Failed to update sold status", err);
+                                                setIsSold(!newIsSold); // revert on failure
+                                            }
+                                        }} 
+                                    />
                                     <span className="si-toggle-slider" />
                                 </label>
                             </div>

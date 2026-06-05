@@ -25,7 +25,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
         { key: 'payout-methods', icon: <FaUniversity />, label: t('wallet.payout', 'Payout') },
     ];
     const router = useRouter();
-    const { formatPrice, currentCurrency, defaultCurrency } = useContext(CurrencyContext);
+    const { formatPrice, convertPrice, currentCurrency, defaultCurrency } = useContext(CurrencyContext);
 
     /* internal sub-tab state — kept in sync with sidebar prop */
     const [activeSubTab, setActiveSubTab] = useState(propSubTab);
@@ -78,7 +78,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
             await axios.post('/api/wallet/withdraw', {
                 amount: parseFloat(withdrawForm.amount),
                 payout_method_id: withdrawForm.payout_method_id,
-                currency: defaultCurrency?.code || currentCurrency?.code || 'INR'
+                currency: currentCurrency?.code || 'INR'
             });
             alert('Withdrawal request submitted successfully!');
             const def = userPayoutMethods.find(m => m.is_default) || userPayoutMethods[0];
@@ -106,13 +106,8 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                 <div className="wc-hero-text">
                     <div className="wc-hero-label">{t('wallet.total_balance', 'Total Balance')}</div>
                     <div className="wc-hero-amount">
-                        {formatPrice(walletData?.wallet?.balance || 0, null, defaultCurrency)}
+                        {formatPrice(walletData?.wallet?.balance || 0, walletData?.wallet?.currency, currentCurrency)}
                     </div>
-                    {currentCurrency?.code !== defaultCurrency?.code && (
-                        <div className="wc-hero-converted" style={{ fontSize: '0.8rem', opacity: 0.7, fontWeight: '500' }}>
-                            ≈ {formatPrice(walletData?.wallet?.balance || 0)} <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.8 }}>({t('common.in', 'in')} {currentCurrency?.code})</span>
-                        </div>
-                    )}
                 </div>
                 {withdrawHistory?.some(r => r.status === 'pending') ? (
                     <button className="wc-withdraw-btn pending" disabled style={{ opacity: 0.7, cursor: 'not-allowed' }}>
@@ -160,22 +155,26 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                             </div>
                             <div className="wc-tx-info">
                                 <div className="wc-tx-desc">
-                                    {tx.description ? safeString(tx.description) : (tx.type === 'credit' ? t('wallet.credit', 'Credit') : t('wallet.debit', 'Debit'))}
+                                    {(() => {
+                                        let desc = tx.description ? safeString(tx.description) : '';
+                                        if (desc.startsWith('Full refund for cancelled order ')) {
+                                            return t('wallet.full_refund_desc', 'Full refund for cancelled order {{id}}').replace('{{id}}', desc.replace('Full refund for cancelled order ', ''));
+                                        }
+                                        if (desc.startsWith('Payment for order ')) {
+                                            return t('wallet.payment_for_order', 'Payment for order {{id}}').replace('{{id}}', desc.replace('Payment for order ', ''));
+                                        }
+                                        return desc || (tx.type === 'credit' ? t('wallet.credit', 'Credit') : t('wallet.debit', 'Debit'));
+                                    })()}
                                 </div>
                                 <div className="wc-tx-meta">
                                     <span>{new Date(tx.created_at).toLocaleDateString()}</span>
-                                    {tx.purpose && <span className="wc-tx-purpose">{tx.purpose.replace(/_/g, ' ')}</span>}
+                                    {tx.purpose && <span className="wc-tx-purpose">{t(`wallet.purpose_${tx.purpose}`, tx.purpose.replace(/_/g, ' '))}</span>}
                                 </div>
                             </div>
                             <div className="wc-tx-right">
                                 <span className={`wc-tx-amount ${tx.type === 'credit' ? 'credit' : 'debit'}`}>
-                                    {tx.type === 'credit' ? '+' : '−'}{formatPrice(tx.amount, null, defaultCurrency)}
+                                    {tx.type === 'credit' ? '+' : '−'}{formatPrice(tx.amount, walletData?.wallet?.currency, currentCurrency)}
                                 </span>
-                                {currentCurrency?.code !== defaultCurrency?.code && (
-                                    <span className="wc-tx-converted" style={{ fontSize: '0.72rem', opacity: 0.6, marginTop: '-2px' }}>
-                                        {tx.type === 'credit' ? '+' : '−'}{formatPrice(tx.amount)} <span style={{ fontSize: '0.65rem' }}>({currentCurrency?.code})</span>
-                                    </span>
-                                )}
                                 <span className={`wc-tx-status ${tx.status}`}>
                                     {tx.status === 'completed' ? <><FaCheckCircle size={9} /> {t('wallet.completed', 'Completed')}</> :
                                         tx.status === 'failed' ? <><FaExclamationCircle size={9} /> {t('wallet.failed', 'Failed')}</> :
@@ -223,12 +222,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                             )}
                         </div>
                         <div className="wc-tx-right">
-                            <span className="wc-tx-amount debit">{formatPrice(req.amount, null, defaultCurrency)}</span>
-                            {currentCurrency?.code !== defaultCurrency?.code && (
-                                <span className="wc-tx-converted" style={{ fontSize: '0.72rem', opacity: 0.6, marginTop: '-2px' }}>
-                                    - {formatPrice(req.amount)} <span style={{ fontSize: '0.65rem' }}>({currentCurrency?.code})</span>
-                                </span>
-                            )}
+                            <span className="wc-tx-amount debit">{formatPrice(req.amount, walletData?.wallet?.currency, currentCurrency)}</span>
                             <span className={`wc-tx-status ${req.status === 'completed' ? 'completed' : req.status === 'pending' ? 'pending' : 'failed'}`}>
                                 {req.status === 'completed' ? <><FaCheckCircle size={9} /> Done</> :
                                     req.status === 'pending' ? <><FaClock size={9} /> Pending</> :
@@ -255,12 +249,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                     <div>
                         <h3 className="wc-modal-title">{t('wallet.request_withdrawal', 'Request Withdrawal')}</h3>
                         <p className="wc-modal-sub">
-                            {t('wallet.available', 'Available')}: <strong>{formatPrice(walletData?.wallet?.balance || 0, null, defaultCurrency)}</strong>
-                            {currentCurrency?.code !== defaultCurrency?.code && (
-                                <span className="ms-2 opacity-75" style={{ fontSize: '0.85em' }}>
-                                    (≈ {formatPrice(walletData?.wallet?.balance || 0)} {t('common.in', 'in')} {currentCurrency?.code})
-                                </span>
-                            )}
+                            {t('wallet.available', 'Available')}: <strong>{formatPrice(walletData?.wallet?.balance || 0, walletData?.wallet?.currency, currentCurrency)}</strong>
                         </p>
                     </div>
                     <button className="btn-close" onClick={() => setShowWithdrawModal(false)} />
@@ -282,7 +271,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                                 {t('wallet.amount_to_withdraw', 'Amount to withdraw')}
                             </label>
                             <div className="wc-input-row">
-                                <span className="wc-currency-sym">{defaultCurrency?.symbol || currentCurrency?.symbol || '₹'}</span>
+                                <span className="wc-currency-sym">{currentCurrency?.symbol || '₹'}</span>
                                 <input
                                     type="number"
                                     className="wc-input"
@@ -290,7 +279,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                                     onChange={e => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
                                     placeholder="0.00"
                                     min="1"
-                                    max={walletData?.wallet?.balance}
+                                    max={convertPrice(walletData?.wallet?.balance || 0, walletData?.wallet?.currency, currentCurrency)}
                                     required
                                 />
                             </div>

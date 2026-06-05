@@ -6,6 +6,7 @@ import { showToast } from '../utils/swal';
 import Toggle from './Toggle';
 import axios from '../utils/axios';
 import Pagination from './common/Pagination';
+import { useLocalization } from '../context/LocalizationContext';
 import '../styles/Table.css';
 
 const Table = ({
@@ -18,8 +19,9 @@ const Table = ({
     emptyMessage = "No records found"
 }) => {
     const { paginationLimit, emptyTableImage, paginationMode } = useSettings();
+    const { t } = useLocalization();
     const [currentPage, setCurrentPage] = useState(1);
-    const [currentLimit, setCurrentLimit] = useState(paginationLimit || 10);
+    const [currentLimit, setCurrentLimit] = useState(parseInt(paginationLimit) || 10);
     const [isScrollMode, setIsScrollMode] = useState(paginationMode === 'scroll');
 
     useEffect(() => {
@@ -28,7 +30,7 @@ const Table = ({
 
     useEffect(() => {
         if (!isScrollMode) {
-            setCurrentLimit(paginationLimit || 10);
+            setCurrentLimit(parseInt(paginationLimit) || 10);
         }
     }, [paginationLimit, isScrollMode]);
 
@@ -55,7 +57,7 @@ const Table = ({
 
     const handleLoadMore = () => {
         if (currentLimit < data.length) {
-            setCurrentLimit(prev => prev + (paginationLimit || 10));
+            setCurrentLimit(prev => parseInt(prev) + (parseInt(paginationLimit) || 10));
         }
     };
 
@@ -141,7 +143,7 @@ const Table = ({
                                     {col.header}
                                 </th>
                             ))}
-                            {actions && <th style={{ width: '120px', textAlign: 'right' }}>Actions</th>}
+                            {actions && <th style={{ width: '120px', textAlign: 'right' }}>{t('table.actions', 'Actions')}</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -156,7 +158,7 @@ const Table = ({
                                         </td>
                                     ))}
                                     {actions && (
-                                        <td className="text-end action-cell" data-label="Actions">
+                                        <td className="text-end action-cell" data-label={t('table.actions', 'Actions')}>
                                             <div className="action-buttons">
                                                 {onEdit && (
                                                     <button
@@ -205,7 +207,7 @@ const Table = ({
                                             </div>
                                         )}
                                         <span className="fw-semibold" style={{ fontSize: '0.95rem', color: '#64748b' }}>{emptyMessage}</span>
-                                        <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>No records to display here yet.</span>
+                                        <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{t('table.no_records', 'No records to display here yet.')}</span>
                                     </div>
                                 </td>
                             </tr>
@@ -219,14 +221,14 @@ const Table = ({
                     <div className="d-flex align-items-center gap-4">
                         {!isScrollMode && (
                             <div className="rows-per-page">
-                                Rows per page:
+                                {t('table.rows_per_page', 'Rows per page:')}
                                 <select
                                     className="rows-select"
                                     value={currentLimit}
                                     onChange={(e) => { setCurrentLimit(parseInt(e.target.value)); setCurrentPage(1); }}
                                 >
                                     {[1, 2, 3].map(multiplier => {
-                                        const val = (paginationLimit || 10) * multiplier;
+                                        const val = (parseInt(paginationLimit) || 10) * multiplier;
                                         return <option key={val} value={val}>{val}</option>;
                                     })}
                                 </select>
@@ -235,7 +237,7 @@ const Table = ({
                         {/* Mode switcher removed as per request to use default pagination mode from settings */}
                         {!isScrollMode && totalPages > 1 && (
                             <div className="page-range d-none d-sm-block">
-                                {(currentPage - 1) * currentLimit + 1}-{Math.min(currentPage * currentLimit, data.length)} of {data.length}
+                                {(currentPage - 1) * currentLimit + 1}-{Math.min(currentPage * currentLimit, data.length)} {t('table.of', 'of')} {data.length}
                             </div>
                         )}
                     </div>

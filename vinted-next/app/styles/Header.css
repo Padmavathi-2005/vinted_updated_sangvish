@@ -169,10 +169,18 @@
     justify-content: center;
 }
 
+.icon-wrapper::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: -5px;
+    right: -5px;
+    height: 10px;
+}
+
 .icon-wrapper:hover {
-    color: #00bcd4 !important;
+    color: var(--primary-color) !important;
     /* Teal color on hover */
-    transform: translateY(-1px);
 }
 
 .categories-toggle {
@@ -520,3 +528,13 @@
     color: white !important;
     border-color: var(--primary-color);
 }
+
+/* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
+.sell-btn { position: relative; }
+.sell-btn::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.icon-wrapper { position: relative; }
+.icon-wrapper::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.mobile-btn { position: relative; }
+.mobile-btn::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.search-trending-tag { position: relative; }
+.search-trending-tag::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }

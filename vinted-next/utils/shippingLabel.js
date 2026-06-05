@@ -1,7 +1,7 @@
 /**
  * Generates a printable shipping label window
  */
-export const printShippingLabel = (order, seller) => {
+export const printShippingLabel = (order, seller, t = (k, v) => v) => {
     const labelWindow = window.open('', '_blank', 'width=800,height=600');
     
     const html = `
@@ -73,42 +73,81 @@ export const printShippingLabel = (order, seller) => {
                     cursor: pointer;
                     font-weight: bold;
                 }
+                .items-section {
+                    margin-top: 25px;
+                    padding-top: 25px;
+                    border-top: 1px dashed #cbd5e1;
+                }
+                .item-line {
+                    font-size: 14px;
+                    margin-bottom: 5px;
+                    color: #334155;
+                }
             </style>
         </head>
         <body>
-            <button class="print-btn no-print" onclick="window.print()">Print Label</button>
+            <button class="print-btn no-print" onclick="window.print()">${t('shipping_label.print_label', 'Print Label')}</button>
             
             <div class="label-container">
-                <div class="label-header">ECONOMY SHIPPING</div>
+                <div class="label-header">${t('shipping_label.economy_shipping', 'ECONOMY SHIPPING')}</div>
                 
                 <div class="label-body">
                     <div class="address-section">
-                        <span class="address-label">FROM (Shipper)</span>
+                        <span class="address-label">${t('shipping_label.from_shipper', 'FROM (Shipper)')}</span>
                         <div class="address-name">${seller?.username || 'Vinted Seller'}</div>
                         <div class="address-text">
-                            ${seller?.address?.address_line || ''}<br>
-                            ${seller?.address?.city || ''}, ${seller?.address?.state || ''} ${seller?.address?.pincode || ''}<br>
-                            Phone: ${seller?.phone || 'N/A'}
+                            ${(() => {
+                                const adr = seller?.address;
+                                if (!adr) return '';
+                                let html = '';
+                                if (adr.address_line) html += `${adr.address_line}<br>`;
+                                const parts = [adr.city, adr.state, adr.pincode].filter(Boolean);
+                                if (parts.length > 0) html += `${parts.join(', ')}<br>`;
+                                return html;
+                            })()}
+                            ${t('shipping_label.phone', 'Phone')}: ${seller?.phone || 'N/A'}
                         </div>
                     </div>
                     
                     <div class="divider"></div>
                     
                     <div class="address-section">
-                        <span class="address-label">TO (Receiver)</span>
-                        <div class="address-name">${order.shipping_address?.full_name}</div>
+                        <span class="address-label">${t('shipping_label.to_receiver', 'TO (Receiver)')}</span>
+                        <div class="address-name">${order.shipping_address?.full_name || ''}</div>
                         <div class="address-text">
-                            ${order.shipping_address?.address_line}<br>
-                            ${order.shipping_address?.city}, ${order.shipping_address?.state} ${order.shipping_address?.pincode}<br>
-                            Phone: ${order.shipping_address?.phone}
+                            ${(() => {
+                                const adr = order.shipping_address;
+                                if (!adr) return '';
+                                let html = '';
+                                if (adr.address_line) html += `${adr.address_line}<br>`;
+                                const parts = [adr.city, adr.state, adr.pincode].filter(Boolean);
+                                if (parts.length > 0) html += `${parts.join(', ')}<br>`;
+                                return html;
+                            })()}
+                            ${t('shipping_label.phone', 'Phone')}: ${order.shipping_address?.phone || 'N/A'}
                         </div>
+                    </div>
+                    
+                    <div class="items-section">
+                        <span class="address-label">${t('shipping_label.order_contents', 'Order Contents')}</span>
+                        ${(() => {
+                            const itemsArray = order.items && order.items.length > 0 
+                                ? order.items.map(i => i.item_id) 
+                                : (order.item_id ? [order.item_id] : []);
+                            
+                            return itemsArray.filter(Boolean).map(item => `
+                                <div class="item-line">
+                                    • ${item.title || t('shipping_label.product', 'Product')} ${item.size ? `(${t('shipping_label.size', 'Size')}: ${item.size})` : ''} 
+                                </div>
+                            `).join('');
+                        })()}
                     </div>
                 </div>
                 
                 <div class="label-footer">
                     <div class="order-info">
-                        ORDER: #${order.order_number}<br>
-                        DATE: ${new Date(order.created_at).toLocaleDateString()}
+                        ${t('shipping_label.order', 'ORDER')}: #${order.order_number}<br>
+                        ${t('shipping_label.date', 'DATE')}: ${new Date(order.created_at).toLocaleDateString()}
                     </div>
                     <div class="barcode-placeholder"></div>
                 </div>

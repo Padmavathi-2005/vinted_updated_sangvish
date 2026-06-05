@@ -258,3 +258,7 @@
         display: none;
     }
 }
+
+/* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
+.home-btn { position: relative; }
+.home-btn::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }

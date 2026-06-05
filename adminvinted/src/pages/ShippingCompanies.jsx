@@ -8,9 +8,12 @@ import axios from '../utils/axios';
 import { useLocalization } from '../context/LocalizationContext';
 import { showToast, showConfirm } from '../utils/swal';
 import { safeString } from '../utils/constants';
+import { useSettings } from '../context/SettingsContext';
+import { formatAdminDate } from '../utils/dateFormatter';
 
 const ShippingCompanies = () => {
     const { t } = useLocalization();
+    const { globalSettings } = useSettings();
     const [companies, setCompanies] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -152,9 +155,9 @@ const ShippingCompanies = () => {
         }
     };
 
-    const columns = [
+        const columns = [
         {
-            header: 'Logo',
+            header: t('shipping.table.logo', 'Logo'),
             accessor: 'logo',
             render: (row) => (
                 <div className="avatar-small bg-light rounded d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
@@ -163,12 +166,12 @@ const ShippingCompanies = () => {
             )
         },
         {
-            header: 'Company Name',
+            header: t('shipping.table.company_name', 'Company Name'),
             accessor: 'company_name',
             render: (row) => <div className="fw-bold">{row.company_name}</div>
         },
         {
-            header: 'Tracking URL',
+            header: t('shipping.table.tracking_url', 'Tracking URL'),
             accessor: 'tracking_url',
             render: (row) => (
                 <div className="small text-muted text-truncate" style={{ maxWidth: '300px' }}>
@@ -178,20 +181,20 @@ const ShippingCompanies = () => {
             )
         },
         {
-            header: 'Status',
+            header: t('shipping.table.status', 'Status'),
             accessor: 'status',
             render: (row) => (
                 <Toggle 
                     checked={row.status === 'active'}
                     onChange={(checked) => handleStatusToggle(row, checked)}
-                    label={row.status === 'active' ? 'Active' : 'Inactive'}
+                    label={row.status === 'active' ? t('common.status.active', 'Active') : t('common.status.inactive', 'Inactive')}
                 />
             )
         },
         {
-            header: 'Created At',
+            header: t('shipping.table.created_at', 'Created At'),
             accessor: 'created_at',
-            render: (row) => <div className="small">{new Date(row.created_at).toLocaleDateString()}</div>
+            render: (row) => <div className="small">{formatAdminDate(row.created_at, globalSettings)}</div>
         }
     ];
 
@@ -201,26 +204,28 @@ const ShippingCompanies = () => {
                 <Card className="main-content-card border-0 shadow-sm p-4">
                     <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                         <div>
-                            <h1 className="dashboard-title h3 mb-1 text-primary">Shipping Companies</h1>
-                            <p className="text-muted small mb-0">Manage marketplace delivery partners</p>
+                            <h1 className="dashboard-title h3 mb-1 text-primary">{t('shipping.title', 'Shipping Companies')}</h1>
+                            <p className="text-muted small mb-0">{t('shipping.subtitle', 'Manage marketplace delivery partners')}</p>
                         </div>
                         <Button variant="primary" onClick={handleAdd} className="btn-admin-action">
-                            <FaPlus /> Add New Company
+                            <FaPlus /> {t('shipping.add_new', 'Add New Company')}
                         </Button>
                     </div>
 
-                    <div className="mb-4 search-box-container">
-                        <InputGroup>
-                            <InputGroup.Text className="bg-white border-end-0">
-                                <FaSearch className="text-muted" />
-                            </InputGroup.Text>
-                            <Form.Control
-                                placeholder="Search companies..."
-                                className="border-start-0 ps-0"
-                                value={searchTerm}
-                                onChange={handleSearch}
-                            />
-                        </InputGroup>
+                    <div className="d-flex gap-3 flex-wrap mb-4 align-items-center">
+                        <div className="flex-grow-1" style={{ maxWidth: '350px' }}>
+                            <InputGroup>
+                                <InputGroup.Text className="bg-white border-end-0">
+                                    <FaSearch className="text-muted" />
+                                </InputGroup.Text>
+                                <Form.Control
+                                    placeholder="Search companies..."
+                                    className="border-start-0 ps-0"
+                                    value={searchTerm}
+                                    onChange={handleSearch}
+                                />
+                            </InputGroup>
+                        </div>
                     </div>
 
                     {loading ? (
@@ -235,7 +240,7 @@ const ShippingCompanies = () => {
                             onEdit={handleEdit}
                             onDelete={handleDelete}
                             pagination={true}
-                            emptyMessage="No shipping companies found"
+                            emptyMessage={t('shipping.no_data', 'No shipping companies found')}
                         />
                     )}
                 </Card>

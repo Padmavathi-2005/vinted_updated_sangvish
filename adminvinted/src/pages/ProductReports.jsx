@@ -7,9 +7,12 @@ import axios from '../utils/axios';
 import { useLocalization } from '../context/LocalizationContext';
 import { showToast, showConfirm } from '../utils/swal';
 import { safeString, getImageUrl } from '../utils/constants';
+import { useSettings } from '../context/SettingsContext';
+import { formatAdminDate } from '../utils/dateFormatter';
 
 const ProductReports = () => {
     const { formatPrice, t } = useLocalization();
+    const { globalSettings } = useSettings();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -24,7 +27,7 @@ const ProductReports = () => {
     const fetchReports = async () => {
         setLoading(true);
         try {
-            const { data } = await axios.get('/api/moderation-reports');
+            const { data } = await axios.get('/api/reports');
             setReports(data);
         } catch (error) {
             console.error("Error fetching reports", error);
@@ -48,7 +51,7 @@ const ProductReports = () => {
         if (result.isConfirmed) {
             setActionLoading(true);
             try {
-                await axios.post(`/api/moderation-reports/${reportId}/action`, { action });
+                await axios.post(`/api/reports/${reportId}/action`, { action });
                 showToast('success', `Action ${action} completed successfully`);
                 fetchReports();
                 setShowDetailModal(false);
@@ -63,7 +66,7 @@ const ProductReports = () => {
 
     const updateStatus = async (reportId, status) => {
         try {
-            await axios.put(`/api/moderation-reports/${reportId}/status`, { status });
+            await axios.put(`/api/reports/${reportId}/status`, { status });
             showToast('success', `Report status updated to ${status}`);
             fetchReports();
         } catch (error) {
@@ -73,7 +76,7 @@ const ProductReports = () => {
 
     const columns = [
         {
-            header: 'Item',
+            header: t('product_reports.table.item', 'Item'),
             accessor: 'item_id',
             render: (row) => (
                 <div className="d-flex align-items-center gap-2">
@@ -91,7 +94,7 @@ const ProductReports = () => {
             )
         },
         {
-            header: 'Reporter',
+            header: t('product_reports.table.reporter', 'Reporter'),
             accessor: 'reporter_id',
             render: (row) => (
                 <div>
@@ -101,12 +104,12 @@ const ProductReports = () => {
             )
         },
         {
-            header: 'Reason',
+            header: t('product_reports.table.reason', 'Reason'),
             accessor: 'reason',
             render: (row) => <Badge bg="danger" className="text-capitalize">{row.reason}</Badge>
         },
         {
-            header: 'Status',
+            header: t('product_reports.table.status', 'Status'),
             accessor: 'status',
             render: (row) => {
                 const colors = {
@@ -119,17 +122,19 @@ const ProductReports = () => {
             }
         },
         {
-            header: 'Date',
+            header: t('product_reports.table.date', 'Date'),
             accessor: 'created_at',
-            render: (row) => <span className="small">{new Date(row.created_at).toLocaleDateString()}</span>
+            render: (row) => <span className="small">{formatAdminDate(row.created_at, globalSettings)}</span>
         }
     ];
 
-    const filteredReports = reports.filter(r => 
-        r.reason?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.item_id?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.reporter_id?.username?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredReports = reports.filter(r => {
+        const term = (searchTerm || '').toLowerCase();
+        const reasonMatch = r.reason ? r.reason.toLowerCase().includes(term) : false;
+        const titleMatch = r.item_id && r.item_id.title ? r.item_id.title.toLowerCase().includes(term) : false;
+        const userMatch = r.reporter_id && r.reporter_id.username ? r.reporter_id.username.toLowerCase().includes(term) : false;
+        return reasonMatch || titleMatch || userMatch;
+    });
 
     return (
         <div className="admin-dashboard p-4">
@@ -137,8 +142,8 @@ const ProductReports = () => {
                 <Card className="border-0 shadow-sm p-4">
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         <div>
-                            <h1 className="h3 mb-1">Product Reports</h1>
-                            <p className="text-muted small mb-0">Manage and review complaints about listings.</p>
+                            <h1 className="h3 mb-1">{t('product_reports.title', 'Product Reports')}</h1>
+                            <p className="text-muted small mb-0">{t('product_reports.subtitle', 'Manage and review complaints about listings.')}</p>
                         </div>
                     </div>
 
@@ -146,7 +151,7 @@ const ProductReports = () => {
                         <InputGroup>
                             <InputGroup.Text className="bg-white"><FaSearch className="text-muted" /></InputGroup.Text>
                             <Form.Control 
-                                placeholder="Search reports..."
+                                placeholder={t('product_reports.search_placeholder', 'Search reports...')}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -161,7 +166,7 @@ const ProductReports = () => {
                             data={filteredReports}
                             actions={true}
                             onView={(row) => { setSelectedReport(row); setShowDetailModal(true); }}
-                            emptyMessage="No reports found"
+                            emptyMessage={t('product_reports.no_data', 'No reports found')}
                         />
                     )}
                 </Card>
@@ -262,7 +267,7 @@ const ProductReports = () => {
                             <h6 className="text-muted text-uppercase small fw-bold">Reporter Info</h6>
                             <p className="mb-0"><strong>Username:</strong> {selectedReport.reporter_id?.username}</p>
                             <p className="mb-0"><strong>Email:</strong> {selectedReport.reporter_id?.email}</p>
-                            <p className="mb-0"><strong>Member Since:</strong> {new Date(selectedReport.reporter_id?.created_at).toLocaleDateString()}</p>
+                            <p className="mb-0"><strong>Member Since:</strong> {formatAdminDate(selectedReport.reporter_id?.created_at, globalSettings)}</p>
                         </div>
                     </div>
                 )}

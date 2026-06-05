@@ -38,6 +38,7 @@ import shippingRoutes from './routes/shippingRoutes.js';
 import shippingCompanyRoutes from './routes/shippingCompanyRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
+import cartRoutes from './routes/cartRoutes.js';
 import { protect, adminProtect } from './middleware/authMiddleware.js';
 import { getReportsAdmin, updateReportStatus, handleReportAction } from './controllers/reportController.js';
 import startDiscountReminderJob from './jobs/discountReminderJob.js';
@@ -156,6 +157,69 @@ const startServer = async () => {
         app.use('/images/items', express.static(path.join(__dirname, 'images/items'), imageStaticOptions));
         app.use('/images/profile', express.static(path.join(__dirname, 'images/profile'), imageStaticOptions));
 
+        // Serve localization files with dynamic DB overrides
+        app.get('/api/locales/:lang/:namespace.json', async (req, res, next) => {
+            const { lang, namespace } = req.params;
+            const filePath = path.join(__dirname, 'locales', lang, `${namespace}.json`);
+            
+            try {
+                let json = {};
+                if (fs.existsSync(filePath)) {
+                    json = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                } else {
+                    return res.status(404).json({ message: 'Namespace not found' });
+                }
+                
+                // Fetch overrides from DB
+                const Language = (await import('./models/Language.js')).default;
+                const language = await Language.findOne({ code: lang });
+                
+                if (language && language.translations) {
+                    const unflatten = (data) => {
+                        if (Object(data) !== data || Array.isArray(data)) return data;
+                        const result = {};
+                        for (let p in data) {
+                            let keys = p.split('.');
+                            keys.reduce((acc, key, index) => {
+                                if (index === keys.length - 1) acc[key] = data[p];
+                                else acc[key] = acc[key] || {};
+                                return acc[key];
+                            }, result);
+                        }
+                        return result;
+                    };
+                    
+                    // Handle both Map and plain objects depending on Mongoose version/schema Mixed type
+                    const translationEntries = language.translations instanceof Map 
+                        ? language.translations 
+                        : Object.entries(language.translations || {});
+                    
+                    const overrides = unflatten(Object.fromEntries(translationEntries));
+                    
+                    // Deep merge overrides into json
+                    const mergeDeep = (target, source) => {
+                        for (const key of Object.keys(source)) {
+                            if (source[key] instanceof Object && key in target) {
+                                Object.assign(source[key], mergeDeep(target[key], source[key]));
+                            }
+                        }
+                        Object.assign(target || {}, source);
+                        return target;
+                    };
+                    json = mergeDeep(json, overrides);
+                }
+                
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+                res.setHeader('Cache-Control', 'public, max-age=86400');
+                
+                return res.json(json);
+            } catch (error) {
+                console.error("Locales serving error:", error);
+                next(error);
+            }
+        });
+
         // Initialize Passport
         app.use(passport.initialize());
 
@@ -187,6 +251,7 @@ const startServer = async () => {
         app.use('/api/moderation-reports', adminProtect, getReportsAdmin);
         app.use('/api/reports', reportRoutes);
         app.use('/api/contact', contactRoutes);
+        app.use('/api/cart', cartRoutes);
 
         // Root Mail Check Endpoints
         app.get(['/mail_check', '/api/mail_check'], async (req, res) => {

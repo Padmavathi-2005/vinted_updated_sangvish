@@ -5,11 +5,14 @@ import { Link } from 'react-router-dom';
 import axios from '../utils/axios';
 import { useLocalization } from '../context/LocalizationContext';
 import { safeString, getImageUrl } from '../utils/constants';
+import { useSettings } from '../context/SettingsContext';
+import { formatAdminDate } from '../utils/dateFormatter';
 import '../styles/Admin.css';
 import '../styles/RentalDashboard.css';
 
 const AdminDashboard = () => {
     const { formatPrice, t } = useLocalization();
+    const { globalSettings } = useSettings();
     const [stats, setStats] = useState({
         users: { total: 0, today: 0, buyers: 0, sellers: 0 },
         revenue: { total: 0, count: 0 },
@@ -289,7 +292,7 @@ const AdminDashboard = () => {
                                     <div className="rental-chart-line" style={{ bottom: '100%' }}></div>
 
                                     <svg className="mock-svg-line" viewBox="0 0 1000 300" preserveAspectRatio="none">
-                                        <path d={generatePath()} fill="none" stroke="#0d6efd" strokeWidth="3" />
+                                        <path d={generatePath()} fill="none" stroke="var(--primary-color)" strokeWidth="3" />
                                         {stats.monthlySales?.map((m, i) => {
                                             const x = (i / 11) * 900 + 50;
                                             const y = 300 - ((m.sales / maxSales) * 250 + 25);
@@ -299,7 +302,7 @@ const AdminDashboard = () => {
                                                         cx={x}
                                                         cy={y}
                                                         r={hoveredPoint?.index === i ? "7" : "5"}
-                                                        fill={hoveredPoint?.index === i ? "#0056b3" : "#0d6efd"}
+                                                        fill={hoveredPoint?.index === i ? "color-mix(in srgb, var(--primary-color) 85%, black)" : "var(--primary-color)"}
                                                         onMouseEnter={() => setHoveredPoint({ index: i, x, y, ...m })}
                                                         onMouseLeave={() => setHoveredPoint(null)}
                                                         style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
@@ -372,7 +375,7 @@ const AdminDashboard = () => {
                                                     <td className="fw-semibold text-primary px-4 py-3"><Link to="/users" className="text-decoration-none">{safeString(order.buyer_id?.username) || 'Guest'}</Link></td>
                                                     <td className="fw-bold px-4 py-3 text-success">{formatPrice(order.total_amount)}</td>
                                                     <td className="text-muted small px-4 py-3">
-                                                        {new Date(order.created_at).toLocaleDateString()}
+                                                        {formatAdminDate(order.created_at, globalSettings)}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -405,7 +408,7 @@ const AdminDashboard = () => {
                                                     <td className="fw-semibold text-primary px-4 py-3"><Link to="/listings" className="text-decoration-none">{safeString(item.title)}</Link></td>
                                                     <td className="px-4 py-3"><Link to="/users" className="text-dark text-decoration-none">{safeString(item.seller_id?.username) || 'Seller'}</Link></td>
                                                     <td className="text-muted small px-4 py-3">
-                                                        {new Date(item.created_at).toLocaleDateString()}
+                                                        {formatAdminDate(item.created_at, globalSettings)}
                                                     </td>
                                                     <td className="px-4 py-3"><span className={`badge bg-${item.status === 'active' || item.status === 'available' ? 'success' : item.status === 'sold' ? 'danger' : item.status === 'inactive' ? 'secondary' : 'warning'} text-capitalize`}>{t(`common.status.${item.status}`)}</span></td>
                                                 </tr>
@@ -438,7 +441,7 @@ const AdminDashboard = () => {
                                                     <td className="px-4 py-3">
                                                         <div className="d-flex align-items-center gap-2">
                                                             <div className="rounded-circle shadow-sm" style={{ width: 36, height: 36, position: 'relative', overflow: 'hidden', minWidth: '36px' }}>
-                                                                <div className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white w-100 h-100" style={{ fontSize: '14px', background: 'linear-gradient(135deg, #0d6efd, #0dcaf0)' }}>
+                                                                <div className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white w-100 h-100" style={{ fontSize: '14px' }}>
                                                                     {seller.username?.charAt(0).toUpperCase() || 'S'}
                                                                 </div>
                                                                 {seller.profile_image && (

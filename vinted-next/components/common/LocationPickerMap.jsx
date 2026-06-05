@@ -16,7 +16,7 @@ import {
 
 let L = null;
 
-const LocationPickerMap = ({ onLocationSelect, initialLat, initialLng, initialLabel, readOnly = false }) => {
+const LocationPickerMap = ({ onLocationSelect, initialLat, initialLng, initialLabel, readOnly = false, showMap = true }) => {
     const { t } = useTranslation();
     const mapRef = useRef(null);
     const leafletMapRef = useRef(null);
@@ -456,18 +456,20 @@ const LocationPickerMap = ({ onLocationSelect, initialLat, initialLng, initialLa
             )}
 
             {/* Map Container */}
-            <div
-                ref={mapRef}
-                style={{
-                    height: readOnly ? '250px' : '360px',
-                    width: '100%',
-                    borderRadius: '12px',
-                    border: '1.5px solid #e2e8f0',
-                    overflow: 'hidden',
-                    background: '#f1f5f9',
-                    zIndex: 0,
-                }}
-            />
+            {showMap && (
+                <div
+                    ref={mapRef}
+                    style={{
+                        height: readOnly ? '250px' : '360px',
+                        width: '100%',
+                        borderRadius: '12px',
+                        border: '1.5px solid #e2e8f0',
+                        overflow: 'hidden',
+                        background: '#f1f5f9',
+                        zIndex: 0,
+                    }}
+                />
+            )}
 
             {/* Selected location label */}
             {selectedLocation.label && (
@@ -477,7 +479,7 @@ const LocationPickerMap = ({ onLocationSelect, initialLat, initialLng, initialLa
                 </div>
             )}
 
-            {!readOnly && (
+            {(!readOnly && showMap) && (
                 <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0, textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
                     <FaMap /> {mapProvider === 'openstreetmap' ? 'OpenStreetMap' : 'Google Maps'}
                 </p>

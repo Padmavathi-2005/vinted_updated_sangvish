@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from '../utils/axios';
 import AuthContext from '../context/AuthContext';
 import CurrencyContext from '../context/CurrencyContext';
+import WishlistContext from '../context/WishlistContext';
 import { FaListAlt, FaBoxOpen, FaHeart, FaWallet, FaCheckCircle, FaExclamationTriangle, FaUserEdit, FaAngleLeft, FaAngleRight, FaEnvelope, FaBell, FaTruck, FaClock, FaCreditCard, FaMoneyBillWave, FaBars, FaTimes, FaStar, FaTag, FaLightbulb, FaPlusCircle } from 'react-icons/fa';
 import '../styles/Profile.css';
 import EditProfileModal from '../components/common/EditProfileModal';
@@ -21,6 +22,7 @@ import { getImageUrl, getItemImageUrl, safeString } from '../utils/constants';
 const Profile = () => {
     const { user, loading, updateUser, logout, mode, toggleMode, setMode } = useContext(AuthContext);
     const { formatPrice } = useContext(CurrencyContext);
+    const { wishlist } = useContext(WishlistContext);
     const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
@@ -112,6 +114,9 @@ const Profile = () => {
     // Orders State
     const [boughtOrders, setBoughtOrders] = useState([]);
     const [soldOrders, setSoldOrders] = useState([]);
+    const [ordersPage, setOrdersPage] = useState(1);
+    const [ordersTotalPages, setOrdersTotalPages] = useState(1);
+    const [ordersTotalCount, setOrdersTotalCount] = useState(0);
     const [ordersLoading, setOrdersLoading] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showOrderModal, setShowOrderModal] = useState(false);
@@ -159,7 +164,7 @@ const Profile = () => {
     // Tab label helper
     const getTabLabel = (tab) => {
         const labels = {
-            dashboard: t('profile.dashboard'),
+            dashboard: t('profile.dashboard', 'Dashboard'),
             profile_settings: t('user_menu.my_profile'),
             orders: mode === 'seller' ? t('profile.orders_received', 'Orders Received') : t('user_menu.my_orders', 'My orders'),
             listings: t('user_menu.manage_listings', 'Manage listings'),
@@ -257,7 +262,7 @@ const Profile = () => {
             const { items, totalPages, totalCount } = res.data;
 
             setFavoritesTotalPages(totalPages);
-            setFavoritesTotalCount(totalCount);
+            // setFavoritesTotalCount(totalCount); // Let WishlistContext handle the count
 
             if (isAppend) {
                 setFavorites(prev => {
@@ -276,13 +281,21 @@ const Profile = () => {
     }, [user]);
 
     // Fetch Orders
-    const fetchMyOrders = useCallback(async () => {
+    const fetchMyOrders = useCallback(async (pageNum = 1) => {
         if (!user) return;
         setOrdersLoading(true);
         try {
-            const res = await axios.get('/api/orders');
+            const res = await axios.get('/api/orders', {
+                params: { page: pageNum, limit: 10 }
+            });
             setBoughtOrders(res.data.bought || []);
             setSoldOrders(res.data.sold || []);
+            
+            // Assuming the backend returns boughtPages, soldPages, etc.
+            // If the user is a buyer, we might want to track boughtPages, else soldPages.
+            // For now, let's track the max of both or specifically depending on the mode.
+            setOrdersTotalPages(Math.max(res.data.boughtPages || 1, res.data.soldPages || 1));
+            setOrdersTotalCount(Math.max(res.data.boughtCount || 0, res.data.soldCount || 0));
         } catch (error) {
             console.error("Error fetching orders:", error);
         } finally {
@@ -540,12 +553,15 @@ const Profile = () => {
             axios.get('/api/items/myitems', { params: { limit: 1 } })
                 .then(res => setListingsTotalCount(res.data.totalCount || res.data.total_count || 0))
                 .catch(() => {});
-
-            axios.get('/api/favorites', { params: { limit: 1 } })
-                .then(res => setFavoritesTotalCount(res.data.totalCount || res.data.total_count || 0))
-                .catch(() => {});
         }
     }, [user, activeTab, mode]);
+
+    // Sync favorites count with global WishlistContext
+    useEffect(() => {
+        if (wishlist) {
+            setFavoritesTotalCount(wishlist.length);
+        }
+    }, [wishlist]);
 
     // Trigger Listings Fetch
     useEffect(() => {
@@ -757,7 +773,7 @@ const Profile = () => {
                 <div className="pd-header-full">
                     <div className="pd-nav">
                         <div className="pd-nav-items">
-                            <div className={`pd-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => handleTabChange('dashboard')}>{t('profile.dashboard')}</div>
+                            <div className={`pd-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => handleTabChange('dashboard')}>{t('profile.dashboard', 'Dashboard')}</div>
                             <div className={`pd-nav-item ${activeTab === 'profile_settings' ? 'active' : ''}`} onClick={() => handleTabChange('profile_settings')}>{t('user_menu.my_profile')}</div>
 
                             {mode === 'buyer' && (
@@ -829,7 +845,6 @@ const Profile = () => {
                                 <p className="extra-small mb-2 fw-bold text-uppercase" style={{ letterSpacing: '0.05em', color: '#64748b' }}>{t('profile.order_status', 'Order Status')}</p>
                                 <div className="d-flex flex-column gap-1">
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'all' ? 'active' : ''}`} onClick={() => setOrderSubTab('all')}>{t('profile.all_orders', 'All Orders')}</div>
-                                    <div className={`pd-sidemenu-item ${orderSubTab === 'pending' ? 'active' : ''}`} onClick={() => setOrderSubTab('pending')}>{t('order_status.pending', 'Pending')}</div>
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'confirmed' ? 'active' : ''}`} onClick={() => setOrderSubTab('confirmed')}>{t('order_status.confirmed', 'Confirmed')}</div>
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'packed' ? 'active' : ''}`} onClick={() => setOrderSubTab('packed')}>{t('order_status.packed', 'Packed')}</div>
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'shipped' ? 'active' : ''}`} onClick={() => setOrderSubTab('shipped')}>{t('order_status.shipped', 'Shipped')}</div>
@@ -1237,7 +1252,14 @@ const Profile = () => {
 
                                                 <div className="pd-oic-body">
                                                     <div className="pd-oic-info">
-                                                        <h3 className="pd-oic-title">{safeString(order.item_id?.title) || 'Unknown Item'}</h3>
+                                                        <h3 className="pd-oic-title">
+                                                            {safeString(order.item_id?.title) || 'Unknown Item'}
+                                                            {order.is_bundle && order.items && order.items.length > 1 && (
+                                                                <span className="ms-2 badge bg-secondary" style={{ fontSize: '0.75rem' }}>
+                                                                    +{order.items.length - 1} more
+                                                                </span>
+                                                            )}
+                                                        </h3>
                                                         <div className="pd-oic-participant-mini">
                                                             {mode === 'buyer' ? (
                                                                 <>
@@ -1291,6 +1313,17 @@ const Profile = () => {
                                         <Link to="/products" className="btn btn-primary px-4 rounded-pill">{t('home.start_shopping', 'Start Shopping')}</Link>
                                     )}
                                 </div>
+                            )}
+
+                            {ordersTotalPages > 1 && (
+                                <Pagination 
+                                    currentPage={ordersPage} 
+                                    totalPages={ordersTotalPages} 
+                                    onPageChange={(pageNum) => {
+                                        setOrdersPage(pageNum);
+                                        fetchMyOrders(pageNum);
+                                    }} 
+                                />
                             )}
 
                             {/* Order Detail Modal */}

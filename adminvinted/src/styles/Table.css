@@ -141,7 +141,7 @@
 .role-badge.admin {
     background: #e0f2fe;
     /* Light Blue */
-    color: #0ea5e9;
+    color: var(--primary-color);
     /* Blue */
 }
 

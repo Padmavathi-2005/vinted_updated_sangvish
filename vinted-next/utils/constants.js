@@ -3,7 +3,7 @@ export const IMAGE_BASE_URL = (typeof process !== 'undefined' && process.env.NEX
 
 export const getImageUrl = (path) => {
     if (!path) return null;
-    const pathStr = String(path);
+    const pathStr = String(path).trim();
     if (pathStr.startsWith('http')) return pathStr;
 
     // Robust normalization for frontend

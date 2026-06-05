@@ -182,20 +182,20 @@ const Reports = () => {
             {/* Header */}
             <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                 <div>
-                    <h1 className="dashboard-title h3 mb-1 text-primary">Business Reports</h1>
-                    <p className="text-muted small mb-0">Comprehensive platform performance insights</p>
+                    <h1 className="dashboard-title h3 mb-1 text-primary">{t('reports.title', 'Business Reports')}</h1>
+                    <p className="text-muted small mb-0">{t('reports.subtitle', 'Comprehensive platform performance insights')}</p>
                 </div>
                 <Form onSubmit={handleFilterSubmit} className="d-flex flex-wrap align-items-end gap-2 bg-white p-3 rounded-4 shadow-sm border border-light w-100 w-sm-auto">
                     <div className="flex-grow-1 flex-sm-grow-0">
-                        <Form.Label className="small text-muted mb-1 px-1">From</Form.Label>
+                        <Form.Label className="small text-muted mb-1 px-1">{t('reports.filter.from', 'From')}</Form.Label>
                         <Form.Control type="date" value={startDate} onChange={e => setStartDate(e.target.value)} size="sm" className="rounded-3" />
                     </div>
                     <div className="flex-grow-1 flex-sm-grow-0">
-                        <Form.Label className="small text-muted mb-1 px-1">To</Form.Label>
+                        <Form.Label className="small text-muted mb-1 px-1">{t('reports.filter.to', 'To')}</Form.Label>
                         <Form.Control type="date" value={endDate} onChange={e => setEndDate(e.target.value)} size="sm" className="rounded-3" />
                     </div>
                     <Button type="submit" variant="primary" size="sm" className="btn-admin-action px-3 py-2" style={{ height: 'fit-content' }}>
-                        Filter
+                        {t('reports.filter.button', 'Filter')}
                     </Button>
                 </Form>
             </div>
@@ -204,14 +204,14 @@ const Reports = () => {
                 {/* Revenue Overview */}
                 <Col lg={12}>
                     <Card className="border-0 shadow-sm rounded-4 h-100 p-3 p-md-4 bg-white overflow-hidden">
-                        <h5 className="fw-bold mb-4">Revenue & Commission Trends</h5>
+                        <h5 className="fw-bold mb-4">{t('reports.charts.revenue_commission', 'Revenue & Commission Trends')}</h5>
                         <div style={{ width: '100%', height: 350, marginLeft: -10, position: 'relative', minWidth: '1px' }}>
                             <ResponsiveContainer width="100%" height="100%" debounce={50}>
                                 <AreaChart data={data.chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8} />
-                                            <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+                                            <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.8} />
+                                            <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0} />
                                         </linearGradient>
                                         <linearGradient id="colorCommission" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8} />
@@ -223,8 +223,8 @@ const Reports = () => {
                                     <YAxis width={65} axisLine={false} tickLine={false} tick={{ fontSize: 11 }} tickFormatter={(value) => formatPrice(value)} />
                                     <RechartsTooltip formatter={(value) => `${formatPrice(value)}`} />
                                     <Legend wrapperStyle={{ fontSize: '12px' }} />
-                                    <Area type="monotone" dataKey="sales" name="Total Sales" stroke="#0ea5e9" fillOpacity={1} fill="url(#colorSales)" />
-                                    <Area type="monotone" dataKey="commission" name="Admin Commission" stroke="#22c55e" fillOpacity={1} fill="url(#colorCommission)" />
+                                    <Area type="monotone" dataKey="sales" name={t('reports.charts.total_sales', 'Total Sales')} stroke="var(--primary-color)" fillOpacity={1} fill="url(#colorSales)" />
+                                    <Area type="monotone" dataKey="commission" name={t('reports.charts.admin_commission', 'Admin Commission')} stroke="#22c55e" fillOpacity={1} fill="url(#colorCommission)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
@@ -236,8 +236,8 @@ const Reports = () => {
                 {/* Geographic Map Tracker */}
                 <Col lg={6}>
                     <Card className="border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white mb-4 overflow-hidden" style={{ minHeight: '480px' }}>
-                        <h5 className="fw-bold mb-4">Delivery Map Tracking</h5>
-                        <p className="text-muted small">Heatmap of booking addresses globally</p>
+                        <h5 className="fw-bold mb-4">{t('reports.map.title', 'Delivery Map Tracking')}</h5>
+                        <p className="text-muted small">{t('reports.map.subtitle', 'Heatmap of booking addresses globally')}</p>
                         <div style={{ height: '380px', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', zIndex: 1 }}>
                             {/* Force re-render of map on coordinates change with a react key trick */}
                             <MapContainer key={`${mapCenter[0]}-${mapCenter[1]}-${mapZoom}`} center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%', zIndex: 1 }}>
@@ -246,7 +246,7 @@ const Reports = () => {
                                     attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
                                 />
                                 {/* Specific hovered point */}
-                                <CircleMarker center={mapCenter} pathOptions={{ fillColor: '#0ea5e9', color: '#0ea5e9', fillOpacity: 0.8 }} radius={6} />
+                                <CircleMarker center={mapCenter} pathOptions={{ fillColor: 'var(--primary-color)', color: 'var(--primary-color)', fillOpacity: 0.8 }} radius={6} />
 
                                 {/* Broad location grouping */}
                                 {data.bookingLocations.map((loc, idx) => {
@@ -276,15 +276,15 @@ const Reports = () => {
                 {/* Latest Orders Tracker List */}
                 <Col lg={6}>
                     <Card className="border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                        <h5 className="fw-bold mb-4">Tracked Orders Stream</h5>
-                        <p className="text-muted small">Hover an order to locate its address on the map, click to view.</p>
+                        <h5 className="fw-bold mb-4">{t('reports.stream.title', 'Tracked Orders Stream')}</h5>
+                        <p className="text-muted small">{t('reports.stream.subtitle', 'Hover an order to locate its address on the map, click to view.')}</p>
                         <div className="table-responsive rounded border" style={{ maxHeight: '350px', overflowY: 'auto' }}>
                             <BootstrapTable hover variant="white" className="mb-0">
                                 <thead className="table-light flex-sticky top-0 sticky-top">
                                     <tr>
-                                        <th className="py-3 px-3">Order ID</th>
-                                        <th className="py-3 px-3">Location Hint</th>
-                                        <th className="py-3 px-3 text-end">Price</th>
+                                        <th className="py-3 px-3">{t('reports.stream.order_id', 'Order ID')}</th>
+                                        <th className="py-3 px-3">{t('reports.stream.location', 'Location Hint')}</th>
+                                        <th className="py-3 px-3 text-end">{t('reports.stream.price', 'Price')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -315,27 +315,27 @@ const Reports = () => {
                 {/* Fully Analyzed Top Sellers List */}
                 <Col lg={12}>
                     <Card className="border-0 shadow-sm rounded-4 p-4 bg-white">
-                        <h5 className="fw-bold mb-4">Top Sellers (Full Analyzed View)</h5>
+                        <h5 className="fw-bold mb-4">{t('reports.top_sellers.title', 'Top Sellers (Full Analyzed View)')}</h5>
                         <div className="table-responsive">
                             <BootstrapTable hover className="align-middle">
                                 <thead className="table-light">
                                     <tr>
-                                        <th className="py-3 px-3">Seller Profile</th>
-                                        <th className="py-3 px-3">Email Address</th>
-                                        <th className="py-3 px-3 text-end">Total Completed Orders</th>
-                                        <th className="py-3 px-3 text-end">Total Gross Sales</th>
-                                        <th className="py-3 px-3 text-end">Net Platform Commission</th>
+                                        <th className="py-3 px-3">{t('reports.top_sellers.profile', 'Seller Profile')}</th>
+                                        <th className="py-3 px-3">{t('reports.top_sellers.email', 'Email Address')}</th>
+                                        <th className="py-3 px-3 text-end">{t('reports.top_sellers.orders', 'Total Completed Orders')}</th>
+                                        <th className="py-3 px-3 text-end">{t('reports.top_sellers.sales', 'Total Gross Sales')}</th>
+                                        <th className="py-3 px-3 text-end">{t('reports.top_sellers.commission', 'Net Platform Commission')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {data.topSellers.length === 0 ? (
-                                        <tr><td colSpan="5" className="text-center text-muted py-4">No seller data available</td></tr>
+                                        <tr><td colSpan="5" className="text-center text-muted py-4">{t('reports.top_sellers.no_data', 'No seller data available')}</td></tr>
                                     ) : data.topSellers.map((seller, idx) => (
                                         <tr key={idx} className="border-bottom">
                                             <td className="py-3 px-3">
                                                 <div className="d-flex align-items-center gap-3">
                                                     <div className="rounded-circle shadow-sm" style={{ width: 40, height: 40, position: 'relative', overflow: 'hidden', minWidth: '40px' }}>
-                                                        <div className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white w-100 h-100" style={{ fontSize: '14px', background: 'linear-gradient(135deg, #0d6efd, #0dcaf0)' }}>
+                                                        <div className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white w-100 h-100" style={{ fontSize: '14px' }}>
                                                             {safeString(seller.username)?.charAt(0).toUpperCase() || 'S'}
                                                         </div>
                                                         {seller.profile_image && (

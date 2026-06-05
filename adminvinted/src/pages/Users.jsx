@@ -11,6 +11,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useLocalization } from '../context/LocalizationContext';
 import { showToast, showConfirm } from '../utils/swal';
 import { safeString, getImageUrl } from '../utils/constants';
+import { formatAdminDate } from '../utils/dateFormatter';
 
 const Users = () => {
     const location = useLocation();
@@ -23,7 +24,7 @@ const Users = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [userTypeFilter, setUserTypeFilter] = useState(initialFilter);
 
-    const { paginationLimit } = useSettings();
+    const { paginationLimit, globalSettings } = useSettings();
     const { t, formatPrice } = useLocalization();
 
 
@@ -33,6 +34,8 @@ const Users = () => {
 
     const [formData, setFormData] = useState({
         username: '',
+        first_name: '',
+        last_name: '',
         email: '',
         password: '',
         status: 'Active',
@@ -43,7 +46,8 @@ const Users = () => {
         rating_count: 0,
         followers_count: 0,
         following_count: 0,
-        profile_image: null
+        profile_image: null,
+        remove_image: false
     });
 
     const [errors, setErrors] = useState({});
@@ -51,11 +55,13 @@ const Users = () => {
     const validateField = (name, value) => {
         let error = '';
         if (name === 'username') {
-            if (!value) error = 'Username is required';
-            else if (value.length < 3) error = 'Username must be at least 3 characters';
+            const trimmed = value?.trim() || '';
+            if (!trimmed) error = 'Username is required';
+            else if (trimmed.length < 3) error = 'Username must be at least 3 characters';
         } else if (name === 'email') {
-            if (!value) error = 'Email is required';
-            else if (!/\S+@\S+\.\S+/.test(value)) error = 'Invalid email format';
+            const trimmed = value?.trim() || '';
+            if (!trimmed) error = 'Email is required';
+            else if (!/\S+@\S+\.\S+/.test(trimmed)) error = 'Invalid email format';
         } else if (name === 'password') {
             if (showAddModal && !value) error = 'Password is required';
             else if (value && value.length < 6) error = 'Password must be at least 6 characters';
@@ -125,7 +131,8 @@ const Users = () => {
             followers_count: user.followers_count ?? 0,
             following_count: user.following_count ?? 0,
             password: '',
-            profile_image: null
+            profile_image: null,
+            remove_image: false
         });
         setErrors({});
         setShowEditModal(true);
@@ -188,12 +195,23 @@ const Users = () => {
         }
     };
 
-    const handleSaveUser = async () => {
-        // Final validation
+    const handleSaveUser = async (e) => {
+        if (e) e.preventDefault();
+        // Final validation enforcing all rules
         const newErrors = {};
-        if (!formData.username) newErrors.username = 'Username is required';
-        if (!formData.email) newErrors.email = 'Email is required';
+        const uName = formData.username?.trim() || '';
+        const fName = formData.first_name?.trim() || '';
+        const lName = formData.last_name?.trim() || '';
+        const uEmail = formData.email?.trim() || '';
+
+        if (!uName) newErrors.username = 'Username is required';
+        else if (uName.length < 3) newErrors.username = 'Username must be at least 3 characters';
+
+        if (!uEmail) newErrors.email = 'Email is required';
+        else if (!/\S+@\S+\.\S+/.test(uEmail)) newErrors.email = 'Invalid email format';
+
         if (showAddModal && !formData.password) newErrors.password = 'Password is required';
+        else if (formData.password && formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -204,8 +222,10 @@ const Users = () => {
         setSaving(true);
         try {
             const submitData = new FormData();
-            submitData.append('username', formData.username);
-            submitData.append('email', formData.email);
+            submitData.append('username', uName);
+            submitData.append('first_name', fName);
+            submitData.append('last_name', lName);
+            submitData.append('email', uEmail);
             submitData.append('status', formData.status);
             submitData.append('is_verified', formData.is_verified);
             submitData.append('balance', formData.balance);
@@ -217,6 +237,7 @@ const Users = () => {
 
             if (formData.password) submitData.append('password', formData.password);
             if (formData.profile_image) submitData.append('profile_image', formData.profile_image);
+            if (formData.remove_image) submitData.append('remove_image', 'true');
 
             if (showEditModal) {
                 await axios.put(`/api/admin/users/${selectedUser._id}`, submitData, {
@@ -248,7 +269,7 @@ const Users = () => {
             render: (row) => (
                 <div className="d-flex align-items-center gap-3">
                     <div className="avatar-small d-flex align-items-center justify-content-center bg-light rounded-circle overflow-hidden border shadow-sm" style={{ width: '40px', height: '40px', position: 'relative' }}>
-                        <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-primary text-white" style={{ background: 'linear-gradient(135deg, #0d6efd, #0dcaf0)', fontSize: '14px' }}>
+                        <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-primary text-white" style={{ fontSize: '14px' }}>
                             {safeString(row.username)?.charAt(0).toUpperCase() || <FaUserAlt size={16} />}
                         </div>
                         {row.profile_image && (
@@ -337,9 +358,9 @@ const Users = () => {
             accessor: 'created_at',
             render: (row) => (
                 <div className="small">
-                    <div>{new Date(row.created_at).toLocaleDateString()}</div>
+                    <div>{formatAdminDate(row.created_at, globalSettings)}</div>
                     <div className="text-muted" style={{ fontSize: '0.75rem' }}>
-                        {new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {formatAdminDate(row.created_at, globalSettings, { year: undefined, month: undefined, day: undefined, hour: '2-digit', minute: '2-digit' })}
                     </div>
                 </div>
             )
@@ -349,9 +370,9 @@ const Users = () => {
             accessor: 'updated_at',
             render: (row) => (
                 <div className="small">
-                    <div>{new Date(row.updated_at).toLocaleDateString()}</div>
+                    <div>{formatAdminDate(row.updated_at, globalSettings)}</div>
                     <div className="text-muted" style={{ fontSize: '0.75rem' }}>
-                        {new Date(row.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {formatAdminDate(row.updated_at, globalSettings, { year: undefined, month: undefined, day: undefined, hour: '2-digit', minute: '2-digit' })}
                     </div>
                 </div>
             )
@@ -370,7 +391,7 @@ const Users = () => {
                         <Button
                             variant="primary"
                             onClick={() => {
-                                setFormData({ username: '', email: '', password: '', status: 'Active', profile_image: null });
+                                setFormData({ username: '', first_name: '', last_name: '', email: '', password: '', status: 'Active', profile_image: null, remove_image: false });
                                 setErrors({});
                                 setShowAddModal(true);
                             }}
@@ -430,26 +451,27 @@ const Users = () => {
                 <Modal
                     show={showAddModal || showEditModal}
                     onHide={() => { setShowAddModal(false); setShowEditModal(false); }}
-                    title={showAddModal ? "Add New User" : "Edit User Profile"}
+                    title={showAddModal ? t('users.modal.add_title', 'Add New User') : t('users.modal.edit_title', 'Edit User Profile')}
                     size="md"
                     footer={
                         <>
                             <Button variant="outline-secondary" className="btn-admin-outline" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>
-                                Cancel
+                                {t('common.cancel', 'Cancel')}
                             </Button>
                             <Button
                                 variant="primary"
-                                onClick={handleSaveUser}
+                                type="submit"
+                                form="userForm"
                                 className="btn-admin-action"
                                 disabled={saving}
                             >
                                 {saving ? <Spinner size="sm" className="me-2" /> : null}
-                                {showAddModal ? "Create User" : "Update User"}
+                                {showAddModal ? t('users.modal.create_user', 'Create User') : t('users.modal.update_user', 'Update User')}
                             </Button>
                         </>
                     }
                 >
-                    <Form className="admin-form">
+                    <Form id="userForm" onSubmit={handleSaveUser} className="admin-form">
                         <div className="row">
                             <div className="col-md-12 mb-3 text-center">
                                 <div className="mb-2 d-flex justify-content-center">
@@ -457,7 +479,7 @@ const Users = () => {
                                         <div className="rounded-circle border overflow-hidden shadow-sm" style={{ width: '80px', height: '80px' }}>
                                             <img src={URL.createObjectURL(formData.profile_image)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         </div>
-                                    ) : selectedUser?.profile_image ? (
+                                    ) : (selectedUser?.profile_image && !formData.remove_image) ? (
                                         <div className="rounded-circle border overflow-hidden shadow-sm" style={{ width: '80px', height: '80px' }}>
                                             <img src={getImageUrl(selectedUser.profile_image)} alt="Current" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={handleImageError} />
                                         </div>
@@ -467,37 +489,70 @@ const Users = () => {
                                         </div>
                                     )}
                                 </div>
-                                <Form.Label className="btn btn-sm btn-outline-primary rounded-pill px-3 mt-1 cursor-pointer">
-                                    <input type="file" hidden accept="image/*" onChange={(e) => setFormData({ ...formData, profile_image: e.target.files[0] })} />
-                                    {showAddModal ? "Upload Profile Image" : "Change Profile Image"}
-                                </Form.Label>
+                                <div className="d-flex justify-content-center gap-2 mt-2">
+                                    <Form.Label className="btn btn-sm btn-outline-primary rounded-pill px-3 cursor-pointer mb-0">
+                                        <input type="file" hidden accept="image/*" onChange={(e) => setFormData({ ...formData, profile_image: e.target.files[0], remove_image: false })} />
+                                        {showAddModal ? t('users.modal.upload_image', 'Upload Profile Image') : t('users.modal.change_image', 'Change Image')}
+                                    </Form.Label>
+                                    {(formData.profile_image || (selectedUser?.profile_image && !formData.remove_image)) && (
+                                        <Button variant="outline-danger" size="sm" className="rounded-pill px-3" onClick={() => setFormData({ ...formData, profile_image: null, remove_image: true })}>
+                                            {t('users.modal.remove_image', 'Remove')}
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="col-md-12">
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Username</Form.Label>
+                                    <Form.Label>{t('users.modal.username', 'Username')}</Form.Label>
                                     <Form.Control
                                         type="text"
                                         name="username"
                                         value={formData.username}
                                         onChange={handleInputChange}
-                                        placeholder="e.g. john_doe"
+                                        placeholder={t('users.modal.username_placeholder', 'e.g. john_doe')}
                                         isInvalid={!!errors.username}
+                                        required
                                     />
                                     <Form.Control.Feedback type="invalid">{errors.username}</Form.Control.Feedback>
                                 </Form.Group>
                             </div>
+                            <div className="col-md-6">
+                                <Form.Group className="mb-3">
+                                    <Form.Label>{t('users.modal.first_name', 'First Name')}</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="first_name"
+                                        value={formData.first_name}
+                                        onChange={handleInputChange}
+                                        placeholder={t('users.modal.first_name_placeholder', 'e.g. John')}
+                                    />
+                                </Form.Group>
+                            </div>
+                            <div className="col-md-6">
+                                <Form.Group className="mb-3">
+                                    <Form.Label>{t('users.modal.last_name', 'Last Name')}</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="last_name"
+                                        value={formData.last_name}
+                                        onChange={handleInputChange}
+                                        placeholder={t('users.modal.last_name_placeholder', 'e.g. Doe')}
+                                    />
+                                </Form.Group>
+                            </div>
                             <div className="col-md-12">
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Email Address</Form.Label>
+                                    <Form.Label>{t('users.modal.email', 'Email Address')}</Form.Label>
                                     <Form.Control
                                         type="email"
                                         name="email"
                                         value={formData.email}
                                         onChange={handleInputChange}
-                                        placeholder="e.g. john@example.com"
+                                        placeholder={t('users.modal.email_placeholder', 'e.g. john@example.com')}
                                         disabled={showEditModal}
                                         isInvalid={!!errors.email}
+                                        required
                                     />
                                     <Form.Control.Feedback type="invalid">{errors.email}</Form.Control.Feedback>
                                 </Form.Group>
@@ -505,42 +560,42 @@ const Users = () => {
                         </div>
  
                         <Form.Group className="mb-3">
-                            <Form.Label>{showEditModal ? "New Password (Optional)" : "Password"}</Form.Label>
+                            <Form.Label>{showEditModal ? t('users.modal.new_password', 'New Password (Optional)') : t('users.modal.password', 'Password')}</Form.Label>
                             <Form.Control
                                 type="password"
                                 name="password"
                                 value={formData.password || ''}
                                 onChange={handleInputChange}
-                                placeholder={showEditModal ? "Leave blank to keep current" : "Enter secure password"}
+                                placeholder={showEditModal ? t('users.modal.password_keep', 'Leave blank to keep current') : t('users.modal.password_placeholder', 'Enter secure password')}
                                 isInvalid={!!errors.password}
                             />
                             <Form.Control.Feedback type="invalid">{errors.password}</Form.Control.Feedback>
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                            <Form.Label>Bio (Description)</Form.Label>
+                            <Form.Label>{t('users.modal.bio_label', 'Bio (Description)')}</Form.Label>
                             <Form.Control
                                 as="textarea"
                                 rows={3}
                                 value={formData.bio || ''}
                                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                placeholder="Enter user bio description..."
+                                placeholder={t('users.modal.bio_placeholder', 'Enter user bio description...')}
                             />
                         </Form.Group>
 
                         <div className="row">
                             <div className={showEditModal ? "col-md-6" : "col-md-12"}>
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Status (Active/Blocked)</Form.Label>
+                                    <Form.Label>{t('users.modal.status_label', 'Status (Active/Blocked)')}</Form.Label>
                                     <AdminSearchSelect
                                         options={[
-                                            { value: 'Active', label: 'Active User' },
-                                            { value: 'Inactive', label: 'Inactive / Blocked User' }
+                                            { value: 'Active', label: t('users.modal.status_active', 'Active User') },
+                                            { value: 'Inactive', label: t('users.modal.status_inactive', 'Inactive / Blocked User') }
                                         ]}
                                         value={formData.status}
                                         onChange={(val) => setFormData({ ...formData, status: val })}
-                                        placeholder="Select status..."
-                                        searchPlaceholder="Search active/inactive..."
+                                        placeholder={t('users.modal.status_select', 'Select status...')}
+                                        searchPlaceholder={t('users.modal.status_search', 'Search active/inactive...')}
                                     />
                                 </Form.Group>
                             </div>
@@ -548,16 +603,16 @@ const Users = () => {
                             {showEditModal && (
                                 <div className="col-md-6">
                                     <Form.Group className="mb-3">
-                                        <Form.Label>Verification Status</Form.Label>
+                                        <Form.Label>{t('users.modal.verification_label', 'Verification Status')}</Form.Label>
                                         <AdminSearchSelect
                                             options={[
-                                                { value: false, label: 'Unverified' },
-                                                { value: true, label: 'Verified Account' }
+                                                { value: false, label: t('users.modal.verification_unverified', 'Unverified') },
+                                                { value: true, label: t('users.modal.verification_verified', 'Verified Account') }
                                             ]}
                                             value={formData.is_verified}
                                             onChange={(val) => setFormData({ ...formData, is_verified: val })}
-                                            placeholder="Select status..."
-                                            searchPlaceholder="Search verified..."
+                                            placeholder={t('users.modal.status_select', 'Select status...')}
+                                            searchPlaceholder={t('users.modal.verification_search', 'Search verified...')}
                                         />
                                     </Form.Group>
                                 </div>

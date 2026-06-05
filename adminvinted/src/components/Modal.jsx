@@ -14,9 +14,9 @@ const Modal = ({ show, onHide, title, children, footer, size = 'md' }) => {
             backdrop="static"
             keyboard={false}
         >
-            <BModal.Header>
-                <BModal.Title>{title}</BModal.Title>
-                <button className="modal-close-btn" onClick={onHide}>
+            <BModal.Header className="w-100 d-flex justify-content-between align-items-center border-bottom pb-3">
+                <BModal.Title className="m-0">{title}</BModal.Title>
+                <button className="modal-close-btn m-0" onClick={onHide}>
                     <FaTimes />
                 </button>
             </BModal.Header>

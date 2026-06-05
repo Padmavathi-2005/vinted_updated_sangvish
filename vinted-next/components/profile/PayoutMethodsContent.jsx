@@ -179,7 +179,7 @@ const PayoutMethodsContent = () => {
                                                     {formData.payout_type === 'Bank' && <FaUniversity className="text-primary" />}
                                                     {formData.payout_type === 'UPI' && <FaMapMarkerAlt className="text-success" />}
                                                     {formData.payout_type === 'PayPal' && <FaCreditCard className="text-info" />}
-                                                    <span className="fw-500">{formData.payout_type}</span>
+                                                    <span className="fw-500">{t(`wallet.payout_type_${formData.payout_type.toLowerCase()}`, formData.payout_type)}</span>
                                                 </div>
                                                 <div style={{ transition: 'transform 0.3s', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                                                     <FaGlobe size={12} className="text-muted" />
@@ -302,7 +302,7 @@ const PayoutMethodsContent = () => {
                                             {m.payout_type === 'Bank' ? <FaUniversity size={20} /> : m.payout_type === 'UPI' ? <FaMapMarkerAlt size={20} /> : <FaCreditCard size={20} />}
                                         </div>
                                         <div>
-                                            <div className="fw-bold text-dark" style={{ fontSize: '0.95rem' }}>{m.payout_type}</div>
+                                            <div className="fw-bold text-dark" style={{ fontSize: '0.95rem' }}>{t(`wallet.payout_type_${m.payout_type.toLowerCase()}`, m.payout_type)}</div>
                                             <div className="text-muted xsmall">{m.payout_type === 'Bank' ? m.bank_name : m.payout_type === 'UPI' ? m.upi_id : m.paypal_email}</div>
                                         </div>
                                     </div>

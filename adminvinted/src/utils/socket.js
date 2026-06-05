@@ -14,7 +14,8 @@ export const getUserSocket = () => {
         
         userSocket = socketIO(socketUrl, {
             path: '/api/socket.io',
-            transports: ['polling'],
+            transports: ['polling', 'websocket'], // try polling first
+            upgrade: false, // force polling if websocket is failing at Nginx layer
             reconnection: true,
             reconnectionAttempts: 5
         });
@@ -40,7 +41,8 @@ export const getAdminSocket = () => {
         
         adminSocket = socketIO(socketUrl, {
             path: '/api/socket.io',
-            transports: ['polling'],
+            transports: ['polling', 'websocket'],
+            upgrade: false,
             reconnection: true,
             reconnectionAttempts: 5
         });

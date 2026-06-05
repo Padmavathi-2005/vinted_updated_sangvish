@@ -9,7 +9,8 @@ const getSocket = () => {
         
         socket = socketIO(socketUrl, {
             path: '/api/socket.io',
-            transports: ['polling'],
+            transports: ['polling', 'websocket'],
+            upgrade: false,
             reconnection: true,
             reconnectionAttempts: 5
         });

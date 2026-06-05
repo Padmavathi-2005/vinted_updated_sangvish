@@ -76,7 +76,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
             await axios.post('/api/wallet/withdraw', {
                 amount: parseFloat(withdrawForm.amount),
                 payout_method_id: withdrawForm.payout_method_id,
-                currency: defaultCurrency?.code || currentCurrency?.code || 'INR'
+                currency: currentCurrency?.code || defaultCurrency?.code || 'INR'
             });
             alert('Withdrawal request submitted successfully!');
             const def = userPayoutMethods.find(m => m.is_default) || userPayoutMethods[0];
@@ -221,12 +221,9 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                             )}
                         </div>
                         <div className="wc-tx-right">
-                            <span className="wc-tx-amount debit">{formatPrice(req.amount, null, defaultCurrency)}</span>
-                            {currentCurrency?.code !== defaultCurrency?.code && (
-                                <span className="wc-tx-converted" style={{ fontSize: '0.72rem', opacity: 0.6, marginTop: '-2px' }}>
-                                    - {formatPrice(req.amount)} <span style={{ fontSize: '0.65rem' }}>({currentCurrency?.code})</span>
-                                </span>
-                            )}
+                            <span className="wc-tx-amount debit">
+                                {req.currency || 'INR'} {Number(req.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
                             <span className={`wc-tx-status ${req.status === 'completed' ? 'completed' : req.status === 'pending' ? 'pending' : 'failed'}`}>
                                 {req.status === 'completed' ? <><FaCheckCircle size={9} /> Done</> :
                                     req.status === 'pending' ? <><FaClock size={9} /> Pending</> :
@@ -243,6 +240,10 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
             </div>
         </div>
     );
+
+    const maxAmountInCurrentCurrency = walletData?.wallet?.balance 
+        ? ((walletData.wallet.balance / (defaultCurrency?.exchange_rate || 1)) * (currentCurrency?.exchange_rate || 1)).toFixed(2)
+        : 0;
 
     /* ── Withdraw Request Modal ───────────────────────────── */
     const renderWithdrawModal = () => (
@@ -280,7 +281,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                                 {t('wallet.amount_to_withdraw', 'Amount to withdraw')}
                             </label>
                             <div className="wc-input-row">
-                                <span className="wc-currency-sym">{defaultCurrency?.symbol || currentCurrency?.symbol || '₹'}</span>
+                                <span className="wc-currency-sym">{currentCurrency?.symbol || defaultCurrency?.symbol || '₹'}</span>
                                 <input
                                     type="number"
                                     className="wc-input"
@@ -288,7 +289,8 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                                     onChange={e => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
                                     placeholder="0.00"
                                     min="1"
-                                    max={walletData?.wallet?.balance}
+                                    max={maxAmountInCurrentCurrency}
+                                    step="0.01"
                                     required
                                 />
                             </div>

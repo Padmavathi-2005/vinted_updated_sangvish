@@ -1,5 +1,5 @@
 :root {
-    --pm-primary: #0ea5e9;
+    --pm-primary: var(--primary-color);
     --pm-bg: #f8fafc;
     --pm-card-bg: #ffffff;
     --pm-border: #e2e8f0;

@@ -2408,3 +2408,17 @@
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
 }
+
+/* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
+.id-btn-edit-item { position: relative; }
+.id-btn-edit-item::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.id-btn-cart { position: relative; }
+.id-btn-cart::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.id-btn-buy { position: relative; }
+.id-btn-buy::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.id-btn-offer { position: relative; }
+.id-btn-offer::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.id-btn-message-cta { position: relative; }
+.id-btn-message-cta::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.id-share-item { position: relative; }
+.id-share-item::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }

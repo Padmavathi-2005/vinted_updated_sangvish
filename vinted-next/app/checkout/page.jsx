@@ -11,6 +11,7 @@ import axios from '@/utils/axios';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import StripePaymentForm from '@/components/checkout/StripePaymentForm';
+import LocationPickerMap from '@/components/common/LocationPickerMap';
 import { useCart } from '@/context/CartContext';
 import CurrencyContext from '@/context/CurrencyContext';
 import AuthContext from '@/context/AuthContext';
@@ -35,13 +36,35 @@ const SHIPPING_FEE = 200; // In INR (Base currency)
 
 const Checkout = () => {
     const router = useRouter();
-    const { user } = useContext(AuthContext);
-    const { formatPrice, currentCurrency, defaultCurrency, currencies } = useContext(CurrencyContext);
+    const { user, mode, setMode } = useContext(AuthContext);
+    const { formatPrice: contextFormatPrice, currentCurrency, defaultCurrency, currencies } = useContext(CurrencyContext);
+    
+    // Force all prices in checkout to defaultCurrency
+    const formatPrice = (amount, itemCurrency = null, targetOverride = null) => {
+        return contextFormatPrice(amount, itemCurrency, defaultCurrency);
+    };
+
     const { cartItems, toggleSelect, selectedItems, clearCart } = useCart();
     const { showPopup, PopupComponent } = usePopup();
     const { t, i18n } = useTranslation();
     const { currentLanguage } = useContext(LanguageContext);
 
+    const [availableMethods, setAvailableMethods] = useState([]);
+    const [walletBalance, setWalletBalance] = useState(0);
+    const [paymentMethod, setPaymentMethod] = useState('');
+    const [clientSecret, setClientSecret] = useState('');
+    const [stripeError, setStripeError] = useState(null);
+    const [placing, setPlacing] = useState(false);
+    const [step, setStep] = useState('details'); // 'details' | 'done'
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [paypalSettings, setPaypalSettings] = useState(null);
+    const [paypalLoaded, setPaypalLoaded] = useState(false);
+    const [paypalError, setPaypalError] = useState(null);
+    const [shippingEstimates, setShippingEstimates] = useState([]);
+    const [selectedShippingMethod, setSelectedShippingMethod] = useState(null);
+    const [loadingShipping, setLoadingShipping] = useState(false);
+    const handlePlaceOrderRef = React.useRef(null);
     const calculateBundleTotals = () => {
         let subtotal = 0; // In default currency
         let shippingTotal = 0; // In default currency
@@ -79,13 +102,6 @@ const Checkout = () => {
                 subtotal += getInDefault(item.price, item.currency_id);
             });
 
-            // 2. Calculate Combined Shipping (200 INR per seller if not free)
-            const anyFreeShipping = items.some(i => i.shipping_included);
-            if (!anyFreeShipping) {
-                // SHIPPING_FEE in backend is 200 INR
-                shippingTotal += getInDefault(200, 'inr');
-            }
-
             // 3. Calculate Bundle Discount
             if (seller && seller.bundle_discounts?.enabled) {
                 const count = items.length;
@@ -101,16 +117,25 @@ const Checkout = () => {
             }
         });
 
+        // 2. Calculate Combined Shipping
+        if (typeof selectedShippingMethod !== 'undefined' && selectedShippingMethod) {
+            shippingTotal = getInDefault(selectedShippingMethod.estimated_cost, 'inr');
+        } else {
+            // Fallback
+            Object.values(selectedBySeller).forEach(group => {
+                const { items } = group;
+                const anyFreeShipping = items.some(i => i.shipping_included);
+                if (!anyFreeShipping) {
+                    shippingTotal += getInDefault(200, 'inr');
+                }
+            });
+        }
+
         return { subtotal, shippingTotal, discountTotal, total: subtotal + shippingTotal - discountTotal };
     };
 
     const formatDualPrice = (amount, amountCurrency = defaultCurrency) => {
-        const defaultFormatted = formatPrice(amount, amountCurrency, defaultCurrency);
-        if (currentCurrency && currentCurrency._id !== defaultCurrency?._id) {
-            const currentFormatted = formatPrice(amount, amountCurrency);
-            return `${defaultFormatted} (${currentFormatted})`;
-        }
-        return defaultFormatted;
+        return formatPrice(amount, amountCurrency);
     };
 
     const { subtotal, shippingTotal, discountTotal, total } = calculateBundleTotals();
@@ -120,20 +145,6 @@ const Checkout = () => {
         const countries = [...new Set(selectedItems.map(item => item.country || 'India'))];
         return countries.length === 1 ? countries[0] : 'Multiple';
     }, [selectedItems]);
-
-    const [availableMethods, setAvailableMethods] = useState([]);
-    const [walletBalance, setWalletBalance] = useState(0);
-    const [paymentMethod, setPaymentMethod] = useState('');
-    const [clientSecret, setClientSecret] = useState('');
-    const [stripeError, setStripeError] = useState(null);
-    const [placing, setPlacing] = useState(false);
-    const [step, setStep] = useState('details'); // 'details' | 'done'
-    const [showSuccess, setShowSuccess] = useState(false);
-    const [fieldErrors, setFieldErrors] = useState({});
-    const [paypalSettings, setPaypalSettings] = useState(null);
-    const [paypalLoaded, setPaypalLoaded] = useState(false);
-    const [paypalError, setPaypalError] = useState(null);
-    const handlePlaceOrderRef = React.useRef(null);
 
     // Fetch methods and settings on mount
     React.useEffect(() => {
@@ -249,7 +260,7 @@ const Checkout = () => {
 
             // Auto redirect after 3 seconds
             const timer = setTimeout(() => {
-                router.push('/profile?tab=orders');
+                router.push('/profile?tab=orders&mode=buyer');
             }, 3500);
 
             return () => clearTimeout(timer);
@@ -353,6 +364,12 @@ const Checkout = () => {
                 try {
                     const buttons = window.paypal.Buttons({
                         style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'paypal' },
+                        onClick: (data, actions) => {
+                            if (!validateForm()) {
+                                return actions.reject();
+                            }
+                            return actions.resolve();
+                        },
                         createOrder: (data, actions) => {
                             return actions.order.create({
                                 purchase_units: [{
@@ -398,7 +415,9 @@ const Checkout = () => {
         city: user?.address?.city || '',
         state: user?.address?.state || '',
         country: commonCountry !== 'Multiple' ? commonCountry : (user?.address?.country || 'India'),
-        pincode: user?.address?.pincode || ''
+        pincode: user?.address?.pincode || '',
+        lat: user?.address?.lat || null,
+        lng: user?.address?.lng || null
     });
 
     // Update country if commonCountry changes (and not multiple)
@@ -407,6 +426,35 @@ const Checkout = () => {
             setForm(f => ({ ...f, country: commonCountry }));
         }
     }, [commonCountry]);
+
+    // Fetch Shipping Estimates
+    React.useEffect(() => {
+        const fetchShippingEstimates = async () => {
+            if (!form.city || !form.state || selectedItems.length === 0) return;
+            setLoadingShipping(true);
+            try {
+                const res = await axios.post('/api/shipping/estimate', {
+                    items: selectedItems,
+                    shipping_address: form
+                });
+                setShippingEstimates(res.data);
+                if (res.data.length > 0) {
+                    // Update selected method if none selected, or if current one is not in new list
+                    setSelectedShippingMethod(prev => {
+                        if (!prev) return res.data[0];
+                        const stillExists = res.data.find(m => m.company_id === prev.company_id);
+                        return stillExists || res.data[0];
+                    });
+                }
+            } catch (err) {
+                console.error("Error fetching shipping estimates", err);
+            } finally {
+                setLoadingShipping(false);
+            }
+        };
+        const timeoutId = setTimeout(fetchShippingEstimates, 800);
+        return () => clearTimeout(timeoutId);
+    }, [form.city, form.state, selectedItems]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -487,6 +535,8 @@ const Checkout = () => {
     const handlePlaceOrder = React.useCallback(async (e, stripePaymentId = null) => {
         if (e) e.preventDefault();
 
+        if (placing) return;
+
         if (commonCountry === 'Multiple') {
             showPopup({ 
                 type: 'error', 
@@ -516,7 +566,8 @@ const Checkout = () => {
                 items: selectedItems,
                 payment_method: paymentMethod,
                 shipping_address: form,
-                stripe_payment_id: stripePaymentId
+                stripe_payment_id: stripePaymentId,
+                shipping_company_id: selectedShippingMethod?.company_id
             });
             setPlacing(false);
             setShowSuccess(true);
@@ -531,7 +582,7 @@ const Checkout = () => {
                 message: err.response?.data?.message || 'There was an error placing your order.'
             });
         }
-    }, [validateForm, selectedItems, paymentMethod, form, showPopup, clearCart]);
+    }, [validateForm, selectedItems, paymentMethod, form, showPopup, clearCart, selectedShippingMethod, placing]);
 
     // Keep ref updated for PayPal callbacks to prevent button re-rendering on every keystroke
     React.useEffect(() => {
@@ -551,8 +602,20 @@ const Checkout = () => {
         };
     }, [clientSecret]);
 
+    React.useEffect(() => {
+        if (!user) {
+            router.push('/login');
+        }
+    }, [user, router]);
+
+    // Force buyer mode on checkout
+    React.useEffect(() => {
+        if (mode === 'seller' && setMode) {
+            setMode('buyer');
+        }
+    }, [mode, setMode]);
+
     if (!user) {
-        router.push('/login');
         return null;
     }
 
@@ -602,9 +665,23 @@ const Checkout = () => {
                                     {fieldErrors.phone && <span className="field-error-text">{fieldErrors.phone}</span>}
                                 </div>
                             </div>
-                            <div className={`checkout-field ${fieldErrors.address_line ? 'error' : ''}`}>
-                                <label>{t('checkout.street_address')}</label>
-                                <input name="address_line" value={form.address_line} onChange={handleChange} placeholder="123 Main Street, Apt 4B" required />
+                            <div className="checkout-field">
+                                <label>{t('checkout.street_address', 'Search Address')}</label>
+                                <LocationPickerMap 
+                                    showMap={false} 
+                                    initialLabel={form.address_line}
+                                    onLocationSelect={(loc) => {
+                                        setForm(prev => ({
+                                            ...prev,
+                                            address_line: loc.label || prev.address_line,
+                                            city: loc.city || prev.city,
+                                            state: loc.state || prev.state,
+                                            pincode: loc.pincode || prev.pincode,
+                                            lat: loc.lat,
+                                            lng: loc.lng
+                                        }));
+                                    }} 
+                                />
                                 {fieldErrors.address_line && <span className="field-error-text">{fieldErrors.address_line}</span>}
                             </div>
                             <div className="checkout-grid-3">
@@ -640,6 +717,45 @@ const Checkout = () => {
                             </div>
                         </div>
 
+                        {/* Shipping Method Section */}
+                        <div className="checkout-section">
+                            <h2 className="checkout-section-title"><FaTruck /> Shipping Method</h2>
+                            {loadingShipping ? (
+                                <div className="p-3 text-center text-muted" style={{ fontSize: '0.9rem' }}>
+                                    <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                                    Calculating shipping rates...
+                                </div>
+                            ) : shippingEstimates.length > 0 ? (
+                                <div className="checkout-pay-methods" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+                                    {shippingEstimates.map(m => (
+                                        <button
+                                            key={m.company_id}
+                                            type="button"
+                                            className={`checkout-pay-btn ${selectedShippingMethod?.company_id === m.company_id ? 'active' : ''}`}
+                                            onClick={() => setSelectedShippingMethod(m)}
+                                            style={{ justifyContent: 'space-between', padding: '15px' }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                                {m.logo ? (
+                                                    <img src={m.logo} alt={m.company_name} style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+                                                ) : (
+                                                    <FaTruck style={{ fontSize: '24px', color: '#666' }} />
+                                                )}
+                                                <span className="fw-bold">{m.company_name}</span>
+                                            </div>
+                                            <div className="fw-bold" style={{ color: '#059669' }}>
+                                                +{formatPrice(m.estimated_cost, 'inr')}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="alert alert-warning" style={{ fontSize: '0.85rem', marginBottom: 0 }}>
+                                    Please enter a valid shipping address to see available shipping methods.
+                                </div>
+                            )}
+                        </div>
+
                         <div className="checkout-section">
                             <h2 className="checkout-section-title"><FaCreditCard /> {t('checkout.payment_method')}</h2>
                             <div className="checkout-pay-methods">
@@ -652,7 +768,20 @@ const Checkout = () => {
                                     >
                                         <div className="checkout-pay-icon-wrapper">
                                             {m.icon ? (
-                                                <img src={m.icon} alt={m.name} className="checkout-method-logo" />
+                                                <>
+                                                    <img 
+                                                        src={m.icon} 
+                                                        alt={m.name} 
+                                                        className="checkout-method-logo" 
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                            if (e.target.nextElementSibling) {
+                                                                e.target.nextElementSibling.style.display = 'inline-flex';
+                                                            }
+                                                        }}
+                                                    />
+                                                    <span className="checkout-pay-icon" style={{ display: 'none' }}>{m.defaultIcon}</span>
+                                                </>
                                             ) : (
                                                 <span className="checkout-pay-icon">{m.defaultIcon}</span>
                                             )}
@@ -775,7 +904,7 @@ const Checkout = () => {
                                             {item.condition && <span>{safeString(item.condition)}</span>}
                                         </div>
                                         <div className="checkout-summary-item-price">
-                                            <strong>{formatPrice(item.price, item.currency_id, defaultCurrency)}</strong>
+                                            <strong>{formatPrice(item.price, item.currency_id)}</strong>
                                             {item.shipping_included && (
                                                 <small className="ship-inc">{t('checkout.shipping_included')}</small>
                                             )}
@@ -795,18 +924,18 @@ const Checkout = () => {
 
                             <div className="checkout-summary-row">
                                 <span>{t('checkout.subtotal')} ({selectedItems.length} {t('checkout.items')})</span>
-                                <span>{formatPrice(subtotal, defaultCurrency, defaultCurrency)}</span>
+                                <span>{formatPrice(subtotal)}</span>
                             </div>
                             <div className="checkout-summary-row">
                                 <span>{t('checkout.shipping')}</span>
                                 <span className={shippingTotal === 0 ? 'ship-free-label' : ''}>
-                                    {shippingTotal === 0 ? t('checkout.free') : formatPrice(shippingTotal, defaultCurrency, defaultCurrency)}
+                                    {shippingTotal === 0 ? t('checkout.free') : formatPrice(shippingTotal)}
                                 </span>
                             </div>
                             {discountTotal > 0 && (
                                 <div className="checkout-summary-row checkout-discount-row">
                                     <span>{t('checkout.bundle_discount') || 'Bundle Discount'}</span>
-                                    <span className="text-success">-{formatPrice(discountTotal, defaultCurrency, defaultCurrency)}</span>
+                                    <span className="text-success">-{formatPrice(discountTotal)}</span>
                                 </div>
                             )}
 
@@ -814,14 +943,8 @@ const Checkout = () => {
 
                             <div className="checkout-summary-row checkout-total-row">
                                 <strong>{t('checkout.total')}</strong>
-                                <strong>{formatPrice(total, defaultCurrency, defaultCurrency)}</strong>
+                                <strong>{formatPrice(total)}</strong>
                             </div>
-
-                            {currentCurrency && defaultCurrency && currentCurrency._id !== defaultCurrency._id && (
-                                <div className="checkout-converted-reference">
-                                    {t('checkout.approx_total') || 'Approx. Total'}: {formatPrice(total, defaultCurrency, currentCurrency)}
-                                </div>
-                            )}
 
                             {paymentMethod === 'stripe' && (
                                 <div className="checkout-stripe-notice">
@@ -845,7 +968,7 @@ const Checkout = () => {
                             )}
 
                             <p className="checkout-terms">
-                                {t('checkout.agree_terms')} <Link href="/terms">{t('checkout.terms_service')}</Link>.
+                                {t('checkout.agree_terms')} <Link href="/pages/terms-of-service">{t('checkout.terms_service')}</Link>.
                             </p>
 
                             <div className="checkout-trust-badges">

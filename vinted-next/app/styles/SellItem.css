@@ -116,7 +116,7 @@
 
 .si-upload-box-full:hover {
     border-color: var(--primary-color, #0ea5e9);
-    background: #f0f9ff;
+    background: color-mix(in srgb, var(--primary-color, #0ea5e9) 12%, transparent);
 }
 
 .si-upload-icon {
@@ -169,7 +169,7 @@
 .si-photo-add-btn:hover {
     border-color: var(--primary-color, #0ea5e9);
     color: var(--primary-color, #0ea5e9);
-    background: #f0f9ff;
+    background: color-mix(in srgb, var(--primary-color, #0ea5e9) 12%, transparent);
 }
 
 .si-add-icon {
@@ -306,7 +306,7 @@
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--primary-color, #0ea5e9);
-    background: var(--primary-variation-color, #f0f9ff);
+    background: color-mix(in srgb, var(--primary-color, #0ea5e9) 12%, transparent);
     border: 1px solid var(--primary-color, #0ea5e9);
     padding: 3px 12px;
     border-radius: 50px;
@@ -571,7 +571,7 @@
 }
 
 .si-btn-draft:hover {
-    background: #f0f9ff;
+    background: color-mix(in srgb, var(--primary-color, #0ea5e9) 12%, transparent);
 }
 
 .si-btn-upload {
@@ -674,4 +674,13 @@
     .si-title {
         font-size: 1.3rem;
     }
+}
+
+/* ─── Modal Header Fixes ──────────────────────────────────── */
+.modal-header {
+    justify-content: space-between !important;
+}
+
+.modal-header .btn-close {
+    margin: 0 !important;
 }

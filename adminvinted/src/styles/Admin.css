@@ -435,7 +435,18 @@ body {
     background: var(--primary-color);
 }
 
-/* New Admin Utility Classes */
+.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.border-primary {
+    border-color: var(--primary-color) !important;
+}
+
 .btn-primary {
     background-color: var(--primary-color) !important;
     border-color: var(--primary-color) !important;
@@ -447,6 +458,19 @@ body {
     background-color: var(--primary-color) !important;
     border-color: var(--primary-color) !important;
     filter: brightness(0.9);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    background-color: transparent !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+    background-color: var(--primary-color) !important;
+    color: white !important;
 }
 
 .btn-admin-action {
@@ -709,3 +733,5 @@ body {
     color: #ffffff !important;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%230ea5e9' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
 }
+[dir="rtl"] .admin-rtl-select { background-position: left 0.75rem center !important; padding-right: 0.75rem !important; padding-left: 2.25rem !important; }
+

@@ -112,6 +112,7 @@ const settingSchema = mongoose.Schema(
         // AI Settings
         gemini_api_key: { type: String },
         huggingface_api_key: { type: String },
+        visual_search_enabled: { type: Boolean, default: true },
         support_phone: { type: String },
         support_address: { type: String },
         // Email Settings

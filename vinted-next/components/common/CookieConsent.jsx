@@ -84,115 +84,39 @@ const CookieConsent = () => {
 
     return (
         <>
-            {/* Proper backdrop overlay for better focus and readability */}
-            <div style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: 9998,
-                backgroundColor: 'rgba(0,0,0,0.45)', // Darkened backdrop
-                animation: 'fadeInOverlay 0.6s ease',
-                cursor: 'default'
-            }} />
+            <div className="cookie-backdrop" />
 
-            <div style={{
-                position: 'fixed',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                zIndex: 9999,
-                animation: 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-            }}>
-                <div style={{
-                    backgroundColor: '#ffffff',
-                    padding: '24px 0',
-                    boxShadow: '0 -10px 40px rgba(0,0,0,0.1)',
-                    borderTop: '1px solid #e2e8f0',
-                }}>
-                    <div style={{
-                        maxWidth: '1200px',
-                        margin: '0 auto',
-                        width: '90%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '24px',
-                        flexWrap: 'wrap'
-                    }}>
-                        <div style={{
-                            flex: 1,
-                            display: 'flex',
-                            gap: '20px',
-                            alignItems: 'center',
-                            minWidth: '280px'
-                        }}>
+            <div className="cookie-banner-wrapper">
+                <div className="cookie-banner-content">
+                    <div className="cookie-container">
+                        <div className="cookie-info-section">
                             <img
                                 src="/eaten_cookie.png"
                                 alt="Cookie"
-                                style={{ width: '50px', height: '50px', objectFit: 'contain' }}
+                                className="cookie-image"
                             />
-                            <div>
-                                <h1 style={{
-                                    margin: '0 0 4px 0',
-                                    color: '#0f172a',
-                                    fontSize: '1.4rem',
-                                    fontWeight: '700',
-                                    letterSpacing: '-0.02em',
-                                    lineHeight: '1.2'
-                                }}>
+                            <div className="cookie-text-content">
+                                <h1 className="cookie-heading">
                                     {safeString(settings?.cookie_heading, 'Better experience with cookies')}
                                 </h1>
-                                <p style={{
-                                    margin: 0,
-                                    color: '#64748b',
-                                    fontSize: '0.95rem',
-                                    fontWeight: '500',
-                                    lineHeight: '1.5',
-                                    maxWidth: '800px'
-                                }}>
-                                    {safeString(settings?.cookie_message, 'Our website uses cookies to improve your experience and show you relevant content. To continue, please accept our use of cookies.')}{' '}
-                                    {cookiePage && (
-                                        <Link
-                                            href={`/pages/${cookiePage.slug}`}
-                                            style={{
-                                                color: '#3b82f6',
-                                                textDecoration: 'underline',
-                                                textUnderlineOffset: '4px',
-                                                fontWeight: '600'
-                                            }}
-                                        >
-                                            Cookies
-                                        </Link>
-                                    )}
-                                </p>
+                                <p 
+                                    className="cookie-message"
+                                    dangerouslySetInnerHTML={{ __html: safeString(settings?.cookie_message, 'Our website uses cookies to improve your experience and show you relevant content. To continue, please accept our use of cookies.') }}
+                                />
+                                {cookiePage && (
+                                    <Link
+                                        href={`/pages/${cookiePage.slug}`}
+                                        className="cookie-link mt-2 d-inline-block"
+                                    >
+                                        Cookies
+                                    </Link>
+                                )}
                             </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div className="cookie-action-section">
                             <button
                                 onClick={handleAccept}
-                                style={{
-                                    backgroundColor: settings?.primary_color || '#000000',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '12px 32px',
-                                    borderRadius: '12px',
-                                    fontSize: '0.95rem',
-                                    fontWeight: '700',
-                                    cursor: 'pointer',
-                                    whiteSpace: 'nowrap',
-                                    transition: 'all 0.2s ease',
-                                    boxShadow: `0 4px 12px ${settings?.primary_color ? settings.primary_color + '30' : 'rgba(0,0,0,0.1)'}`,
-                                }}
-                                onMouseOver={e => {
-                                    e.currentTarget.style.filter = 'brightness(1.1)';
-                                    e.currentTarget.style.transform = 'translateY(-1px)';
-                                }}
-                                onMouseOut={e => {
-                                    e.currentTarget.style.filter = 'brightness(1)';
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                }}
+                                className="cookie-accept-btn"
                             >
                                 {safeString(settings?.cookie_button_text, 'Accept All')}
                             </button>
@@ -200,6 +124,97 @@ const CookieConsent = () => {
                     </div>
                 </div>
                 <style>{`
+                    .cookie-backdrop {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        z-index: 9998;
+                        background-color: rgba(0,0,0,0.45);
+                        animation: fadeInOverlay 0.6s ease;
+                        cursor: default;
+                    }
+                    .cookie-banner-wrapper {
+                        position: fixed;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        z-index: 9999;
+                        animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+                    }
+                    .cookie-banner-content {
+                        background-color: #ffffff;
+                        padding: 24px 0;
+                        box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+                        border-top: 1px solid #e2e8f0;
+                    }
+                    .cookie-container {
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        width: 90%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 24px;
+                    }
+                    .cookie-info-section {
+                        flex: 1;
+                        display: flex;
+                        gap: 20px;
+                        align-items: center;
+                    }
+                    .cookie-image {
+                        width: 50px;
+                        height: 50px;
+                        object-fit: contain;
+                        flex-shrink: 0;
+                    }
+                    .cookie-heading {
+                        margin: 0 0 4px 0;
+                        color: #0f172a;
+                        font-size: 1.4rem;
+                        font-weight: 700;
+                        letter-spacing: -0.02em;
+                        line-height: 1.2;
+                    }
+                    .cookie-message {
+                        margin: 0;
+                        color: #64748b;
+                        font-size: 0.95rem;
+                        font-weight: 500;
+                        line-height: 1.5;
+                        max-width: 800px;
+                    }
+                    .cookie-link {
+                        color: #3b82f6;
+                        text-decoration: underline;
+                        text-underline-offset: 4px;
+                        font-weight: 600;
+                    }
+                    .cookie-action-section {
+                        display: flex;
+                        align-items: center;
+                        flex-shrink: 0;
+                    }
+                    .cookie-accept-btn {
+                        background-color: ${settings?.primary_color || '#000000'};
+                        color: white;
+                        border: none;
+                        padding: 12px 32px;
+                        border-radius: 12px;
+                        font-size: 0.95rem;
+                        font-weight: 700;
+                        cursor: pointer;
+                        white-space: nowrap;
+                        transition: all 0.2s ease;
+                        box-shadow: 0 4px 12px ${settings?.primary_color ? settings.primary_color + '30' : 'rgba(0,0,0,0.1)'};
+                    }
+                    .cookie-accept-btn:hover {
+                        filter: brightness(1.1);
+                        transform: translateY(-1px);
+                    }
+
                     @keyframes fadeInOverlay {
                         from { opacity: 0; }
                         to { opacity: 1; }
@@ -207,6 +222,37 @@ const CookieConsent = () => {
                     @keyframes slideUp {
                         from { transform: translateY(100%); opacity: 0; }
                         to { transform: translateY(0); opacity: 1; }
+                    }
+
+                    /* Responsive Styles */
+                    @media (max-width: 768px) {
+                        .cookie-container {
+                            flex-direction: column;
+                            text-align: center;
+                            gap: 16px;
+                        }
+                        .cookie-info-section {
+                            flex-direction: column;
+                            gap: 12px;
+                        }
+                        .cookie-image {
+                            width: 60px;
+                            height: 60px;
+                        }
+                        .cookie-heading {
+                            font-size: 1.2rem;
+                        }
+                        .cookie-message {
+                            font-size: 0.9rem;
+                        }
+                        .cookie-action-section {
+                            width: 100%;
+                            justify-content: center;
+                        }
+                        .cookie-accept-btn {
+                            width: 100%;
+                            padding: 14px 20px;
+                        }
                     }
                 `}</style>
             </div>

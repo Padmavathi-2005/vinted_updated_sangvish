@@ -74,17 +74,22 @@ const getItemById = asyncHandler(async (req, res) => {
         }
     }
 
-    // IP-based unique view counting
+    // IP/User-based unique view counting
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.connection?.remoteAddress || 'unknown';
+    const viewerId = currentUser ? currentUser._id : null;
     try {
-        await ItemView.create({ item_id: item._id, ip_address: ip });
-        // If create succeeds → new unique view, increment count
-        await Item.findByIdAndUpdate(item._id, { $inc: { views_count: 1 } });
-    } catch (err) {
-        // Duplicate key error (code 11000) means this IP already viewed → skip
-        if (err.code !== 11000) {
-            console.error('View tracking error:', err.message);
+        const query = viewerId 
+            ? { item_id: item._id, user_id: viewerId } 
+            : { item_id: item._id, ip_address: ip };
+
+        const existingView = await ItemView.findOne(query);
+        
+        if (!existingView) {
+            await ItemView.create({ item_id: item._id, ip_address: ip, user_id: viewerId });
+            await Item.findByIdAndUpdate(item._id, { $inc: { views_count: 1 } });
         }
+    } catch (err) {
+        console.error('View tracking error:', err.message);
     }
 
     const itemObj = item.toObject();
@@ -192,9 +197,9 @@ const getItems = asyncHandler(async (req, res) => {
 
         // --- Basic Filters ---
         if (brand) queryObj.brand = { $regex: new RegExp(brand, 'i') };
-        if (size) queryObj.size = size;
-        if (color) queryObj.color = color;
-        if (condition) queryObj.condition = condition;
+        if (size) queryObj.size = { $regex: new RegExp(`^${size}$`, 'i') };
+        if (color) queryObj.color = { $regex: new RegExp(`^${color}$`, 'i') };
+        if (condition) queryObj.condition = { $regex: new RegExp(`^${condition}$`, 'i') };
         if (material) {
             queryObj.attributes = {
                 $elemMatch: {
@@ -237,7 +242,7 @@ const getItems = asyncHandler(async (req, res) => {
         // Join currency for conversion
         pipeline.push(
             { $lookup: { from: 'currencies', localField: 'currency_id', foreignField: '_id', as: 'curr' } },
-            { $unwind: '$curr' },
+            { $unwind: { path: '$curr', preserveNullAndEmptyArrays: true } },
             {
                 $addFields: {
                     convertedPrice: {
@@ -304,8 +309,8 @@ const getItems = asyncHandler(async (req, res) => {
             );
         } else {
             let sOrder = { created_at: -1 };
-            if (sort === 'price_asc') sOrder = { convertedPrice: 1 };
-            else if (sort === 'price_desc') sOrder = { convertedPrice: -1 };
+            if (sort === 'price_asc') sOrder = { convertedPrice: 1, created_at: -1 };
+            else if (sort === 'price_desc') sOrder = { convertedPrice: -1, created_at: -1 };
             else if (sort === 'oldest') sOrder = { created_at: 1 };
             else if (sort === 'discounted') sOrder = { original_price: -1, created_at: -1 };
             pipeline.push({ $sort: sOrder });

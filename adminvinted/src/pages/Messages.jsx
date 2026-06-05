@@ -5,9 +5,11 @@ import { FaUser, FaSearch, FaPaperPlane, FaEllipsisV, FaImage, FaSmile, FaCheckD
 import axios from '../utils/axios';
 import { getAdminInfo } from '../utils/auth';
 import { getImageUrl, safeString } from '../utils/constants';
+import { useLocalization } from '../context/LocalizationContext';
 import '../styles/AdminMessages.css';
 
 const Messages = () => {
+    const { t } = useLocalization();
     const navigate = useNavigate();
     const adminInfo = getAdminInfo();
     const adminId = adminInfo?._id || adminInfo?.id;
@@ -239,7 +241,7 @@ const Messages = () => {
             <aside className={`messages-sidebar ${showDetailMobile ? 'd-none d-lg-flex' : 'd-flex'}`}>
                 <div className="messages-sidebar-header">
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h2>Messages</h2>
+                        <h2>{t('messages.title', 'Messages')}</h2>
                         <button className="input-action-btn" onClick={() => setShowUserPicker(true)}>
                             <FaPlus />
                         </button>
@@ -247,14 +249,14 @@ const Messages = () => {
 
                     <div className="compose-btn-wrapper">
                         <button className="sidebar-compose-btn" onClick={() => setShowUserPicker(true)}>
-                            <FaPlus /> Start New Chat
+                            <FaPlus /> {t('messages.start_chat', 'Start New Chat')}
                         </button>
                     </div>
 
                     <div className="search-wrapper">
                         <FaSearch className="search-icon-inside" />
                         <input
-                            placeholder="Search conversation..."
+                            placeholder={t('messages.search_placeholder', 'Search conversation...')}
                             className="sidebar-search-input"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -409,7 +411,7 @@ const Messages = () => {
                                     {messages.length === 0 && selectedConv._id === 'new' && (
                                         <div className="text-center py-5 opacity-50">
                                             <FaEnvelope size={40} className="mb-3" />
-                                            <p>Send a message to start this conversation</p>
+                                            <p>{t('messages.send_prompt', 'Send a message to start this conversation')}</p>
                                         </div>
                                     )}
                                     {messages.map((m) => {
@@ -437,7 +439,7 @@ const Messages = () => {
                                 <button type="button" className="input-action-btn"><FaImage /></button>
                                 <button type="button" className="input-action-btn"><FaSmile /></button>
                                 <input
-                                    placeholder="Type a message..."
+                                    placeholder={t('messages.type_message', 'Type a message...')}
                                     className="chat-input-field"
                                     value={messageInput}
                                     onChange={(e) => setMessageInput(e.target.value)}
@@ -457,10 +459,10 @@ const Messages = () => {
                         <div className="empty-state-illustration">
                             <FaEnvelope />
                         </div>
-                        <h3>Select a Conversation</h3>
-                        <p>Choose a user from the list on the left to start a real-time conversation.</p>
+                        <h3>{t('messages.select_conversation', 'Select a Conversation')}</h3>
+                        <p>{t('messages.select_prompt', 'Choose a user from the list on the left to start a real-time conversation.')}</p>
                         <Button variant="primary" className="mt-4 rounded-pill px-4" onClick={() => setShowUserPicker(true)}>
-                            Start New Chat
+                            {t('messages.start_chat', 'Start New Chat')}
                         </Button>
                     </div>
                 )}
@@ -475,14 +477,14 @@ const Messages = () => {
                 className="user-picker-modal"
             >
                 <Modal.Header closeButton>
-                    <Modal.Title>New Message</Modal.Title>
+                    <Modal.Title>{t('messages.new_message', 'New Message')}</Modal.Title>
                 </Modal.Header>
                 <div className="user-picker-search-container">
                     <div className="user-picker-search-wrapper">
                         <FaSearch className="text-muted" />
                         <input
                             className="user-picker-search-input"
-                            placeholder="Search users by name or email..."
+                            placeholder={t('messages.search_users', 'Search users by name or email...')}
                             value={userSearch}
                             onChange={(e) => setUserSearch(e.target.value)}
                         />
@@ -514,12 +516,12 @@ const Messages = () => {
                                     <h6 className="user-picker-name">{safeString(u.username || u.name)}</h6>
                                     <p className="user-picker-email">{u.email}</p>
                                 </div>
-                                <div className="user-picker-action">Message</div>
+                                <div className="user-picker-action">{t('messages.message_btn', 'Message')}</div>
                             </div>
                         ))
                     )}
                     {!usersLoading && filteredUsers.length === 0 && (
-                        <div className="text-center p-5 text-muted">No users found</div>
+                        <div className="text-center text-muted p-5">{t('messages.no_users', 'No users found matching your search.')}</div>
                     )}
                 </div>
             </Modal>

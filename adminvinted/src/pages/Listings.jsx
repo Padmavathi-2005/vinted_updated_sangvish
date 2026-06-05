@@ -65,6 +65,8 @@ const Listings = () => {
             else if (parseFloat(value) <= 0) error = 'Price must be greater than 0';
         } else if (name === 'category_id') {
             if (!value) error = 'Category is required';
+        } else if (name === 'subcategory_id') {
+            if (!value) error = 'Subcategory is required';
         } else if (name === 'condition') {
             if (!value) error = 'Condition is required';
         }
@@ -130,9 +132,10 @@ const Listings = () => {
     const handleDeleteClick = (listing) => {
         setSelectedListing(listing);
         showConfirm(
-            'Delete Listing?',
-            `Are you sure you want to delete "${safeString(listing.title)}"?`,
-            'Yes, Delete'
+            t('listings.delete.title', 'Delete Listing?'),
+            t('listings.delete.confirm', 'Are you sure you want to delete "{{title}}"?', { title: safeString(listing.title) }).replace('{{title}}', safeString(listing.title)),
+            t('listings.delete.yes', 'Yes, Delete'),
+            t('common.cancel', 'Cancel')
         ).then((result) => {
             if (result.isConfirmed) {
                 handleDeleteConfirm(listing._id);
@@ -165,7 +168,7 @@ const Listings = () => {
             color: listing.color || '',
             condition: listing.condition || '',
             status: listing.status || 'active',
-            is_sold: !!listing.is_sold,
+            is_sold: !!listing.is_sold || listing.status === 'sold',
             is_blocked: listing.status === 'inactive',
             attributes: listing.attributes || [],
             seo_title: listing.seo_title || '',
@@ -180,7 +183,7 @@ const Listings = () => {
     const handleSaveListing = async () => {
         // Final validation check
         const newErrors = {};
-        const requiredFields = ['title', 'price', 'category_id', 'condition'];
+        const requiredFields = ['title', 'price', 'category_id', 'subcategory_id', 'condition'];
         requiredFields.forEach(field => {
             const err = validateField(field, formData[field]);
             if (err) newErrors[field] = err;
@@ -194,7 +197,7 @@ const Listings = () => {
 
         setSaving(true);
         try {
-            let finalStatus = formData.is_blocked ? 'inactive' : 'active';
+            let finalStatus = formData.is_blocked ? 'inactive' : (formData.is_sold ? 'sold' : 'active');
 
             const data = new FormData();
             Object.keys(formData).forEach(key => {
@@ -285,7 +288,10 @@ const Listings = () => {
         {
             header: t('listings.table.condition'),
             accessor: 'condition',
-            render: (row) => <span className="text-capitalize small">{row.condition?.replace(/-/g, ' ')}</span>
+            render: (row) => {
+                const conditionKey = row.condition ? row.condition.toLowerCase().replace(/\s+/g, '_') : '';
+                return <span className="text-capitalize small">{conditionKey ? t(`conditions.${conditionKey}`, row.condition) : ''}</span>;
+            }
         },
         {
             header: t('listings.table.availability'),
@@ -328,14 +334,7 @@ const Listings = () => {
                             <h1 className="dashboard-title h3 mb-1 text-primary">{t('listings.title')}</h1>
                             <p className="text-muted small mb-0">{t('listings.subtitle')}</p>
                         </div>
-                        <Button variant="primary" className="btn-admin-action" onClick={() => {
-                            setFormData(initialFormData);
-                            setSelectedListing(null);
-                            setErrors({});
-                            setShowEditModal(true);
-                        }}>
-                            <FaPlus className="me-2" /> {t('listings.add_new')}
-                        </Button>
+
                     </div>
 
                     <div className="d-flex gap-3 flex-wrap mb-4">
@@ -431,12 +430,12 @@ const Listings = () => {
                                     <Form.Label>{t('listings.modal.condition')}</Form.Label>
                                     <AdminSearchSelect
                                         options={[
-                                            { value: 'New', label: 'New' },
-                                            { value: 'Very Good', label: 'Very Good' },
-                                            { value: 'Good', label: 'Good' },
-                                            { value: 'Normal', label: 'Normal' },
-                                            { value: 'Bad', label: 'Bad' },
-                                            { value: 'Very Bad', label: 'Very Bad' },
+                                            { value: 'New', label: t('conditions.new', 'New') },
+                                            { value: 'Very Good', label: t('conditions.very_good', 'Very Good') },
+                                            { value: 'Good', label: t('conditions.good', 'Good') },
+                                            { value: 'Normal', label: t('conditions.normal', 'Normal') },
+                                            { value: 'Bad', label: t('conditions.bad', 'Bad') },
+                                            { value: 'Very Bad', label: t('conditions.very_bad', 'Very Bad') },
                                         ]}
                                         value={formData.condition}
                                         onChange={(val) => handleSelectChange('condition', val)}
@@ -558,7 +557,7 @@ const Listings = () => {
                                     const newAttrs = [...(formData.attributes || []), { key: '', value: '' }];
                                     setFormData({ ...formData, attributes: newAttrs });
                                 }}>
-                                    + Add Detail
+                                    {t('listings.modal.add_detail', '+ Add Detail')}
                                 </Button>
                             </div>
                             {(formData.attributes || []).map((attr, idx) => (
@@ -593,7 +592,7 @@ const Listings = () => {
                         </div>
 
                         <Form.Group className="mb-4">
-                            <Form.Label>{t('listings.modal.images')}</Form.Label>
+                            <Form.Label>{t('listings.modal.images', 'Images')}</Form.Label>
                             <div className="d-flex flex-wrap gap-2 mb-2">
                                 {existingImages.map((img, idx) => (
                                     <div key={`existing-${idx}`} className="position-relative" style={{ width: '80px', height: '80px' }}>
@@ -686,7 +685,23 @@ const Listings = () => {
                                     <div className="d-flex align-items-center gap-2 p-2 border rounded bg-light">
                                         <Toggle
                                             checked={formData.is_sold}
-                                            onChange={(checked) => setFormData({ ...formData, is_sold: checked, is_blocked: checked ? false : formData.is_blocked })}
+                                            onChange={async (checked) => {
+                                                setFormData({ ...formData, is_sold: checked, is_blocked: checked ? false : formData.is_blocked });
+                                                try {
+                                                    const token = localStorage.getItem('admin_token');
+                                                    const data = new FormData();
+                                                    data.set('is_sold', checked);
+                                                    await axios.put(`${API_URL}/admin/items/${selectedListing._id}`, data, {
+                                                        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
+                                                    });
+                                                    toast.success(checked ? t('listings.modal.sold_out_success', 'Item marked as Sold Out') : t('listings.modal.available_success', 'Item marked as Available'));
+                                                    fetchListings();
+                                                } catch (err) {
+                                                    console.error("Failed to update sold status", err);
+                                                    toast.error("Failed to update availability.");
+                                                    setFormData({ ...formData, is_sold: !checked }); // revert
+                                                }
+                                            }}
                                             label={formData.is_sold ? t('listings.modal.sold') : t('listings.modal.available')}
                                         />
                                     </div>
@@ -695,41 +710,41 @@ const Listings = () => {
                         </div>
 
                         <hr className="my-4" />
-                        <h5 className="mb-3 text-primary">SEO Settings <span className="text-muted small fw-normal">(Optional)</span></h5>
+                        <h5 className="mb-3 text-primary">{t('listings.modal.seo_settings', 'SEO Settings')} <span className="text-muted small fw-normal">{t('common.optional', '(Optional)')}</span></h5>
                         
                         <Form.Group className="mb-3">
-                            <Form.Label>SEO Title <span className="text-muted small fw-normal">(Optional)</span></Form.Label>
+                            <Form.Label>{t('listings.modal.seo_title', 'SEO Title')} <span className="text-muted small fw-normal">{t('common.optional', '(Optional)')}</span></Form.Label>
                             <Form.Control
                                 type="text"
                                 name="seo_title"
                                 value={formData.seo_title}
                                 onChange={handleInputChange}
-                                placeholder="Enter SEO Title"
+                                placeholder={t('listings.modal.seo_title_placeholder', 'Enter SEO Title')}
                             />
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                            <Form.Label>SEO Description <span className="text-muted small fw-normal">(Optional)</span></Form.Label>
+                            <Form.Label>{t('listings.modal.seo_description', 'SEO Description')} <span className="text-muted small fw-normal">{t('common.optional', '(Optional)')}</span></Form.Label>
                             <Form.Control
                                 as="textarea"
                                 rows={2}
                                 name="seo_description"
                                 value={formData.seo_description}
                                 onChange={handleInputChange}
-                                placeholder="Enter SEO Description"
+                                placeholder={t('listings.modal.seo_description_placeholder', 'Enter SEO Description')}
                             />
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                            <Form.Label>SEO Keywords <span className="text-muted small fw-normal">(Optional)</span></Form.Label>
+                            <Form.Label>{t('listings.modal.seo_keywords', 'SEO Keywords')} <span className="text-muted small fw-normal">{t('common.optional', '(Optional)')}</span></Form.Label>
                             <Form.Control
                                 type="text"
                                 name="seo_keywords"
                                 value={formData.seo_keywords}
                                 onChange={handleInputChange}
-                                placeholder="e.g. vintage, jacket, denim, blue"
+                                placeholder={t('listings.modal.seo_keywords_placeholder', 'e.g. vintage, jacket, denim, blue')}
                             />
-                            <Form.Text className="text-muted">Separate keywords with commas</Form.Text>
+                            <Form.Text className="text-muted">{t('listings.modal.seo_keywords_hint', 'Separate keywords with commas')}</Form.Text>
                         </Form.Group>
                     </Form>
                 </Modal>

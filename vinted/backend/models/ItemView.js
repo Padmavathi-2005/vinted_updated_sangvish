@@ -11,6 +11,11 @@ const itemViewSchema = mongoose.Schema(
             type: String,
             required: true,
         },
+        user_id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: false,
+        },
     },
     {
         timestamps: {

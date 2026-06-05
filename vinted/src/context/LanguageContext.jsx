@@ -48,10 +48,12 @@ export const LanguageProvider = ({ children }) => {
                     if (found) {
                         setCurrentLanguage(found);
                     } else if (defLanguage) {
-                        setCurrentLanguage(defLanguage);
+                        const defFound = languagesRes.data.find(l => l._id === defLanguage);
+                        if (defFound) setCurrentLanguage(defFound);
                     }
                 } else if (defLanguage) {
-                    setCurrentLanguage(defLanguage);
+                    const defFound = languagesRes.data.find(l => l._id === defLanguage);
+                    if (defFound) setCurrentLanguage(defFound);
                 } else if (Array.isArray(languagesRes.data) && languagesRes.data.length > 0) {
                     setCurrentLanguage(languagesRes.data[0]); // Fallback to first available
                 }

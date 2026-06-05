@@ -21,4 +21,7 @@ const favoriteSchema = mongoose.Schema(
     }
 );
 
+// Compound index: one favorite per user per item
+favoriteSchema.index({ user_id: 1, item_id: 1 }, { unique: true });
+
 export default mongoose.model('Favorite', favoriteSchema);

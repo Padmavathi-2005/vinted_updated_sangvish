@@ -99,6 +99,8 @@ const orderSchema = mongoose.Schema(
             state: String,
             country: String,
             pincode: String,
+            lat: Number,
+            lng: Number,
         },
         delivered_at: {
             type: Date,

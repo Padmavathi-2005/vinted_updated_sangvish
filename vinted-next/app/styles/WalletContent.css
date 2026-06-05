@@ -77,7 +77,8 @@
 
 /* ── Wallet Hero Card ─────────────────────────────────────── */
 .wc-hero {
-    background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+    background: linear-gradient(135deg, var(--primary-color, #0ea5e9) 0%, rgba(0,0,0,0.3) 150%);
+    background-color: var(--primary-color, #0ea5e9);
     border-radius: 20px;
     padding: 28px 24px;
     color: white;
@@ -270,7 +271,7 @@
     margin-top: 4px;
     font-size: 0.75rem;
     color: var(--primary-color, #0ea5e9);
-    background: #e0f2fe;
+    background: color-mix(in srgb, var(--primary-color, #0ea5e9) 12%, transparent);
     border-radius: 6px;
     padding: 2px 8px;
     display: inline-block;
@@ -556,8 +557,8 @@
 .wc-payout-icon {
     width: 36px;
     height: 36px;
-    background: #e0f2fe;
-    color: #0ea5e9;
+    background: color-mix(in srgb, var(--primary-color, #0ea5e9) 12%, transparent);
+    color: var(--primary-color, #0ea5e9);
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -745,3 +746,9 @@
         max-height: 80vh;
     }
 }
+
+/* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
+.wc-withdraw-btn { position: relative; }
+.wc-withdraw-btn::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.wc-add-payout-btn { position: relative; }
+.wc-add-payout-btn::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }

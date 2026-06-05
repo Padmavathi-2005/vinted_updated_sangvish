@@ -74,7 +74,7 @@
 .filter-sidebar-icon-wrap {
     width: 30px;
     height: 30px;
-    background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 15%, white), color-mix(in srgb, var(--primary-color) 25%, white));
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -222,7 +222,7 @@
 }
 
 .filter-group.is-open .filter-group-icon {
-    border-color: rgba(14, 165, 233, 0.3);
+    border-color: color-mix(in srgb, var(--primary-color) 30%, transparent);
     color: var(--primary-color, #0ea5e9);
     background: white;
 }
@@ -297,10 +297,10 @@
 }
 
 .filter-option.active {
-    background: #e0f2fe;
+    background: color-mix(in srgb, var(--primary-color) 15%, white);
     color: var(--primary-color, #0ea5e9);
     font-weight: 700;
-    border-color: rgba(14, 165, 233, 0.25);
+    border-color: color-mix(in srgb, var(--primary-color) 25%, transparent);
 }
 
 .filter-check {
@@ -399,7 +399,7 @@
 .apply-price-btn:hover {
     opacity: 0.9;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--primary-color) 30%, transparent);
 }
 
 /* ── Size chips ───────────────────────────────────────────── */
@@ -425,7 +425,7 @@
 .size-chip:hover {
     border-color: var(--primary-color, #0ea5e9);
     color: var(--primary-color, #0ea5e9);
-    background: #e0f2fe;
+    background: color-mix(in srgb, var(--primary-color) 15%, white);
 }
 
 .size-chip.active {
@@ -463,7 +463,7 @@
 
 .color-chip.active {
     border-color: var(--primary-color, #0ea5e9);
-    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 20%, transparent);
 }
 
 .color-dot {
@@ -548,7 +548,7 @@
 .open-filters-btn:hover {
     border-color: var(--primary-color, #0ea5e9);
     color: var(--primary-color, #0ea5e9);
-    background: #f0f9ff;
+    background: color-mix(in srgb, var(--primary-color) 10%, white);
 }
 
 /* Breadcrumb */
@@ -706,15 +706,15 @@
     padding: 4px 10px;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #0ea5e9;
+    color: var(--primary-color, #0ea5e9);
     cursor: pointer;
     transition: all 0.15s;
     white-space: nowrap;
 }
 
 .active-filter-pill:hover {
-    border-color: #0ea5e9;
-    background: #f0f9ff;
+    border-color: var(--primary-color, #0ea5e9);
+    background: color-mix(in srgb, var(--primary-color) 10%, white);
 }
 
 .clear-all-btn {
@@ -820,7 +820,7 @@
 .products-empty-icon {
     width: 72px;
     height: 72px;
-    background: #e0f2fe;
+    background: color-mix(in srgb, var(--primary-color) 15%, white);
     color: var(--primary-color, #0ea5e9);
     border-radius: 50%;
     display: flex;
@@ -857,7 +857,7 @@
 .reset-filters-btn-lg:hover {
     opacity: 0.9;
     transform: translateY(-1px);
-    box-shadow: 0 8px 20px rgba(14, 165, 233, 0.3);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--primary-color) 30%, transparent);
 }
 
 /* ── Skeleton ─────────────────────────────────────────────── */
@@ -1045,7 +1045,7 @@
 .oc-apply-btn:hover {
     opacity: 0.92;
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(14, 165, 233, 0.3);
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--primary-color) 30%, transparent);
 }
 
 @media (max-width: 400px) {
@@ -1093,3 +1093,11 @@
         padding: 10px 16px;
     }
 }
+
+/* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
+.apply-price-btn { position: relative; }
+.apply-price-btn::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.reset-filters-btn-lg { position: relative; }
+.reset-filters-btn-lg::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.oc-apply-btn { position: relative; }
+.oc-apply-btn::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }

@@ -58,6 +58,74 @@ const Header = () => {
     const [hasSentFirstMsg, setHasSentFirstMsg] = useState(false);
     const [isAiBtnVisible, setIsAiBtnVisible] = useState(true);
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+    const [aiBottomOffset, setAiBottomOffset] = useState(0);
+
+    // Draggable Logic
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [isDragged, setIsDragged] = useState(false);
+    const dragRef = useRef({ startX: 0, startY: 0, lastX: 0, lastY: 0 });
+
+    const handleMouseDown = (e) => {
+        // Only trigger drag on the button itself, not the chat window
+        if (e.target.closest('.ai-drag-handle') || e.target.closest('.floating-ai-btn')) {
+            e.preventDefault();
+            setIsDragging(true);
+            setIsDragged(false);
+            dragRef.current.startX = e.clientX;
+            dragRef.current.startY = e.clientY;
+            dragRef.current.lastX = dragOffset.x;
+            dragRef.current.lastY = dragOffset.y;
+        }
+    };
+
+    const handleMouseMove = (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - dragRef.current.startX;
+        const dy = e.clientY - dragRef.current.startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            setIsDragged(true);
+        }
+        setDragOffset({
+            x: dragRef.current.lastX + dx,
+            y: dragRef.current.lastY + dy
+        });
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    useEffect(() => {
+        if (isDragging) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+        }
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const footer = document.querySelector('.footer');
+            if (footer) {
+                const footerRect = footer.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+                if (footerRect.top < windowHeight) {
+                    setAiBottomOffset(windowHeight - footerRect.top);
+                } else {
+                    setAiBottomOffset(0);
+                }
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        handleScroll();
+        
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
     const [hoveredIcon, setHoveredIcon] = useState(null); // 'heart', 'bell', 'cart'
     const aiBoxRef = useRef(null);
     const chatMessagesEndRef = useRef(null);
@@ -433,7 +501,7 @@ const Header = () => {
                             }}
                         >
                             <FaThLarge style={{ fontSize: '1.2rem', opacity: 0.8 }} />
-                            <span style={{ fontSize: '1.05rem' }}>{t('header.categories')}</span>
+                            <span style={{ fontSize: '1.05rem' }}>{t('header.categories', 'Categories')}</span>
                         </div>
                     </nav>
                 </div>
@@ -471,7 +539,7 @@ const Header = () => {
                             </div>
                             <input
                                 type="text"
-                                placeholder={t('header.search_placeholder')}
+                                placeholder={t('header.search_placeholder', 'Search for items...')}
                                 style={{
                                     flex: 1,
                                     padding: '0 16px',
@@ -579,7 +647,7 @@ const Header = () => {
                                         animation: 'fadeIn 0.2s',
                                     }}
                                 >
-                                    {t('header.search_button')}
+                                    {t('header.search_button', 'Search')}
                                 </button>
                             )}
                         </div>
@@ -689,7 +757,7 @@ const Header = () => {
                 {/* Right Section: Actions - Hidden on < 1200px */}
                 <div className="right-section d-none d-xl-flex">
                     <Link to="/sell" className="sell-btn" style={{ backgroundColor: settings.primary_color }}>
-                        <FaPlus /> {t('header.sell_button')}
+                        <FaPlus /> {t('header.sell_button', 'Sell')}
                     </Link>
                     <div className="icon-group">
                         {/* Combined Language & Currency Selector (Visible to everyone) */}
@@ -701,7 +769,7 @@ const Header = () => {
                             }}
                             onMouseLeave={() => { setIsSettingsDropdownOpen(false); setLanguageSearchTerm(''); setCurrencySearchTerm(''); }}
                             style={{ position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '20px', background: '#f8f9fa', border: '1px solid #e9ecef', transition: 'all 0.3s ease' }}
-                            title={t('header.settings')}
+                            title={t('header.settings', 'Settings')}
                         >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', fontWeight: '700', color: '#495057' }}>
                                 <FiGlobe style={{ color: settings.primary_color }} />
@@ -737,7 +805,7 @@ const Header = () => {
                                                     cursor: 'pointer', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.02em'
                                                 }}
                                             >
-                                                {t('header.language')}
+                                                {t('header.language', 'Language')}
                                             </button>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); setSettingsTab('currency'); }}
@@ -749,7 +817,7 @@ const Header = () => {
                                                     cursor: 'pointer', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.02em'
                                                 }}
                                             >
-                                                {t('header.currency')}
+                                                {t('header.currency', 'Currency')}
                                             </button>
                                         </div>
 
@@ -761,7 +829,7 @@ const Header = () => {
                                                         <FaSearch style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: settings.primary_color, fontSize: '0.75rem' }} />
                                                         <input
                                                             type="text"
-                                                            placeholder={t('header.search_languages')}
+                                                            placeholder={t('header.search_languages', 'Search languages...')}
                                                             value={languageSearchTerm}
                                                             onChange={(e) => setLanguageSearchTerm(e.target.value)}
                                                             onClick={(e) => e.stopPropagation()}
@@ -792,7 +860,7 @@ const Header = () => {
                                                         <FaSearch style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: settings.primary_color, fontSize: '0.75rem' }} />
                                                         <input
                                                             type="text"
-                                                            placeholder={t('header.search_currencies')}
+                                                            placeholder={t('header.search_currencies', 'Search currencies...')}
                                                             value={currencySearchTerm}
                                                             onChange={(e) => setCurrencySearchTerm(e.target.value)}
                                                             onClick={(e) => e.stopPropagation()}
@@ -829,7 +897,7 @@ const Header = () => {
                                 <Link
                                     to="/profile?tab=favorites"
                                     className="icon-wrapper heart-link"
-                                    title={t('header.my_favorites')}
+                                    title={t('header.my_favorites', 'My Favorites')}
                                     onMouseEnter={() => setHoveredIcon('heart')}
                                     onMouseLeave={() => setHoveredIcon(null)}
                                     style={{ color: hoveredIcon === 'heart' ? '#ef4444' : '#495057' }}
@@ -852,7 +920,7 @@ const Header = () => {
                                 >
                                     <div
                                         className="icon-wrapper"
-                                        title={t('header.notifications')}
+                                        title={t('header.notifications', 'Notifications')}
                                         style={{ position: 'relative', cursor: 'pointer', color: hoveredIcon === 'bell' || isNotifDropdownOpen ? settings.primary_color : '#495057' }}
                                         onClick={() => navigate('/profile?tab=notifications')}
                                     >
@@ -1196,7 +1264,7 @@ const Header = () => {
                             <input
                                 type="text"
                                 autoFocus
-                                placeholder={t('header.search_placeholder')}
+                                placeholder={t('header.search_placeholder', 'Search for items...')}
                                 style={{ flex: 1, padding: '0 100px 0 16px', border: 'none', background: 'transparent', fontSize: '0.95rem', outline: 'none' }}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -1246,7 +1314,7 @@ const Header = () => {
                                         position: 'absolute', right: '6px', border: 'none', background: settings.primary_color, color: 'white', borderRadius: '20px', padding: '0 15px', height: '34px', fontWeight: '600'
                                     }}
                                 >
-                                    {t('header.search_button')}
+                                    {t('header.search_button', 'Search')}
                                 </button>
                             )}
                         </div>
@@ -1514,20 +1582,23 @@ const Header = () => {
                         ref={aiBoxRef}
                         style={{
                             position: 'fixed',
-                            bottom: windowWidth < 768 ? '90px' : (windowWidth < 480 ? '20px' : '30px'),
+                            bottom: `calc(${windowWidth < 768 ? '90px' : (windowWidth < 480 ? '20px' : '30px')} + ${aiBottomOffset}px)`,
                             right: windowWidth < 480 ? '15px' : '30px',
                             zIndex: 2505,
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'flex-end',
-                            fontFamily: "var(--font-family)"
+                            fontFamily: "var(--font-family)",
+                            transition: isDragging ? 'none' : 'bottom 0.15s ease-out',
+                            transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)`,
+                            cursor: isDragging ? 'grabbing' : 'auto'
                         }}
                     >
                         {/* Chat Box - Shown when Open */}
                         {isAIDrawerOpen && (
                             <div style={{
                                 position: 'fixed',
-                                bottom: windowWidth < 768 ? '160px' : (windowWidth < 480 ? '100px' : '110px'),
+                                bottom: `calc(${windowWidth < 768 ? '160px' : (windowWidth < 480 ? '100px' : '110px')} + ${aiBottomOffset}px)`,
                                 top: windowWidth < 768 ? '75px' : '85px',
                                 right: windowWidth < 480 ? '15px' : '30px',
                                 width: windowWidth < 480 ? 'calc(100vw - 30px)' : '380px',
@@ -1627,19 +1698,30 @@ const Header = () => {
 
                         {/* Floating Trigger Button */}
                         <div
+                            className="floating-ai-btn"
+                            onMouseDown={handleMouseDown}
                             onMouseEnter={() => setIsAiHovered(true)}
                             onMouseLeave={() => setIsAiHovered(false)}
-                            onClick={() => setIsAIDrawerOpen(!isAIDrawerOpen)}
+                            onClick={(e) => {
+                                if (isDragged) {
+                                    e.preventDefault();
+                                    return;
+                                }
+                                setIsAIDrawerOpen(!isAIDrawerOpen);
+                            }}
                             style={{
+                                position: 'relative',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '12px',
-                                cursor: 'pointer',
-                                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                                cursor: isDragging ? 'grabbing' : 'pointer',
+                                transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                             }}
                         >
                             {/* Hover Text Labels */}
                             <div style={{
+                                position: 'absolute',
+                                right: '100%',
+                                marginRight: '16px',
                                 background: 'white',
                                 padding: '8px 16px',
                                 borderRadius: '20px',
@@ -1648,8 +1730,8 @@ const Header = () => {
                                 fontWeight: '700',
                                 color: settings.primary_color,
                                 opacity: isAiHovered ? 1 : 0,
-                                transform: isAiHovered ? 'translateX(0)' : 'translateX(20px)',
-                                transition: 'all 0.3s ease',
+                                transform: isAiHovered ? 'translateX(0)' : 'translateX(10px)',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                 pointerEvents: 'none',
                                 border: `1px solid ${settings.primary_color}20`,
                                 whiteSpace: 'nowrap'

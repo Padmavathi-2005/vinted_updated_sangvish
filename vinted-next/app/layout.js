@@ -5,6 +5,8 @@ import LayoutWrapper from './LayoutWrapper';
 
 import { BASE_URL, getImageUrl, safeString } from '@/utils/constants';
 
+export const revalidate = 0; // Force Next.js to always fetch fresh metadata
+
 export async function generateMetadata() {
   try {
     const res = await fetch(`${BASE_URL}/api/settings`, { cache: 'no-store' });
@@ -64,10 +66,39 @@ export async function generateMetadata() {
   }
 }
 
-export default function RootLayout({ children }) {
+import Script from 'next/script';
+
+export default async function RootLayout({ children }) {
+  let primaryColor = null;
+  try {
+    const res = await fetch(`${BASE_URL}/api/settings`, { cache: 'no-store' });
+    const settings = await res.json();
+    if (settings?.primary_color) {
+      primaryColor = settings.primary_color;
+    }
+  } catch (error) {}
+
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {primaryColor && (
+          <style dangerouslySetInnerHTML={{ __html: `:root { --primary-color: ${primaryColor}; }` }} />
+        )}
+      </head>
       <body style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
+        <Script id="theme-script" strategy="beforeInteractive">
+          {`
+            try {
+              var cached = localStorage.getItem('site_settings');
+              if (cached) {
+                var settings = JSON.parse(cached);
+                if (settings.primary_color) {
+                  document.documentElement.style.setProperty('--primary-color', settings.primary_color);
+                }
+              }
+            } catch(e) {}
+          `}
+        </Script>
         <Providers>
           <LayoutWrapper>
             {children}

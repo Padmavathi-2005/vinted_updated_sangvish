@@ -4,8 +4,10 @@ import getCroppedImg from '../../utils/cropImage'
 import '@/app/styles/ImageCropModal.css'
 import { FaTimes, FaCheck, FaSyncAlt, FaSearchPlus, FaSearchMinus } from 'react-icons/fa'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const ImageCropModal = ({ image, onCropComplete, onCancel, aspect = 1 }) => {
+  const { t } = useTranslation();
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [rotation, setRotation] = useState(0)
@@ -31,7 +33,7 @@ const ImageCropModal = ({ image, onCropComplete, onCancel, aspect = 1 }) => {
   }
 
   const aspectPresets = [
-    { label: 'Original Ratio', value: 'original' },
+    { label: t('crop.original_ratio', 'Original Ratio'), value: 'original' },
     { label: '1:1', value: 1 },
     { label: '3:4', value: 3 / 4 },
     { label: '4:3', value: 4 / 3 },
@@ -72,7 +74,7 @@ const ImageCropModal = ({ image, onCropComplete, onCancel, aspect = 1 }) => {
       <div className="crop-modal-container">
         <div className="crop-modal-scroll-area">
           <div className="crop-modal-header">
-            <h3>Crop Image</h3>
+            <h3>{t('crop.crop_image', 'Crop Image')}</h3>
           <button className="crop-modal-close" onClick={onCancel}>
             <FaTimes />
           </button>
@@ -96,15 +98,15 @@ const ImageCropModal = ({ image, onCropComplete, onCancel, aspect = 1 }) => {
         <div className="crop-modal-footer">
           <div className="crop-actions-top">
              <button className="btn-skip" onClick={() => onCropComplete(null)}>
-                Upload Original (No Crop)
+                {t('crop.upload_original', 'Upload Original (No Crop)')}
             </button>
           </div>
           <div className="crop-help-tip">
             <FaCheck style={{ color: '#10b981', marginRight: '6px' }} />
-            Zoom and drag the image to cut the exact part you want.
+            {t('crop.help_tip', 'Zoom and drag the image to cut the exact part you want.')}
           </div>
           <div className="aspect-ratio-selector">
-            <span className="aspect-label">Aspect Ratio:</span>
+            <span className="aspect-label">{t('crop.aspect_ratio', 'Aspect Ratio:')}</span>
             <div className="aspect-buttons">
               {aspectPresets.map((preset) => (
                 <button
@@ -122,7 +124,7 @@ const ImageCropModal = ({ image, onCropComplete, onCancel, aspect = 1 }) => {
           </div>
           <div className="crop-controls">
             <div className="control-group">
-              <label className="control-label-text">Zoom</label>
+              <label className="control-label-text">{t('crop.zoom', 'Zoom')}</label>
               <div className="slider-wrapper">
                 <FaSearchMinus onClick={() => setZoom(Math.max(1, zoom - 0.2))} className="control-icon" title="Zoom Out" />
                 <input
@@ -139,7 +141,7 @@ const ImageCropModal = ({ image, onCropComplete, onCancel, aspect = 1 }) => {
               </div>
             </div>
             <div className="control-group">
-              <label className="control-label-text">Rotate</label>
+              <label className="control-label-text">{t('crop.rotate', 'Rotate')}</label>
               <div className="slider-wrapper">
                 <FaSyncAlt onClick={() => setRotation(0)} className="control-icon" title="Reset Rotation" />
                 <input
@@ -158,10 +160,10 @@ const ImageCropModal = ({ image, onCropComplete, onCancel, aspect = 1 }) => {
           </div>
           <div className="crop-actions">
             <button className="btn-cancel" onClick={onCancel}>
-                Cancel
+                {t('crop.cancel', 'Cancel')}
             </button>
             <button className="btn-save" onClick={handleCrop}>
-                Apply Crop
+                {t('crop.apply_crop', 'Apply Crop')}
             </button>
           </div>
         </div>

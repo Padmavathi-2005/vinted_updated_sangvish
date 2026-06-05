@@ -44,7 +44,7 @@ const messageSchema = mongoose.Schema(
         },
         offer_status: {
             type: String,
-            enum: ['pending', 'accepted', 'declined', 'countered'],
+            enum: ['pending', 'accepted', 'declined', 'countered', 'cancelled'],
             default: 'pending',
         },
         item_id: {

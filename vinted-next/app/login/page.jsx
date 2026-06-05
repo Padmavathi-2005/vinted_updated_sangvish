@@ -10,9 +10,11 @@ import { FaXTwitter } from 'react-icons/fa6';
 import AuthContext from '@/context/AuthContext';
 import useRecaptcha from '@/hooks/useRecaptcha';
 import Meta from '@/components/common/Meta';
+import { useTranslation } from 'react-i18next';
 import '@/app/styles/Auth.css';
 
 const LoginContent = () => {
+    const { t } = useTranslation();
     const { login } = useContext(AuthContext);
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [showPassword, setShowPassword] = useState(false);
@@ -108,14 +110,14 @@ const LoginContent = () => {
     return (
         <div className="auth-page">
             <div className="auth-card">
-                <h2 className="text-center">Welcome Back</h2>
-                <p className="subtitle text-center">Securely access your marketplace account</p>
+                <h2 className="text-center">{t('auth.login_title', 'Welcome Back')}</h2>
+                <p className="subtitle text-center">{t('auth.login_subtitle', 'Securely access your marketplace account')}</p>
 
                 {(socialSettings?.google_enabled || socialSettings?.facebook_enabled || socialSettings?.twitter_enabled || socialSettings?.apple_enabled) && (
                     <>
                         <div className="social-buttons">
                             {socialSettings?.google_enabled && (
-                                <button type="button" className="social-btn" onClick={() => window.location.href = `${axios.defaults.baseURL}/api/auth/google`}><FaGoogle /> Google</button>
+                                <button type="button" className="social-btn" onClick={() => window.location.href = `${axios.defaults.baseURL}/api/auth/google`}><FaGoogle /> {t('auth.google_login', 'Google')}</button>
                             )}
                             {socialSettings?.facebook_enabled && (
                                 <button type="button" className="social-btn" onClick={() => window.location.href = `${axios.defaults.baseURL}/api/auth/facebook`}><FaFacebookSquare style={{ color: '#1877F2' }} /> Facebook</button>
@@ -127,7 +129,7 @@ const LoginContent = () => {
                                 <button type="button" className="social-btn" onClick={() => window.location.href = `${axios.defaults.baseURL}/api/auth/apple`}><FaApple className="text-dark" /> Apple</button>
                             )}
                         </div>
-                        <div className="divider"><span>Or continue with email</span></div>
+                        <div className="divider"><span>{t('auth.or_continue_with', 'Or continue with email')}</span></div>
                     </>
                 )}
 
@@ -135,7 +137,7 @@ const LoginContent = () => {
                     {error && <div className="auth-error">{error}</div>}
 
                     <div className="auth-field">
-                        <label className="auth-label">Email Address</label>
+                        <label className="auth-label">{t('auth.email_address', 'Email Address')}</label>
                         <div className="auth-input-wrapper">
                             <span className="auth-icon"><FaEnvelope /></span>
                             <input
@@ -143,7 +145,7 @@ const LoginContent = () => {
                                 className="auth-input"
                                 name="email"
                                 value={email}
-                                placeholder="user@email.com"
+                                placeholder={t('auth.email_placeholder', 'user@email.com')}
                                 onChange={onChange}
                                 required
                             />
@@ -152,7 +154,7 @@ const LoginContent = () => {
 
                     <div className="auth-field">
                         <div className="auth-label-row">
-                            <label className="auth-label">Password</label>
+                            <label className="auth-label">{t('auth.password', 'Password')}</label>
                         </div>
                         <div className="auth-input-wrapper">
                             <span className="auth-icon"><FaLock /></span>
@@ -161,7 +163,7 @@ const LoginContent = () => {
                                 className="auth-input"
                                 name="password"
                                 value={password}
-                                placeholder="Min. 6 characters"
+                                placeholder={t('auth.password_placeholder', 'Min. 6 characters')}
                                 onChange={onChange}
                                 required
                             />
@@ -174,7 +176,7 @@ const LoginContent = () => {
                             </span>
                         </div>
                         <div className="d-flex justify-content-end mt-2">
-                            <Link href="/forgot-password" style={{fontSize: '13px', color: '#0ea5e9', fontWeight: '500', textDecoration: 'none'}}>Forgot password?</Link>
+                            <Link href="/forgot-password" style={{fontSize: '13px', color: '#0ea5e9', fontWeight: '500', textDecoration: 'none'}}>{t('auth.forgot_password', 'Forgot password?')}</Link>
                         </div>
                     </div>
 
@@ -185,15 +187,15 @@ const LoginContent = () => {
                             checked={rememberMe}
                             onChange={(e) => setRememberMe(e.target.checked)}
                         />
-                        <label htmlFor="rememberMe">Keep me logged in</label>
+                        <label htmlFor="rememberMe">{t('auth.remember_me', 'Keep me logged in')}</label>
                     </div>
 
-                    <button type="submit" className="btn-submit">Login to Account</button>
+                    <button type="submit" className="btn-submit">{t('auth.login_btn', 'Login to Account')}</button>
                 </form>
 
                 <div className="auth-footer">
-                    <span>Don't have an account? </span>
-                    <Link href="/register">Create an account</Link>
+                    <span>{t('auth.no_account', "Don't have an account?")} </span>
+                    <Link href="/register">{t('auth.signup_link', 'Create an account')}</Link>
                 </div>
             </div>
         </div>

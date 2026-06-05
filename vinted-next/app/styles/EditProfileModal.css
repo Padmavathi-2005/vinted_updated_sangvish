@@ -445,4 +445,8 @@
         justify-content: center;
     }
 }
-
+
+
+/* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
+.btn-save { position: relative; }
+.btn-save::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }

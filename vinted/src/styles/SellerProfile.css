@@ -6,6 +6,7 @@
     background: #f8fafc;
     font-family: var(--font-family);
     padding: 32px 0 80px;
+    overflow-x: hidden;
 }
 
 /* ─── Loading / Error ─── */
@@ -701,6 +702,11 @@
 
     .sp-sidebar {
         position: static;
+        min-width: 0;
+    }
+
+    .sp-main {
+        min-width: 0;
     }
 
     .sp-avatar-section {
@@ -714,9 +720,14 @@
 
     .sp-avatar-wrap {
         margin: 0;
-        width: 72px;
-        height: 72px;
+        width: 84px;
+        height: 84px;
         flex-shrink: 0;
+    }
+    
+    .sp-seller-info {
+        flex: 1;
+        min-width: 0;
     }
 
     .sp-meta-row,
@@ -728,6 +739,17 @@
         flex-direction: row;
         overflow-x: auto;
         padding: 8px;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+        position: sticky;
+        top: 60px; /* Adjust based on mobile header height */
+        z-index: 100;
+        background: #f8fafc;
+        margin-top: 10px;
+    }
+
+    .sp-nav::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
     }
 
     .sp-nav-item {

@@ -5,14 +5,19 @@ import Table from '../components/Table';
 import { FaTrash, FaSearch, FaSync, FaEnvelope, FaDownload, FaFileCsv, FaFilePdf } from 'react-icons/fa';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useSettings } from '../context/SettingsContext';
+import { useLocalization } from '../context/LocalizationContext';
+import { formatAdminDate } from '../utils/dateFormatter';
 
 const Subscribers = () => {
+    const { t } = useLocalization();
     const [subscribers, setSubscribers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const { globalSettings } = useSettings();
 
     const fetchSubscribers = async () => {
         try {
@@ -95,7 +100,7 @@ const Subscribers = () => {
                 sub.email,
                 sub.source || 'footer',
                 sub.status,
-                new Date(sub.created_at).toLocaleDateString()
+                formatAdminDate(sub.created_at, globalSettings)
             ].map(v => `"${v}"`).join(','))
         ];
 
@@ -120,7 +125,7 @@ const Subscribers = () => {
         doc.text('Newsletter Subscribers Report', 14, 22);
         doc.setFontSize(11);
         doc.setTextColor(100);
-        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+        doc.text(`Generated on: ${formatAdminDate(new Date(), globalSettings, { hour: '2-digit', minute: '2-digit' })}`, 14, 30);
 
         const tableColumn = ["Email", "Source", "Status", "Subscribed At"];
         const tableRows = [];
@@ -130,7 +135,7 @@ const Subscribers = () => {
                 sub.email,
                 sub.source || 'footer',
                 sub.status,
-                new Date(sub.created_at).toLocaleDateString()
+                formatAdminDate(sub.created_at, globalSettings)
             ];
             tableRows.push(subscriberData);
         });
@@ -148,17 +153,17 @@ const Subscribers = () => {
 
     const columns = [
         {
-            header: 'Email',
+            header: t('subscribers.table.email', 'Email'),
             accessor: 'email',
             cell: (row) => (
                 <div className="d-flex align-items-center gap-2">
-                    <FaEnvelope style={{ color: '#0ea5e9', opacity: 0.6 }} />
+                    <FaEnvelope style={{ color: 'var(--primary-color)', opacity: 0.6 }} />
                     <span className="fw-bold text-dark">{row.email}</span>
                 </div>
             )
         },
         {
-            header: 'Source',
+            header: t('subscribers.table.source', 'Source'),
             accessor: 'source',
             cell: (row) => (
                 <Badge bg="light" text="dark" className="border">
@@ -167,7 +172,7 @@ const Subscribers = () => {
             )
         },
         {
-            header: 'Status',
+            header: t('subscribers.table.status', 'Status'),
             accessor: 'status',
             cell: (row) => (
                 <Badge
@@ -175,17 +180,17 @@ const Subscribers = () => {
                     style={{ cursor: 'pointer' }}
                     onClick={() => handleStatusToggle(row._id, row.status)}
                 >
-                    {row.status}
+                    {row.status === 'active' ? t('common.status.active', 'active') : t('common.status.inactive', 'unsubscribed')}
                 </Badge>
             )
         },
         {
-            header: 'Subscribed At',
+            header: t('subscribers.table.subscribed_at', 'Subscribed At'),
             accessor: 'created_at',
-            cell: (row) => new Date(row.created_at).toLocaleDateString()
+            cell: (row) => formatAdminDate(row.created_at, globalSettings)
         },
         {
-            header: 'Actions',
+            header: t('subscribers.table.actions', 'Actions'),
             accessor: '_id',
             cell: (row) => (
                 <div className="d-flex gap-2">
@@ -207,13 +212,13 @@ const Subscribers = () => {
                 <Card className="main-content-card border-0 shadow-sm p-4">
                     <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                         <div>
-                            <h1 className="dashboard-title h3 mb-1 text-primary">Newsletter Subscribers</h1>
-                            <p className="text-muted small mb-0">Manage your newsletter list and subscribers</p>
+                            <h1 className="dashboard-title h3 mb-1 text-primary">{t('subscribers.title', 'Newsletter Subscribers')}</h1>
+                            <p className="text-muted small mb-0">{t('subscribers.subtitle', 'Manage your newsletter list and subscribers')}</p>
                         </div>
                         <div className="d-flex gap-2">
                             <Dropdown>
                                 <Dropdown.Toggle variant="primary" id="dropdown-export" className="btn-admin-action">
-                                    <FaDownload /> Export
+                                    <FaDownload /> {t('subscribers.export', 'Export')}
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu className="shadow border-0">
                                     <Dropdown.Item onClick={exportToCSV} className="d-flex align-items-center gap-2 py-2">
@@ -227,33 +232,35 @@ const Subscribers = () => {
                         </div>
                     </div>
 
-                    <div className="d-flex gap-3 flex-wrap mb-4">
-                        <div className="flex-grow-1 search-box-container">
-                            <Form onSubmit={handleSearch}>
-                                <div className="input-group">
-                                    <span className="input-group-text bg-white border-end-0">
+                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+                        <div className="d-flex gap-3 flex-wrap align-items-center flex-grow-1">
+                            <div className="search-box-container" style={{ minWidth: '300px' }}>
+                                <InputGroup>
+                                    <InputGroup.Text className="bg-white border-end-0">
                                         <FaSearch className="text-muted" />
-                                    </span>
+                                    </InputGroup.Text>
                                     <Form.Control
-                                        placeholder="Search by email..."
+                                        placeholder={t('subscribers.search_placeholder', 'Search by email...')}
                                         className="border-start-0 ps-0"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
-                                </div>
-                            </Form>
+                                </InputGroup>
+                            </div>
                         </div>
-                        <div style={{ width: '220px' }}>
-                            <Form.Select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="admin-filter-select"
-                            >
-                                <option value="">All Statuses</option>
-                                <option value="active">Active</option>
-                                <option value="unsubscribed">Unsubscribed</option>
-                            </Form.Select>
-                        </div>
+
+                        <div className="d-flex gap-3 align-items-center">
+                            <div style={{ width: '220px' }}>
+                                <Form.Select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    className="admin-filter-select"
+                                >
+                                    <option value="">{t('subscribers.all_statuses', 'All Statuses')}</option>
+                                    <option value="active">{t('common.status.active', 'Active')}</option>
+                                    <option value="unsubscribed">{t('common.status.inactive', 'Unsubscribed')}</option>
+                                </Form.Select>
+                            </div></div>
                     </div>
 
                     <Table
@@ -261,7 +268,7 @@ const Subscribers = () => {
                         data={subscribers}
                         loading={loading}
                         pagination={true}
-                        emptyMessage="No subscribers found."
+                        emptyMessage={t('subscribers.no_data', 'No subscribers found.')}
                     />
                 </Card>
             </Container>

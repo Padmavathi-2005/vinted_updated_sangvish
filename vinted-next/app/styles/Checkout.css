@@ -3,7 +3,7 @@
     padding: 24px 48px;
     font-family: var(--font-family);
     min-height: 100vh;
-    overflow-x: hidden;
+    overflow-x: clip;
 }
 
 @media (max-width: 768px) {
@@ -1010,3 +1010,7 @@
         transform: rotate(360deg);
     }
 }
+
+/* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
+.checkout-pay-btn { position: relative; }
+.checkout-pay-btn::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }

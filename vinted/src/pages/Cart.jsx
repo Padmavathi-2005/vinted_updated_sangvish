@@ -18,7 +18,7 @@ const SHIPPING_FEE = 200; // ₹200 temp flat fee
 const Cart = () => {
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
-    const { formatPrice, currencies } = useContext(CurrencyContext);
+    const { formatPrice, currencies, defaultCurrency } = useContext(CurrencyContext);
     const {
         cartItems, removeFromCart, toggleSelect, selectAll,
         deselectAll, selectedItems, cartCount, removeSelected
@@ -38,9 +38,24 @@ const Cart = () => {
 
     // Calculate bundle-aware totals
     const calculateBundleTotals = () => {
-        let subtotal = 0;
-        let shippingTotal = 0;
-        let discountTotal = 0;
+        let subtotal = 0; // In default currency
+        let shippingTotal = 0; // In default currency
+        let discountTotal = 0; // In default currency
+
+        const getInDefault = (price, currId) => {
+            if (!price) return 0;
+            if (!defaultCurrency?.exchange_rate) return price;
+            
+            const targetCurr = currencies.find(c => 
+                c._id === (currId?._id || currId) || 
+                c.code?.toLowerCase() === (currId?.code || currId || '').toString().toLowerCase()
+            );
+            
+            // If it's 'inr' and not found in list, use rate 1.0 (internal base)
+            const itemRate = targetCurr ? targetCurr.exchange_rate : (currId === 'inr' || currId?.code === 'INR' ? 1 : defaultCurrency.exchange_rate);
+            
+            return (price / itemRate) * defaultCurrency.exchange_rate;
+        };
 
         // Group selected items by seller to calculate shipping and discounts
         const selectedBySeller = selectedItems.reduce((acc, item) => {
@@ -54,35 +69,19 @@ const Cart = () => {
             const { items, seller } = group;
             if (items.length === 0) return;
 
-            let groupSubtotalRaw = 0;
-
+            // 1. Add item prices to subtotal
             items.forEach(item => {
-                // To sum correctly, we must convert each item to a common base (e.g., default currency)
-                // We'll simulate the formatPrice logic but without the final target conversion
-                let itemPrice = Number(item.price || 0);
-                let itemCurrencyId = typeof item.currency_id === 'object' ? item.currency_id?._id : item.currency_id;
-
-                // Find currency for base rate
-                let baseRate = 1;
-                const found = currencies.find(c => c._id === itemCurrencyId);
-                if (found) {
-                    baseRate = found.exchange_rate || 1;
-                }
-
-                // Convert to "base units" (price / its_rate)
-                const baseValue = itemPrice / baseRate;
-                subtotal += baseValue;
-                groupSubtotalRaw += baseValue;
+                subtotal += getInDefault(item.price, item.currency_id);
             });
 
-            // Shipping: One fee per seller unless any item has free shipping
-            // Note: SHIPPING_FEE is assumed to be in base currency units for this calculation
-            const hasFreeShipping = items.some(i => i.shipping_included);
-            if (!hasFreeShipping) {
-                shippingTotal += (SHIPPING_FEE / (currencies.find(c => c.code === 'INR')?.exchange_rate || 80));
+            // 2. Calculate Combined Shipping (200 INR per seller if not free)
+            const anyFreeShipping = items.some(i => i.shipping_included);
+            if (!anyFreeShipping) {
+                // SHIPPING_FEE in backend is 200 INR
+                shippingTotal += getInDefault(SHIPPING_FEE, 'inr');
             }
 
-            // Discount: Check seller bundle discounts
+            // 3. Calculate Bundle Discount
             if (seller && seller.bundle_discounts?.enabled) {
                 const count = items.length;
                 let pct = 0;
@@ -91,19 +90,13 @@ const Cart = () => {
                 else if (count >= 2) pct = seller.bundle_discounts.two_items;
 
                 if (pct > 0) {
-                    discountTotal += (groupSubtotalRaw * pct) / 100;
+                    const groupSubtotal = items.reduce((s, i) => s + getInDefault(i.price, i.currency_id), 0);
+                    discountTotal += (groupSubtotal * pct) / 100;
                 }
             }
         });
 
-        // The final subtotal, shipping, and discount are now in "base units".
-        // formatPrice(value) will then convert them to the current user currency.
-        return {
-            subtotal,
-            shippingTotal,
-            discountTotal,
-            total: subtotal + shippingTotal - discountTotal
-        };
+        return { subtotal, shippingTotal, discountTotal, total: subtotal + shippingTotal - discountTotal };
     };
 
     const { subtotal, shippingTotal, discountTotal, total } = calculateBundleTotals();

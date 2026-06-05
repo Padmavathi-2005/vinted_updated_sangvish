@@ -1,5 +1,8 @@
 import ShippingCompany from '../models/ShippingCompany.js';
 import mongoose from 'mongoose';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -305,6 +308,122 @@ const deleteLanguage = asyncHandler(async (req, res) => {
         res.status(404);
         throw new Error('Language not found');
     }
+});
+
+// @desc    Get translations for a language
+// @route   GET /api/admin/languages/:id/translations
+// @access  Private (Admin)
+const getLanguageTranslations = asyncHandler(async (req, res) => {
+    const language = await Language.findById(req.params.id);
+    if (!language) {
+        res.status(404);
+        throw new Error('Language not found');
+    }
+
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+
+    // Load master keys from English file in vinted backend
+    const localesDir = path.join(__dirname, '..', '..', '..', 'vinted', 'backend', 'locales');
+    const enPath = path.join(localesDir, 'en', 'translation.json');
+    let masterKeys = {};
+    
+    const flatten = (obj, prefix = '') => {
+        return Object.keys(obj).reduce((acc, k) => {
+            const pre = prefix.length ? prefix + '.' : '';
+            if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k])) {
+                Object.assign(acc, flatten(obj[k], pre + k));
+            } else {
+                acc[pre + k] = obj[k];
+            }
+            return acc;
+        }, {});
+    };
+
+    if (fs.existsSync(enPath)) {
+        const enJson = JSON.parse(fs.readFileSync(enPath, 'utf8'));
+        masterKeys = flatten(enJson);
+    }
+
+    // Load existing file translations for the specific language
+    let fileTranslations = {};
+    const langPath = path.join(localesDir, language.code, 'translation.json');
+    if (fs.existsSync(langPath)) {
+        const langJson = JSON.parse(fs.readFileSync(langPath, 'utf8'));
+        fileTranslations = flatten(langJson);
+    }
+
+    let overrides = {};
+    if (language.translations) {
+        overrides = language.translations instanceof Map 
+            ? Object.fromEntries(language.translations) 
+            : language.translations;
+    }
+
+    res.json({ masterKeys, fileTranslations, overrides });
+});
+
+// @desc    Update translations for a language
+// @route   PUT /api/admin/languages/:id/translations
+// @access  Private (Admin)
+const updateLanguageTranslations = asyncHandler(async (req, res) => {
+    const language = await Language.findById(req.params.id);
+    if (!language) {
+        res.status(404);
+        throw new Error('Language not found');
+    }
+
+    language.translations = req.body;
+    await language.save();
+
+    res.json({ message: 'Translations updated successfully' });
+});
+
+// @desc    Auto translate missing texts
+// @route   POST /api/admin/languages/:id/auto-translate
+// @access  Private (Admin)
+const autoTranslateLanguage = asyncHandler(async (req, res) => {
+    const language = await Language.findById(req.params.id);
+    if (!language) {
+        res.status(404);
+        throw new Error('Language not found');
+    }
+
+    const { textsToTranslate } = req.body; // Array of { key, text }
+    if (!textsToTranslate || !Array.isArray(textsToTranslate)) {
+        res.status(400);
+        throw new Error('Please provide an array of texts to translate');
+    }
+
+    const { translate } = await import('@vitalets/google-translate-api');
+    
+    // Process in chunks to avoid overwhelming the free API
+    const chunkSize = 15;
+    const translated = {};
+    
+    for (let i = 0; i < textsToTranslate.length; i += chunkSize) {
+        const chunk = textsToTranslate.slice(i, i + chunkSize);
+        await Promise.all(chunk.map(async (item) => {
+            try {
+                if (!item.text || item.text.trim() === '') {
+                    translated[item.key] = '';
+                    return;
+                }
+                const response = await translate(item.text, { to: language.code });
+                translated[item.key] = response.text;
+            } catch (error) {
+                console.error(`Translation error for key ${item.key}:`, error.message);
+                translated[item.key] = item.text; // fallback to original on error
+            }
+        }));
+        
+        // Small delay between chunks
+        if (i + chunkSize < textsToTranslate.length) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+    }
+
+    res.json({ translated });
 });
 
 // @desc    Get all currencies
@@ -762,7 +881,7 @@ const getUsers = asyncHandler(async (req, res) => {
 // @route   POST /api/admin/users
 // @access  Private (Admin)
 const createUser = asyncHandler(async (req, res) => {
-    const { username, email, password, status, balance, bio, rating_avg, rating_count, followers_count, following_count } = req.body;
+    const { username, first_name, last_name, email, password, status, balance, bio, rating_avg, rating_count, followers_count, following_count } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -772,6 +891,8 @@ const createUser = asyncHandler(async (req, res) => {
 
     const user = await User.create({
         username,
+        first_name: first_name || '',
+        last_name: last_name || '',
         email,
         password_hash: password,
         is_blocked: status === 'Inactive' || status === 'Banned',
@@ -796,7 +917,7 @@ const createUser = asyncHandler(async (req, res) => {
 // @route   PUT /api/admin/users/:id
 // @access  Private (Admin)
 const updateUser = asyncHandler(async (req, res) => {
-    const { username, email, status, password, is_deleted, balance, bio, rating_avg, rating_count, followers_count, following_count } = req.body;
+    const { username, first_name, last_name, email, status, password, is_deleted, balance, bio, rating_avg, rating_count, followers_count, following_count } = req.body;
     const user = await User.findById(req.params.id);
 
     if (!user) {
@@ -805,6 +926,8 @@ const updateUser = asyncHandler(async (req, res) => {
     }
 
     user.username = username || user.username;
+    if (first_name !== undefined) user.first_name = first_name;
+    if (last_name !== undefined) user.last_name = last_name;
     user.email = email || user.email;
 
     if (status !== undefined) {
@@ -831,6 +954,8 @@ const updateUser = asyncHandler(async (req, res) => {
 
     if (req.file) {
         user.profile_image = `images/profile/${req.file.filename}`;
+    } else if (req.body.remove_image === 'true') {
+        user.profile_image = '';
     }
 
     if (password) {
@@ -1450,6 +1575,9 @@ export {
     createLanguage,
     updateLanguage,
     deleteLanguage,
+    getLanguageTranslations,
+    updateLanguageTranslations,
+    autoTranslateLanguage,
     getCurrencies,
     createCurrency,
     updateCurrency,

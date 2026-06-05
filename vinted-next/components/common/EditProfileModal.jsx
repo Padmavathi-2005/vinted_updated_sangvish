@@ -12,6 +12,7 @@ import {
     getAlphaError 
 } from '../../utils/validation';
 import ImageCropModal from './ImageCropModal';
+import LocationPickerMap from './LocationPickerMap';
 
 const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
     const { t } = useTranslation();
@@ -35,11 +36,6 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
         }
     });
 
-    const [suggestions, setSuggestions] = useState([]);
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-    const suggestionsRef = React.useRef(null);
-    const debounceRef = React.useRef(null);
     const usernameDebounceRef = React.useRef(null);
     const [usernameStatus, setUsernameStatus] = useState({ 
         checked: false, 
@@ -94,10 +90,7 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
                 address: { ...prev.address, [field]: finalValue }
             }));
 
-            // Handle suggestions for address_line
-            if (field === 'address_line') {
-                handleAddressSearch(finalValue);
-            }
+            // Handle address fields
         } else if (name === 'username') {
             // Lowercase and remove spaces/special chars for username
             const cleanUsername = finalValue.replace(/\s+/g, '_').toLowerCase();
@@ -110,36 +103,6 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
         } else {
             setFormData({ ...formData, [name]: finalValue });
         }
-    };
-
-    const handleAddressSearch = (query) => {
-        if (!query || query.length < 3) {
-            setSuggestions([]);
-            setShowSuggestions(false);
-            return;
-        }
-        
-        clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(async () => {
-            setLoadingSuggestions(true);
-            try {
-                const res = await fetch(
-                    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`,
-                    {
-                        headers: {
-                            'User-Agent': 'VintedClone/1.0'
-                        }
-                    }
-                );
-                const data = await res.json();
-                setSuggestions(data || []);
-                setShowSuggestions(true);
-            } catch {
-                setSuggestions([]);
-            } finally {
-                setLoadingSuggestions(false);
-            }
-        }, 500);
     };
 
     const checkUsernameAvailability = async (username) => {
@@ -167,43 +130,21 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
         }
     };
 
-    const handleSuggestionClick = (suggestion) => {
-        const lat = parseFloat(suggestion.lat);
-        const lng = parseFloat(suggestion.lon);
-        const label = suggestion.display_name;
-        
-        let addrComp = {
-            city: suggestion.address?.city || suggestion.address?.town || suggestion.address?.village || '',
-            state: suggestion.address?.state || '',
-            country: suggestion.address?.country || '',
-            pincode: suggestion.address?.postcode || ''
-        };
-
+    const handleLocationSelect = (location) => {
         setFormData(prev => ({
             ...prev,
             address: {
                 ...prev.address,
-                address_line: label,
-                ...addrComp,
-                lat,
-                lng
+                address_line: location.label || prev.address.address_line,
+                city: location.city || prev.address.city,
+                state: location.state || prev.address.state,
+                country: location.country || prev.address.country,
+                pincode: location.postcode || prev.address.pincode,
+                lat: location.lat,
+                lng: location.lng
             }
         }));
-        
-        setSuggestions([]);
-        setShowSuggestions(false);
     };
-
-    // Close suggestions on outside click
-    React.useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
-                setShowSuggestions(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -406,7 +347,7 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
                                     name="first_name"
                                     value={formData.first_name}
                                     onChange={handleChange}
-                                    placeholder="e.g. John"
+                                    placeholder={t('profile.eg_john', 'e.g. John')}
                                 />
                             </div>
                         </div>
@@ -421,7 +362,7 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
                                     name="last_name"
                                     value={formData.last_name}
                                     onChange={handleChange}
-                                    placeholder="e.g. Doe"
+                                    placeholder={t('profile.eg_doe', 'e.g. Doe')}
                                 />
                             </div>
                         </div>
@@ -499,34 +440,13 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
                     </div>
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" style={{ zIndex: 10 }}>
                     <label>{t('profile.street_address', 'Street Address')}</label>
-                    <div className="input-with-icon" ref={suggestionsRef} style={{ position: 'relative' }}>
-                        <FaMapMarkerAlt className="input-icon" />
-                        <input
-                            type="text"
-                            name="address.address_line"
-                            value={formData.address.address_line}
-                            onChange={handleChange}
-                            placeholder="House No, Street, Landmark"
-                            autoComplete="off"
-                        />
-                        {loadingSuggestions && (
-                            <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
-                                <FaSpinner className="fa-spin" />
-                            </div>
-                        )}
-                        {showSuggestions && suggestions.length > 0 && (
-                            <ul className="address-suggestions-dropdown">
-                                {suggestions.map((s, i) => (
-                                    <li key={i} onClick={() => handleSuggestionClick(s)}>
-                                        <FaMapMarkerAlt style={{ marginRight: '8px', color: '#64748b' }} />
-                                        <span>{s.display_name}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
+                    <LocationPickerMap 
+                        showMap={false} 
+                        initialLabel={formData.address.address_line}
+                        onLocationSelect={handleLocationSelect} 
+                    />
                 </div>
 
                 <div className="row">

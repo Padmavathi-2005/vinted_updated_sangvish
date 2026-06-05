@@ -522,3 +522,7 @@ input[type="number"].eim-discount-input {
     color: #0f172a;
     border-color: #cbd5e1;
 }
+
+/* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
+.btn-save-premium { position: relative; }
+.btn-save-premium::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }

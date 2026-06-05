@@ -55,7 +55,7 @@ const AdminSidebar = ({ isCollapsed, setIsCollapsed }) => {
         { path: '/users', icon: <FaUsers />, label: t('sidebar.users') },
         { path: '/listings', icon: <FaShoppingBag />, label: t('sidebar.listings') },
         { path: '/orders', icon: <FaBoxOpen />, label: t('sidebar.orders') },
-        { path: '/shipping-companies', icon: <FaTruck />, label: 'Shipping Companies' },
+        { path: '/shipping-companies', icon: <FaTruck />, label: t('sidebar.shipping_companies') },
         {
             id: 'wallet',
             path: '/wallet',
@@ -70,8 +70,8 @@ const AdminSidebar = ({ isCollapsed, setIsCollapsed }) => {
         { path: '/categories/main', icon: <FaTags />, label: t('sidebar.categories.title') },
         { path: '/newsletter', icon: <FaEnvelope />, label: t('sidebar.newsletter') },
         { path: '/pages', icon: <FaFileAlt />, label: t('sidebar.static_pages') },
-        { path: '/product-reports', icon: <FaRegFlag />, label: 'Product Reports' },
-        { path: '/contact-inquiries', icon: <FaEnvelope />, label: 'Contact Inquiries' },
+        { path: '/product-reports', icon: <FaRegFlag />, label: t('sidebar.product_reports') },
+        { path: '/contact-inquiries', icon: <FaEnvelope />, label: t('sidebar.contact_inquiries') },
         { path: '/reports', icon: <FaChartBar />, label: t('sidebar.reports') },
         {
             id: 'settings',

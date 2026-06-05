@@ -387,7 +387,11 @@
     "condition": "حالة",
     "prev": "السابق",
     "next": "التالي",
-    "page_of": "الصفحة {{الحالية}} من {{total}}"
+    "page_of": "الصفحة {{الحالية}} من {{total}}",
+    "active_filters": "النشط:",
+    "clear_all": "مسح الكل",
+    "popular": "شائع",
+    "relevance": "الصلة"
   },
   "categories": {
     "Women": "نحيف",
@@ -524,5 +528,21 @@
     "add_first_method": "أضف طريقتك الأولى",
     "available_balance": "الرصيد المتاح",
     "select_method": "حدد طريقة..."
+  },
+  "time_ago": {
+    "today": "اليوم",
+    "yesterday": "أمس",
+    "days_ago": "قبل {{count}} أيام",
+    "months_ago": "قبل {{count}} أشهر",
+    "years_ago": "قبل {{count}} سنوات",
+    "active_now": "نشط الآن",
+    "just_now": "الآن فقط",
+    "mins_ago": "قبل {{count}} دقائق",
+    "hours_ago": "قبل {{count}} ساعات",
+    "weeks_ago": "قبل {{count}} أسابيع",
+    "mins_ago_short": "قبل {{count}}د",
+    "hours_ago_short": "قبل {{count}}س",
+    "days_ago_short": "قبل {{count}}ي",
+    "weeks_ago_short": "قبل {{count}}أ"
   }
 }

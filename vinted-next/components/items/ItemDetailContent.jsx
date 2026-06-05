@@ -910,7 +910,7 @@ const ItemDetailContent = () => {
                             <div className="id-seller-box">
                                 <h3 className="id-box-title">{t('item_detail.seller')}</h3>
                                 <div className="id-seller-top">
-                                    <Link href={`/seller/${seller._id}`} className="id-seller-avatar-link">
+                                    <Link href={`/user/${seller._id || seller.id}`} className="id-seller-avatar-link">
                                         <div className="id-seller-avatar" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', borderRadius: '50%', overflow: 'hidden' }}>
                                             <div className="id-seller-avatar-placeholder" style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff' }}>
                                                 {(seller.username || 'U').charAt(0).toUpperCase()}
@@ -926,7 +926,7 @@ const ItemDetailContent = () => {
                                         </div>
                                     </Link>
                                     <div className="id-seller-info">
-                                        <Link href={`/seller/${seller._id}`} className="id-seller-name-link">
+                                        <Link href={`/user/${seller._id || seller.id}`} className="id-seller-name-link">
                                             <h4 className="id-seller-name">{safeString(seller.username)}</h4>
                                         </Link>
                                         <p className="id-seller-since">
@@ -934,7 +934,7 @@ const ItemDetailContent = () => {
                                         </p>
                                         {renderStars(seller.rating_avg, seller.rating_count)}
                                     </div>
-                                    <Link href={`/seller/${seller._id}`} className="id-btn-view-profile">
+                                    <Link href={`/user/${seller._id || seller.id}`} className="id-btn-view-profile">
                                         <FaUser /> {t('item_detail.view_profile')}
                                     </Link>
                                 </div>
@@ -948,7 +948,7 @@ const ItemDetailContent = () => {
                                             {seller.bundle_discounts.three_items > 0 && <span>3 items ({seller.bundle_discounts.three_items}%)</span>}
                                             {seller.bundle_discounts.five_items > 0 && <span>5 items ({seller.bundle_discounts.five_items}%)</span>}
                                         </div>
-                                        <Link href={`/seller/${seller._id}`} className="id-btn-shop-bundles">
+                                        <Link href={`/user/${seller._id || seller.id}`} className="id-btn-shop-bundles">
                                             <FaBoxOpen /> Shop Bundles
                                         </Link>
                                     </div>

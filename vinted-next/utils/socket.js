@@ -6,11 +6,18 @@ const getSocket = () => {
     if (!socket && typeof window !== 'undefined') {
         // Backend URL is usually the same host but different port or proxied
         // In this project, backend is on 5003, frontend on 3000
-        const socketUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5003';
+        let socketUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+        
+        if (!socketUrl) {
+            // Dynamically detect hostname so it works on mobile testing (e.g. 192.168.x.x)
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            socketUrl = `${protocol}//${hostname}:5003`;
+        }
         
         socket = socketIO(socketUrl, {
             path: '/api/socket.io',
-            transports: ['polling'],
+            transports: ['websocket', 'polling'],
             reconnection: true,
             reconnectionAttempts: 5
         });

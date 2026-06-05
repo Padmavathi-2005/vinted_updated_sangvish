@@ -4,7 +4,7 @@ import React, { useState, useContext, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from '@/utils/axios';
-import { FaImage, FaTimes, FaInfoCircle, FaEllipsisH, FaPlusCircle } from 'react-icons/fa';
+import { FaImage, FaTimes, FaInfoCircle, FaEllipsisH, FaPlusCircle, FaPen, FaTrash } from 'react-icons/fa';
 import AuthContext from '@/context/AuthContext';
 import CurrencyContext from '@/context/CurrencyContext';
 import CustomSelect from '@/components/common/CustomSelect';
@@ -61,6 +61,7 @@ export default function SellItem() {
     // Custom Add Modal State
     const [showAddModal, setShowAddModal] = useState(false);
     const [addModalType, setAddModalType] = useState(''); // 'category', 'subcategory', 'itemtype'
+    const [addModalMode, setAddModalMode] = useState('add'); // 'add', 'edit'
     const [addModalValue, setAddModalValue] = useState('');
     
     // Crop Modal State
@@ -71,31 +72,77 @@ export default function SellItem() {
     // Location State
     const [itemLocation, setItemLocation] = useState({ lat: null, lng: null, label: '' });
 
-    const openAddModal = (type) => {
+    const openAddModal = (type, mode = 'add') => {
         setAddModalType(type);
-        setAddModalValue('');
+        setAddModalMode(mode);
+        if (mode === 'edit') {
+            if (type === 'category') setAddModalValue(categories.find(c => c._id === selectedCategory)?.name || '');
+            if (type === 'subcategory') setAddModalValue(subcategories.find(s => s._id === selectedSubcategory)?.name || '');
+            if (type === 'itemtype') setAddModalValue(itemTypes.find(i => i._id === selectedItemType)?.name || '');
+        } else {
+            setAddModalValue('');
+        }
         setShowAddModal(true);
     };
 
     const handleAddModalSubmit = async () => {
         if (!addModalValue) return;
         try {
-            if (addModalType === 'category') {
-                const res = await axios.post('/api/categories', { name: addModalValue });
-                setCategories([...categories, res.data]);
-                setSelectedCategory(res.data._id);
-            } else if (addModalType === 'subcategory') {
-                const res = await axios.post('/api/categories/subcategories', { name: addModalValue, category_id: selectedCategory });
-                setSubcategories([...subcategories, res.data]);
-                setSelectedSubcategory(res.data._id);
-            } else if (addModalType === 'itemtype') {
-                const res = await axios.post('/api/categories/itemtypes', { name: addModalValue, subcategory_id: selectedSubcategory, category_id: selectedCategory });
-                setItemTypes([...itemTypes, res.data]);
-                setSelectedItemType(res.data._id);
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            if (addModalMode === 'edit') {
+                if (addModalType === 'category') {
+                    await axios.put(`/api/admin/categories/${selectedCategory}`, { name: addModalValue }, config);
+                    setCategories(categories.map(c => c._id === selectedCategory ? { ...c, name: addModalValue } : c));
+                } else if (addModalType === 'subcategory') {
+                    await axios.put(`/api/admin/subcategories/${selectedSubcategory}`, { name: addModalValue }, config);
+                    setSubcategories(subcategories.map(s => s._id === selectedSubcategory ? { ...s, name: addModalValue } : s));
+                } else if (addModalType === 'itemtype') {
+                    await axios.put(`/api/admin/item-types/${selectedItemType}`, { name: addModalValue }, config);
+                    setItemTypes(itemTypes.map(i => i._id === selectedItemType ? { ...i, name: addModalValue } : i));
+                }
+            } else {
+                if (addModalType === 'category') {
+                    const res = await axios.post('/api/categories', { name: addModalValue });
+                    setCategories([...categories, res.data]);
+                    setSelectedCategory(res.data._id);
+                } else if (addModalType === 'subcategory') {
+                    const res = await axios.post('/api/categories/subcategories', { name: addModalValue, category_id: selectedCategory });
+                    setSubcategories([...subcategories, res.data]);
+                    setSelectedSubcategory(res.data._id);
+                } else if (addModalType === 'itemtype') {
+                    const res = await axios.post('/api/categories/itemtypes', { name: addModalValue, subcategory_id: selectedSubcategory, category_id: selectedCategory });
+                    setItemTypes([...itemTypes, res.data]);
+                    setSelectedItemType(res.data._id);
+                }
             }
             setShowAddModal(false);
         } catch (err) {
-            alert('Failed to create item');
+            alert('Failed to save item. ' + (err.response?.data?.message || ''));
+        }
+    };
+
+    const handleDeleteOption = async (type) => {
+        if (!window.confirm(`Are you sure you want to delete this ${type}?`)) return;
+        try {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            if (type === 'category') {
+                await axios.delete(`/api/admin/categories/${selectedCategory}`, config);
+                setCategories(categories.filter(c => c._id !== selectedCategory));
+                setSelectedCategory('');
+                setSubcategories([]);
+                setItemTypes([]);
+            } else if (type === 'subcategory') {
+                await axios.delete(`/api/admin/subcategories/${selectedSubcategory}`, config);
+                setSubcategories(subcategories.filter(s => s._id !== selectedSubcategory));
+                setSelectedSubcategory('');
+                setItemTypes([]);
+            } else if (type === 'itemtype') {
+                await axios.delete(`/api/admin/item-types/${selectedItemType}`, config);
+                setItemTypes(itemTypes.filter(i => i._id !== selectedItemType));
+                setSelectedItemType('');
+            }
+        } catch (err) {
+            alert('Failed to delete item. ' + (err.response?.data?.message || ''));
         }
     };
 
@@ -342,35 +389,46 @@ export default function SellItem() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
+        let newErrors = {};
+        let firstErrorField = null;
+
+        const addError = (field, msg) => {
+            if (!newErrors[field]) {
+                newErrors[field] = msg;
+                if (!firstErrorField) firstErrorField = field;
+            }
+        };
+
+        if (photos.length === 0) addError('photos', 'Please upload at least one photo for the item.');
+
+        if (!title.trim()) addError('title', 'Please enter an item title.');
+        else if (!validateTextField(title)) addError('title', getTextFieldError('Title'));
+
+        if (!description.trim()) addError('description', 'Please enter an item description.');
+        else if (!validateTextField(description)) addError('description', getTextFieldError('Description'));
+
+        if (!selectedCategory) addError('category', 'Please select a category.');
+        if (!selectedSubcategory) addError('subcategory', 'Please select a subcategory.');
+        
         const isItemTypeRequired = itemTypes && itemTypes.length > 0;
-        if (!selectedCategory || !selectedSubcategory || (isItemTypeRequired && !selectedItemType)) {
-            alert(isItemTypeRequired ? 'Please select a category, subcategory, and item type.' : 'Please select a category and subcategory.');
-            return;
+        if (isItemTypeRequired && !selectedItemType) {
+            addError('itemType', 'Please select an item type.');
         }
 
-        if (!title.trim()) return alert('Please enter an item title.');
-        if (!validateTextField(title)) {
-            setValidationErrors(prev => ({ ...prev, title: true }));
-            return alert(getTextFieldError('Title'));
-        }
-        
-        if (!description.trim()) return alert('Please enter an item description.');
-        if (!validateTextField(description)) {
-            setValidationErrors(prev => ({ ...prev, description: true }));
-            return alert(getTextFieldError('Description'));
-        }
+        if (brand && !validateTextField(brand)) addError('brand', getTextFieldError('Brand'));
+        if (!condition) addError('condition', 'Please select the item condition.');
+        if (!color) addError('color', 'Please select the item color.');
+        if (!price || parseFloat(price) <= 0) addError('price', 'Please enter a valid price.');
+        if (!itemLocation || !itemLocation.lat) addError('location', 'Please select the item location.');
 
-        if (brand && !validateTextField(brand)) {
-            setValidationErrors(prev => ({ ...prev, brand: true }));
-            return alert(getTextFieldError('Brand'));
-        }
-
-        if (!condition) return alert('Please select the item condition.');
-        if (!color) return alert('Please select the item color.');
-        if (!price || parseFloat(price) <= 0) return alert('Please enter a valid price.');
-        
-        if (photos.length === 0) {
-            alert('Please upload at least one photo for the item.');
+        if (Object.keys(newErrors).length > 0) {
+            setValidationErrors(newErrors);
+            setTimeout(() => {
+                const el = document.getElementById('field-' + firstErrorField);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
             return;
         }
 
@@ -498,6 +556,8 @@ export default function SellItem() {
                             <span className="si-section-hint">{t('sell_item.up_to_photos', { max: MAX_PHOTOS })}</span>
                         </div>
 
+                        <div id="field-photos" className="si-photo-grid">
+                            {validationErrors.photos && <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginBottom: '10px', width: '100%' }}>{validationErrors.photos}</p>}
                         {photos.length === 0 ? (
                             <label className="si-upload-box si-upload-box-full">
                                 <input ref={fileInputRef} type="file" multiple accept="image/*" onChange={handlePhotoUpload} hidden />
@@ -534,19 +594,20 @@ export default function SellItem() {
                                 <p className="si-photos-count">{t('sell_item.photos_added', { count: photos.length, max: MAX_PHOTOS })}</p>
                             </div>
                         )}
+                        </div>
                         <p className="si-photo-tip"><FaInfoCircle /> {t('sell_item.photo_tip')}</p>
 
                         {detectedColorName && (
                             <div style={{ marginTop: '12px', padding: '10px 14px', backgroundColor: '#e0f2fe', color: '#0369a1', borderRadius: '8px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <FaInfoCircle />
-                                <span>We analyzed your photo and automatically selected <strong>{detectedColorName}</strong> as the default color!</span>
+                                <span>{t('sell_item.ai_color_prefix', 'We analyzed your photo and automatically selected')} <strong>{detectedColorName}</strong> {t('sell_item.ai_color_suffix', 'as the default color!')}</span>
                             </div>
                         )}
                     </div>
 
                     {/* Title & Description */}
                     <div className="si-card">
-                        <div className="si-field">
+                        <div className="si-field" id="field-title">
                             <label className="si-label">{t('sell_item.item_title')}</label>
                             <input 
                                 type="text" 
@@ -556,11 +617,9 @@ export default function SellItem() {
                                 onChange={e => { setTitle(e.target.value); if (validationErrors.title) setValidationErrors(prev => ({ ...prev, title: false })); }} 
                                 required 
                             />
-                            {title && !validateTextField(title) && (
-                                <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{getTextFieldError('Title')}</p>
-                            )}
+                            {validationErrors.title && <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{validationErrors.title}</p>}
                         </div>
-                        <div className="si-field si-field-last">
+                        <div className="si-field si-field-last" id="field-description">
                             <label className="si-label">{t('sell_item.item_description')}</label>
                             <textarea 
                                 className={`si-textarea ${validationErrors.description || (description && !validateTextField(description)) ? 'is-invalid' : ''}`} 
@@ -569,9 +628,7 @@ export default function SellItem() {
                                 value={description} 
                                 onChange={e => { setDescription(e.target.value); if (validationErrors.description) setValidationErrors(prev => ({ ...prev, description: false })); }} 
                             />
-                            {description && !validateTextField(description) && (
-                                <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{getTextFieldError('Description')}</p>
-                            )}
+                            {validationErrors.description && <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{validationErrors.description}</p>}
                         </div>
                     </div>
 
@@ -584,9 +641,17 @@ export default function SellItem() {
                                 <div className="si-label-row d-flex justify-content-between">
                                     <label className="si-label">{t('sell_item.category')}</label>
                                     {user?.role === 'admin' && (
-                                        <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" onClick={() => openAddModal('category')}>
-                                            {t('sell_item.add_category', '+ Add Category')}
-                                        </button>
+                                        <div className="d-flex align-items-center gap-2">
+                                            {selectedCategory && (
+                                                <>
+                                                    <button type="button" className="btn btn-sm btn-light py-0 px-2 text-primary border" onClick={() => openAddModal('category', 'edit')} title="Edit"><FaPen size={12} /></button>
+                                                    <button type="button" className="btn btn-sm btn-light py-0 px-2 text-danger border" onClick={() => handleDeleteOption('category')} title="Delete"><FaTrash size={12} /></button>
+                                                </>
+                                            )}
+                                            <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" onClick={() => openAddModal('category')}>
+                                                {t('sell_item.add_category', '+ Add Category')}
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                                 <CustomSelect
@@ -601,9 +666,23 @@ export default function SellItem() {
                             <div className="si-field">
                                 <div className="si-label-row d-flex justify-content-between">
                                     <label className="si-label">{t('sell_item.subcategory')}</label>
-                                    <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!selectedCategory} onClick={() => openAddModal('subcategory')}>
-                                        {t('sell_item.add_subcategory', '+ Add Subcategory')}
-                                    </button>
+                                    {user?.role === 'admin' ? (
+                                        <div className="d-flex align-items-center gap-2">
+                                            {selectedSubcategory && (
+                                                <>
+                                                    <button type="button" className="btn btn-sm btn-light py-0 px-2 text-primary border" onClick={() => openAddModal('subcategory', 'edit')} title="Edit"><FaPen size={12} /></button>
+                                                    <button type="button" className="btn btn-sm btn-light py-0 px-2 text-danger border" onClick={() => handleDeleteOption('subcategory')} title="Delete"><FaTrash size={12} /></button>
+                                                </>
+                                            )}
+                                            <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!selectedCategory} onClick={() => openAddModal('subcategory')}>
+                                                {t('sell_item.add_subcategory', '+ Add Subcategory')}
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!selectedCategory} onClick={() => openAddModal('subcategory')}>
+                                            {t('sell_item.add_subcategory', '+ Add Subcategory')}
+                                        </button>
+                                    )}
                                 </div>
                                 <CustomSelect
                                     placeholder={t('sell_item.select_subcategory')}
@@ -615,23 +694,38 @@ export default function SellItem() {
                             </div>
 
                             {/* Item Type (Sub-subcategory) */}
-                            <div className="si-field">
+                            <div className="si-field" id="field-itemType">
                                 <div className="si-label-row d-flex justify-content-between">
                                     <label className="si-label">{t('sell_item.item_type')}</label>
-                                    <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!selectedSubcategory} onClick={() => openAddModal('itemtype')}>
-                                        {t('sell_item.add_item_type', '+ Add Item Type')}
-                                    </button>
+                                    {user?.role === 'admin' ? (
+                                        <div className="d-flex align-items-center gap-2">
+                                            {selectedItemType && (
+                                                <>
+                                                    <button type="button" className="btn btn-sm btn-light py-0 px-2 text-primary border" onClick={() => openAddModal('itemtype', 'edit')} title="Edit"><FaPen size={12} /></button>
+                                                    <button type="button" className="btn btn-sm btn-light py-0 px-2 text-danger border" onClick={() => handleDeleteOption('itemtype')} title="Delete"><FaTrash size={12} /></button>
+                                                </>
+                                            )}
+                                            <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!selectedSubcategory} onClick={() => openAddModal('itemtype')}>
+                                                {t('sell_item.add_item_type', '+ Add Item Type')}
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!selectedSubcategory} onClick={() => openAddModal('itemtype')}>
+                                            {t('sell_item.add_item_type', '+ Add Item Type')}
+                                        </button>
+                                    )}
                                 </div>
                                 <CustomSelect
                                     placeholder={t('sell_item.select_item_type')}
                                     options={formatOptions(itemTypes)}
                                     value={selectedItemType}
-                                    onChange={setSelectedItemType}
+                                    onChange={(val) => { setSelectedItemType(val); if(validationErrors.itemType) setValidationErrors(prev => ({...prev, itemType: false})); }}
                                     disabled={!selectedSubcategory}
                                 />
+                                {validationErrors.itemType && <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{validationErrors.itemType}</p>}
                             </div>
 
-                            <div className="si-field">
+                            <div className="si-field" id="field-brand">
                                 <label className="si-label">{t('sell_item.brand')}</label>
                                 <input 
                                     type="text" 
@@ -640,9 +734,7 @@ export default function SellItem() {
                                     value={brand} 
                                     onChange={e => { setBrand(e.target.value); if (validationErrors.brand) setValidationErrors(prev => ({ ...prev, brand: false })); }} 
                                 />
-                                {brand && !validateTextField(brand) && (
-                                    <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{getTextFieldError('Brand')}</p>
-                                )}
+                                {validationErrors.brand && <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{validationErrors.brand}</p>}
                             </div>
 
                             <div className="si-field">
@@ -662,49 +754,39 @@ export default function SellItem() {
                                 />
                             </div>
 
-                            <div className="si-field">
+                            <div className="si-field" id="field-color">
                                 <label className="si-label">{t('sell_item.color')}</label>
-                                <CustomSelect
-                                    placeholder={t('sell_item.select_color')}
+                                <CustomSelect 
                                     options={[
-                                        { value: 'Black', label: 'Black' },
-                                        { value: 'White', label: 'White' },
-                                        { value: 'Grey', label: 'Grey' },
-                                        { value: 'Cream', label: 'Cream' },
-                                        { value: 'Beige', label: 'Beige' },
-                                        { value: 'Red', label: 'Red' },
-                                        { value: 'Blue', label: 'Blue' },
-                                        { value: 'Green', label: 'Green' },
-                                        { value: 'Yellow', label: 'Yellow' },
-                                        { value: 'Purple', label: 'Purple' },
-                                        { value: 'Pink', label: 'Pink' },
-                                        { value: 'Orange', label: 'Orange' },
-                                        { value: 'Brown', label: 'Brown' },
-                                        { value: 'Silver', label: 'Silver' },
-                                        { value: 'Gold', label: 'Gold' },
-                                        { value: 'Multi', label: 'Multi-colored' },
-                                    ]}
-                                    value={color}
-                                    onChange={setColor}
+                                        { value: 'Black', label: 'Black' }, { value: 'White', label: 'White' },
+                                        { value: 'Red', label: 'Red' }, { value: 'Blue', label: 'Blue' },
+                                        { value: 'Green', label: 'Green' }, { value: 'Yellow', label: 'Yellow' },
+                                        { value: 'Purple', label: 'Purple' }, { value: 'Pink', label: 'Pink' },
+                                        { value: 'Orange', label: 'Orange' }, { value: 'Brown', label: 'Brown' },
+                                        { value: 'Grey', label: 'Grey' }, { value: 'Beige', label: 'Beige' },
+                                        { value: 'Multi', label: 'Multi-color' }
+                                    ]} 
+                                    value={color} 
+                                    onChange={(val) => { setColor(val); if(validationErrors.color) setValidationErrors(prev => ({...prev, color: false})); }} 
                                     searchable={true}
                                 />
+                                {validationErrors.color && <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{validationErrors.color}</p>}
                             </div>
 
-                            <div className="si-field">
+                            <div className="si-field" id="field-condition" style={{ flex: 1 }}>
                                 <label className="si-label">{t('sell_item.condition')}</label>
-                                <CustomSelect
-                                    placeholder={t('sell_item.select_condition')}
+                                <CustomSelect 
                                     options={[
                                         { value: 'New', label: 'New' },
                                         { value: 'Very Good', label: 'Very Good' },
                                         { value: 'Good', label: 'Good' },
                                         { value: 'Normal', label: 'Normal' },
                                         { value: 'Bad', label: 'Bad' },
-                                        { value: 'Very Bad', label: 'Very Bad' },
-                                    ]}
-                                    value={condition}
-                                    onChange={setCondition}
+                                    ]} 
+                                    value={condition} 
+                                    onChange={(val) => { setCondition(val); if(validationErrors.condition) setValidationErrors(prev => ({...prev, condition: false})); }} 
                                 />
+                                {validationErrors.condition && <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{validationErrors.condition}</p>}
                             </div>
                         </div>
                     </div>
@@ -712,12 +794,13 @@ export default function SellItem() {
                     {/* Pricing */}
                     <div className="si-card">
                         <h2 className="si-section-title si-section-title-mb">{t('sell_item.pricing')}</h2>
-                        <div className="si-field" style={{ maxWidth: '240px' }}>
+                        <div className="si-field" id="field-price" style={{ maxWidth: '240px' }}>
                             <label className="si-label">{t('sell_item.price_label', { currency: currentCurrency ? currentCurrency.symbol : '€' })}</label>
                             <div className="si-price-input">
                                 <span className="si-currency">{currentCurrency ? currentCurrency.symbol : '€'}</span>
-                                <input type="number" className="si-input si-input-price" placeholder="0.00" min="1" step="0.01" value={price} onChange={e => setPrice(e.target.value)} required />
+                                <input type="number" className="si-input si-input-price" placeholder="0.00" min="1" step="0.01" value={price} onChange={e => { setPrice(e.target.value); if(validationErrors.price) setValidationErrors(prev => ({...prev, price: false})); }} required />
                             </div>
+                            {validationErrors.price && <p className="si-error-text" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px' }}>{validationErrors.price}</p>}
                             {commissionRate > 0 && (
                                 <div className="si-commission-info">
                                     <p className="si-commission-note">{t('sell_item.commission_note')}</p>
@@ -817,38 +900,38 @@ export default function SellItem() {
                     {/* SEO Section */}
                     <div className="si-card">
                         <div className="si-card-header">
-                            <h2 className="si-section-title">SEO Optimization <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>(Optional)</span></h2>
-                            <span className="si-section-hint">Improve how your item appears in search results.</span>
+                            <h2 className="si-section-title">{t('sell.seo_opt', 'SEO Optimization')} <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>{t('sell.optional', '(Optional)')}</span></h2>
+                            <span className="si-section-hint">{t('sell.seo_hint', 'Improve how your item appears in search results.')}</span>
                         </div>
 
                         <div className="si-field">
-                            <label className="si-label">SEO Title <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>(Optional)</span></label>
+                            <label className="si-label">{t('sell.seo_title', 'SEO Title')} <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>{t('sell.optional', '(Optional)')}</span></label>
                             <input 
                                 type="text" 
                                 className="si-input" 
-                                placeholder="Targeted title for search engines" 
+                                placeholder={t('sell.seo_title_ph', 'Targeted title for search engines')} 
                                 value={seoTitle} 
                                 onChange={e => setSeoTitle(e.target.value)} 
                             />
                         </div>
 
                         <div className="si-field">
-                            <label className="si-label">SEO Description <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>(Optional)</span></label>
+                            <label className="si-label">{t('sell.seo_desc', 'SEO Description')} <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>{t('sell.optional', '(Optional)')}</span></label>
                             <textarea 
                                 className="si-textarea" 
                                 rows={3} 
-                                placeholder="Brief summary for search engine snippets" 
+                                placeholder={t('sell.seo_desc_ph', 'Brief summary for search engine snippets')} 
                                 value={seoDescription} 
                                 onChange={e => setSeoDescription(e.target.value)} 
                             />
                         </div>
 
                         <div className="si-field si-field-last">
-                            <label className="si-label">SEO Keywords <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>(Optional)</span></label>
+                            <label className="si-label">{t('sell.seo_keywords', 'SEO Keywords')} <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>{t('sell.optional', '(Optional)')}</span></label>
                             <input 
                                 type="text" 
                                 className="si-input" 
-                                placeholder="e.g. vintage, denim, blue jacket (separate with commas)" 
+                                placeholder={t('sell.seo_kw_ph', 'e.g. vintage, denim, blue jacket (separate with commas)')} 
                                 value={seoKeywords} 
                                 onChange={e => setSeoKeywords(e.target.value)} 
                             />
@@ -862,7 +945,7 @@ export default function SellItem() {
                 </form>
 
                 <div className="si-footer-note">
-                    <p>{t('sell_item.agree_terms')}<Link href="/terms">{t('sell_item.terms_of_service')}</Link>.</p>
+                    <p>{t('sell_item.agree_terms')}<Link href="/pages/terms-of-service">{t('sell_item.terms_of_service')}</Link>.</p>
                     <div className="si-footer-links">
                         <Link href="/help">{t('sell_item.help_center')}</Link>
                         <Link href="/safety">{t('sell_item.safety')}</Link>
@@ -873,9 +956,9 @@ export default function SellItem() {
 
             {/* Add Custom Category/Subcategory Modal */}
             <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>
-                <Modal.Header closeButton>
+                <Modal.Header closeButton className="gap-3">
                     <Modal.Title>
-                        {addModalType === 'category' ? 'Add New Category' : addModalType === 'subcategory' ? 'Add New Subcategory' : 'Add New Item Type'}
+                        {addModalMode === 'edit' ? 'Edit' : 'Add New'} {addModalType === 'category' ? 'Category' : addModalType === 'subcategory' ? 'Subcategory' : 'Item Type'}
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
@@ -896,7 +979,7 @@ export default function SellItem() {
                         Cancel
                     </Button>
                     <Button variant="primary" onClick={handleAddModalSubmit}>
-                        Add
+                        {addModalMode === 'edit' ? 'Save' : 'Add'}
                     </Button>
                 </Modal.Footer>
             </Modal>

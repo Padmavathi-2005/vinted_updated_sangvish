@@ -1099,3 +1099,160 @@
     color: #1e293b;
     font-weight: 700;
 }
+
+/* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
+.pd-rich-system-btn.primary { position: relative; }
+.pd-rich-system-btn.primary::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+
+/* %%% Request Banner %%% */
+.pd-msg-request-bar {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.pd-msg-request-text {
+    font-size: 0.95rem;
+    color: #334155;
+}
+
+.pd-msg-action-btns {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    justify-content: center;
+}
+
+.pd-msg-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+    min-width: 120px;
+}
+
+.pd-msg-btn.accept {
+    background: #0ea5e9;
+    color: white;
+}
+
+.pd-msg-btn.accept:hover {
+    background: #0284c7;
+    transform: translateY(-1px);
+}
+
+.pd-msg-btn.reject {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.pd-msg-btn.reject:hover {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+
+/* %%% Rejected & Blocked Banners %%% */
+.pd-msg-rejected-banner {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    margin: 16px 20px;
+    border-radius: 12px;
+    background: #fff1f2;
+    border: 1px solid #ffe4e6;
+    align-items: flex-start;
+}
+
+.pd-msg-rejected-banner.initiator {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+.pd-rejected-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ffe4e6;
+    color: #e11d48;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.pd-msg-rejected-banner.initiator .pd-rejected-icon {
+    background: #e2e8f0;
+    color: #64748b;
+}
+
+.pd-rejected-body {
+    flex: 1;
+}
+
+.pd-rejected-title {
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 4px 0;
+}
+
+.pd-rejected-sub {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.pd-rejected-accept-btn {
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #1e293b;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.pd-rejected-accept-btn:hover {
+    background: #f1f5f9;
+    color: #0ea5e9;
+    border-color: #cbd5e1;
+}
+
+.pd-msg-blocked-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px;
+    margin: 16px 20px;
+    background: #fef2f2;
+    color: #ef4444;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: 1px solid #fee2e2;
+}
+

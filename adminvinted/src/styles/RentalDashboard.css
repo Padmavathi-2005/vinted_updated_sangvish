@@ -122,7 +122,7 @@
 }
 
 .bg-r-commission {
-    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 85%, black) 100%);
     width: 100%;
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import axios from '@/utils/axios';
 import AuthContext from '@/context/AuthContext';
 
 const CartContext = createContext();
@@ -8,51 +9,128 @@ const CartContext = createContext();
 export const CartProvider = ({ children }) => {
     const { user } = useContext(AuthContext);
     const [cartItems, setCartItems] = useState([]);
-    
+    const [isInitialized, setIsInitialized] = useState(false);
+
     const cartKey = user ? `vinted_cart_${user._id || user.id}` : 'vinted_cart_guest';
-    const prevCartKey = useRef(cartKey);
 
     useEffect(() => {
-        let initialItems = [];
-        try {
-            const stored = localStorage.getItem(cartKey);
-            if (stored) {
-                initialItems = JSON.parse(stored);
-            } else if (user) {
-                const guestStored = localStorage.getItem('vinted_cart_guest');
-                if (guestStored) {
-                    initialItems = JSON.parse(guestStored);
-                    localStorage.removeItem('vinted_cart_guest');
+        const initCart = async () => {
+            let localItems = [];
+            try {
+                const stored = localStorage.getItem(cartKey);
+                if (stored) {
+                    localItems = JSON.parse(stored);
+                } else if (user) {
+                    const guestStored = localStorage.getItem('vinted_cart_guest');
+                    if (guestStored) {
+                        localItems = JSON.parse(guestStored);
+                        localStorage.removeItem('vinted_cart_guest');
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to parse cart items:', e);
+            }
+
+            if (user) {
+                try {
+                    // If we had guest items, merge them
+                    const config = { headers: { Authorization: `Bearer ${user.token}` } };
+                    let serverItems = [];
+                    if (localItems.length > 0) {
+                        const itemIds = localItems.map(i => i._id);
+                        const res = await axios.post('/api/cart/merge', { itemIds }, config);
+                        serverItems = res.data;
+                    } else {
+                        const res = await axios.get('/api/cart', config);
+                        serverItems = res.data;
+                    }
+                    
+                    // Add selected property to server items, except for sold items
+                    const formattedItems = serverItems.map(item => {
+                        const isSold = item.is_sold || item.status === 'sold' || item.is_ordered;
+                        return { ...item, selected: !isSold };
+                    });
+                    setCartItems(formattedItems);
+                    localStorage.setItem(cartKey, JSON.stringify(formattedItems));
+                } catch (err) {
+                    console.error('Failed to fetch/merge server cart:', err);
+                    setCartItems(localItems);
+                }
+            } else {
+                setCartItems(localItems);
+            }
+            setIsInitialized(true);
+        };
+
+        initCart();
+    }, [user?._id, user?.token, cartKey]);
+
+    // Persist on every change to localStorage as fallback/cache
+    useEffect(() => {
+        if (isInitialized) {
+            localStorage.setItem(cartKey, JSON.stringify(cartItems));
+        }
+    }, [cartItems, cartKey, isInitialized]);
+
+    // Sync across tabs
+    useEffect(() => {
+        const handleStorage = (e) => {
+            if (e.key === cartKey) {
+                try {
+                    const newItems = JSON.parse(e.newValue);
+                    if (newItems) {
+                        setCartItems(newItems);
+                    } else {
+                        setCartItems([]);
+                    }
+                } catch (err) {
+                    console.error('Failed to parse cart from storage event:', err);
                 }
             }
-        } catch (e) {
-            console.error('Failed to parse cart items:', e);
-        }
-        setCartItems(initialItems);
-    }, [cartKey, user]);
-
-    // Persist on every change
-    useEffect(() => {
-        if (prevCartKey.current === cartKey) {
-            if (cartItems.length > 0 || localStorage.getItem(cartKey)) {
-                localStorage.setItem(cartKey, JSON.stringify(cartItems));
-            }
-        }
-        prevCartKey.current = cartKey;
-    }, [cartItems, cartKey]);
+        };
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
+    }, [cartKey]);
 
     const isInCart = (itemId) => cartItems.some(i => i._id === itemId);
 
-    const addToCart = (item) => {
+    const addToCart = async (item) => {
         if (!isInCart(item._id)) {
             const isSold = item.is_sold || item.status === 'sold' || item.is_ordered;
             if (isSold) return;
-            setCartItems(prev => [...prev, { ...item, selected: true }]);
+
+            setCartItems(prev => {
+                const newItems = [...prev, { ...item, selected: true }];
+                localStorage.setItem(cartKey, JSON.stringify(newItems));
+                return newItems;
+            });
+
+            if (user) {
+                try {
+                    const config = { headers: { Authorization: `Bearer ${user.token}` } };
+                    await axios.post('/api/cart/add', { itemId: item._id }, config);
+                } catch (err) {
+                    console.error('Failed to add to server cart:', err);
+                }
+            }
         }
     };
 
-    const removeFromCart = (itemId) => {
-        setCartItems(prev => prev.filter(i => i._id !== itemId));
+    const removeFromCart = async (itemId) => {
+        setCartItems(prev => {
+            const newItems = prev.filter(i => i._id !== itemId);
+            localStorage.setItem(cartKey, JSON.stringify(newItems));
+            return newItems;
+        });
+
+        if (user) {
+            try {
+                const config = { headers: { Authorization: `Bearer ${user.token}` } };
+                await axios.post('/api/cart/remove', { itemId }, config);
+            } catch (err) {
+                console.error('Failed to remove from server cart:', err);
+            }
+        }
     };
 
     const toggleSelect = (itemId) => {
@@ -61,12 +139,27 @@ export const CartProvider = ({ children }) => {
         );
     };
 
-    const selectAll = () => setCartItems(prev => prev.map(i => ({ ...i, selected: true })));
+    const selectAll = () => setCartItems(prev => prev.map(i => {
+        const isSold = i.is_sold || i.status === 'sold' || i.is_ordered;
+        return { ...i, selected: !isSold };
+    }));
     const deselectAll = () => setCartItems(prev => prev.map(i => ({ ...i, selected: false })));
 
     const clearCart = () => setCartItems([]);
 
-    const removeSelected = () => setCartItems(prev => prev.filter(i => !i.selected));
+    const removeSelected = () => {
+        const selectedIds = cartItems.filter(i => i.selected).map(i => i._id);
+        setCartItems(prev => prev.filter(i => !i.selected));
+
+        if (user) {
+            try {
+                const config = { headers: { Authorization: `Bearer ${user.token}` } };
+                axios.post('/api/cart/remove', { itemIds: selectedIds }, config);
+            } catch (err) {
+                console.error('Failed to remove from server cart:', err);
+            }
+        }
+    };
 
     const selectedItems = cartItems.filter(i => i.selected);
     const cartCount = cartItems.length;

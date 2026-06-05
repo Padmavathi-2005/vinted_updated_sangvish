@@ -461,9 +461,12 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
             const res = await axios.put(`/api/items/${item._id}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            onUpdate(res.data);
+            onUpdate(res.data, false);
             setSuccess('Item updated successfully!');
-            setTimeout(() => setSuccess(''), 3000);
+            setTimeout(() => {
+                setSuccess('');
+                onClose();
+            }, 1500);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to update item');
         } finally {
@@ -480,7 +483,7 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
         setDiscountLoading(true);
         try {
             const res = await axios.put(`/api/items/${item._id}/discount`, { discounted_price: discountPrice });
-            onUpdate(res.data);
+            onUpdate(res.data, false);
             setPrice(res.data.price);
             setOriginalPrice(res.data.original_price);
             setDiscountPrice('');
@@ -493,7 +496,7 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
         setDiscountLoading(true);
         try {
             const res = await axios.delete(`/api/items/${item._id}/discount`);
-            onUpdate(res.data);
+            onUpdate(res.data, false);
             setPrice(res.data.price);
             setOriginalPrice(res.data.original_price);
             setSuccess('Discount removed.');
@@ -818,36 +821,36 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
 
                         {/* SEO Section */}
                         <div className="eim-form-card mb-4">
-                            <h4 className="eim-form-subtitle mb-3">SEO Optimization <span className="text-muted small fw-normal">(Optional)</span></h4>
+                            <h4 className="eim-form-subtitle mb-3">{t('sell.seo_opt', 'SEO Optimization')} <span className="text-muted small fw-normal">{t('sell.optional', '(Optional)')}</span></h4>
                             
                             <div className="si-field mb-3">
-                                <label className="si-label">SEO Title <span className="text-muted small fw-normal">(Optional)</span></label>
+                                <label className="si-label">{t('sell.seo_title', 'SEO Title')} <span className="text-muted small fw-normal">{t('sell.optional', '(Optional)')}</span></label>
                                 <input 
                                     type="text" 
                                     className="si-input" 
-                                    placeholder="Targeted title for search engines" 
+                                    placeholder={t('sell.seo_title_ph', 'Targeted title for search engines')} 
                                     value={seoTitle} 
                                     onChange={e => setSeoTitle(e.target.value)} 
                                 />
                             </div>
 
                             <div className="si-field mb-3">
-                                <label className="si-label">SEO Description <span className="text-muted small fw-normal">(Optional)</span></label>
+                                <label className="si-label">{t('sell.seo_desc', 'SEO Description')} <span className="text-muted small fw-normal">{t('sell.optional', '(Optional)')}</span></label>
                                 <textarea 
                                     className="si-textarea" 
                                     rows={3} 
-                                    placeholder="Brief summary for search engine snippets" 
+                                    placeholder={t('sell.seo_desc_ph', 'Brief summary for search engine snippets')} 
                                     value={seoDescription} 
                                     onChange={e => setSeoDescription(e.target.value)} 
                                 />
                             </div>
 
                             <div className="si-field">
-                                <label className="si-label">SEO Keywords <span className="text-muted small fw-normal">(Optional)</span></label>
+                                <label className="si-label">{t('sell.seo_keywords', 'SEO Keywords')} <span className="text-muted small fw-normal">{t('sell.optional', '(Optional)')}</span></label>
                                 <input 
                                     type="text" 
                                     className="si-input" 
-                                    placeholder="e.g. vintage, denim, blue jacket (separate with commas)" 
+                                    placeholder={t('sell.seo_kw_ph', 'e.g. vintage, denim, blue jacket (separate with commas)')} 
                                     value={seoKeywords} 
                                     onChange={e => setSeoKeywords(e.target.value)} 
                                 />
@@ -890,6 +893,12 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
                                                     max="99"
                                                     value={discountPercent} 
                                                     onChange={e => handleDiscountPercentChange(e.target.value)} 
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            if (discountPercent) handleApplyDiscount();
+                                                        }
+                                                    }}
                                                     style={{ height: '56px', fontSize: '1.25rem' }}
                                                 />
                                                 <span className="input-group-text bg-white border-0 text-muted fw-bold px-3" style={{ fontSize: '1.1rem' }}>%</span>
@@ -912,15 +921,12 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
 
                                     {discountPercent > 0 && Number(discountPrice) < price && (
                                         <div className="eim-discount-preview animate-zoom-in p-3 rounded-4" style={{ background: '#f0f9ff', border: '1px solid #bae6fd' }}>
-                                            <div className="d-flex justify-content-between align-items-center mb-2">
-                                                <span className="text-primary fw-bold small">Preview:</span>
-                                                <span className="badge-off" style={{ background: '#0ea5e9' }}>-{discountPercent}% OFF</span>
-                                            </div>
-                                            <div className="d-flex align-items-baseline gap-2">
-                                                <span className="text-muted text-decoration-line-through small">{formatPrice(price)}</span>
-                                                <FaChevronRight size={10} className="text-muted" />
-                                                <span className="h4 m-0 fw-bold text-dark">{formatPrice(discountPrice)}</span>
-                                            </div>
+                                            <span className="text-primary fw-bold small">Preview:</span>
+                                            <span className="badge-off" style={{ background: '#0ea5e9' }}>-{discountPercent}% OFF</span>
+                                            
+                                            <span className="text-muted text-decoration-line-through small ms-2">{formatPrice(price)}</span>
+                                            <FaChevronRight size={10} className="text-muted" />
+                                            <span className="h5 m-0 fw-bold text-dark">{formatPrice(discountPrice)}</span>
                                         </div>
                                     )}
                                 </div>

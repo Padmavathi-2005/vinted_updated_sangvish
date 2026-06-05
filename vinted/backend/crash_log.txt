@@ -1,0 +1,22 @@
+[dotenv@17.3.1] injecting env (9) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+Connecting to MongoDB (Attempt 1/5)...
+Targeting Database Host: vinted.ek5p4it.mongodb.net
+✅ MongoDB Connected: ac-ktxztrm-shard-00-01.ek5p4it.mongodb.net
+--- Environment Check ---
+PORT from env: 5004
+NODE_ENV: development
+JWT_SECRET loaded: YES
+RECAPTCHA_SITE_KEY loaded: NO
+RECAPTCHA_ENABLED: undefined
+-------------------------
+✅ Discount Reminder Job scheduled (daily 9AM UTC)
+[1m[32m
+🚀 Unified Vinted Server started on port 5004[39m[22m
+[36m🔗 Main API: http://localhost:5004/api[39m
+[36m🔗 Admin API: http://localhost:5004/api/admin[39m
+[90m---------------------------------[39m
+User connected: VTFCKgDel9ElsXj8AAAB
+User joined personal room: 6a101a0071d0f8f572090d0b
+Admin Protect: Admin not found in DB for ID 64f8a9123456789012345678
+Admin Protect Error: Not authorized as an admin, account no longer exists
+User joined personal room: 6a101a0071d0f8f572090d0b

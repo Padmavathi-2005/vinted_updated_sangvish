@@ -6,6 +6,7 @@
     background: #f8fafc;
     font-family: var(--font-family);
     padding: 32px 0 80px;
+    overflow-x: hidden;
 }
 
 /* ─── Loading / Error ─── */
@@ -701,6 +702,11 @@
 
     .sp-sidebar {
         position: static;
+        min-width: 0;
+    }
+
+    .sp-main {
+        min-width: 0;
     }
 
     .sp-avatar-section {
@@ -714,9 +720,14 @@
 
     .sp-avatar-wrap {
         margin: 0;
-        width: 72px;
-        height: 72px;
+        width: 84px;
+        height: 84px;
         flex-shrink: 0;
+    }
+    
+    .sp-seller-info {
+        flex: 1;
+        min-width: 0;
     }
 
     .sp-meta-row,
@@ -728,6 +739,17 @@
         flex-direction: row;
         overflow-x: auto;
         padding: 8px;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+        position: sticky;
+        top: 60px; /* Adjust based on mobile header height */
+        z-index: 100;
+        background: #f8fafc;
+        margin-top: 10px;
+    }
+
+    .sp-nav::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
     }
 
     .sp-nav-item {
@@ -752,10 +774,71 @@
         gap: 16px;
     }
 
+    .sp-avatar-section {
+        flex-direction: column;
+        text-align: center;
+        gap: 16px;
+        padding: 24px 16px;
+    }
+
+    .sp-avatar-wrap {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
+    }
+
+    .sp-meta-row,
+    .sp-stars {
+        justify-content: center;
+    }
+
+    .sp-stats-box {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .sp-stat-row {
+        flex-direction: column;
+        border-bottom: none;
+        padding: 0;
+        gap: 4px;
+        flex: 1;
+        min-width: 30%;
+        text-align: center;
+    }
+
+    .sp-nav {
+        flex-direction: row;
+        width: 100%;
+        box-sizing: border-box;
+        justify-content: space-between;
+        gap: 6px;
+    }
+
+    .sp-nav-item {
+        flex: 1;
+        justify-content: center;
+        padding: 8px 4px;
+        font-size: 0.8rem;
+        flex-shrink: 1;
+        white-space: nowrap;
+    }
+
+    .sp-nav-msg {
+        margin-left: 0;
+    }
+
     .sp-section {
         padding: 18px;
     }
 
+    .sp-section-title {
+        font-size: 1.05rem;
+    }
 
     .sp-rating-summary {
         flex-direction: column;

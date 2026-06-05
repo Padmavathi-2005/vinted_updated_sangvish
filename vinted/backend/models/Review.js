@@ -39,4 +39,7 @@ const reviewSchema = mongoose.Schema(
     }
 );
 
+// Compound index: one review per user per order
+reviewSchema.index({ order_id: 1, reviewer_id: 1 }, { unique: true });
+
 export default mongoose.model('Review', reviewSchema);

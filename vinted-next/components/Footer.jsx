@@ -189,11 +189,12 @@ const Footer = () => {
                                 )}
                             </Link>
                             <p className="footer-tagline">
-                                {settings.footer_tagline?.[langCode] || settings.footer_tagline?.['en'] || (typeof settings.footer_tagline === 'string' ? settings.footer_tagline : t('footer.tagline', 'Your trusted destination for pre-loved fashion.'))}
+                                {safeString(settings.footer_tagline, t('footer.tagline', 'Your trusted destination for pre-loved fashion.'))}
                             </p>
                             <div className="footer-contact-info mt-3 small text-muted">
                                 {settings.support_email && <div className="mb-1"><FaIcons.FaEnvelope className="me-2" />{settings.support_email}</div>}
                                 {settings.support_phone && <div className="mb-1"><FaIcons.FaPhoneAlt className="me-2" />{settings.support_phone}</div>}
+                                {settings.support_address && <div className="mb-1"><FaIcons.FaMapMarkerAlt className="me-2" />{settings.support_address}</div>}
                             </div>
                             <div className="footer-socials mt-3">
                                 {settings.social_links && settings.social_links.length > 0 ? (
@@ -299,7 +300,7 @@ const Footer = () => {
 
                 <div className="footer-bottom">
                     <div className="copyright">
-                        {settings.footer_copyright?.[langCode] || settings.footer_copyright?.['en'] || (typeof settings.footer_copyright === 'string' ? settings.footer_copyright : t('footer.copyright', `© ${new Date().getFullYear()} Resale Inc. Crafted with passion for a better planet.`))}
+                        {safeString(settings.footer_copyright, t('footer.copyright', `© ${new Date().getFullYear()} Resale Inc. Crafted with passion for a better planet.`))}
                     </div>
 
                     <div className="bottom-links">

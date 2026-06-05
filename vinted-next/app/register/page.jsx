@@ -11,9 +11,11 @@ import AuthContext from '@/context/AuthContext';
 import useRecaptcha from '@/hooks/useRecaptcha';
 import { validateTextField, validateAlphaField, getAlphaError, getTextFieldError } from '@/utils/validation';
 import Meta from '@/components/common/Meta';
+import { useTranslation } from 'react-i18next';
 import '@/app/styles/Auth.css';
 
 export default function Register() {
+    const { t } = useTranslation();
     const { login } = useContext(AuthContext);
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({ 
@@ -67,12 +69,22 @@ export default function Register() {
 
     const onChange = (e) => {
         setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+        if (e.target.name === 'password') {
+            if (e.target.value.length > 0 && e.target.value.length < 6) {
+                setError('Password must be at least 6 characters');
+            } else if (error === 'Password must be at least 6 characters') {
+                setError('');
+            }
+        }
     };
 
     const handleSendOTP = async (e) => {
         e.preventDefault();
         if (!email || !username || !password) {
             return setError('Please fill all required fields');
+        }
+        if (password.length < 6) {
+            return setError('Password must be at least 6 characters');
         }
 
         if (!validateTextField(username)) {
@@ -150,10 +162,8 @@ export default function Register() {
                         </div>
                     )}
                     
-                    <h2 className="text-center">{step === 1 ? 'Create Account' : 'Verify Email'}</h2>
-                    <p className="subtitle text-center">
-                        {step === 1 ? 'Join our marketplace community today' : `We've sent a code to ${email}`}
-                    </p>
+                    <h2 className="text-center">{t('auth.signup_title', 'Create Account')}</h2>
+                    <p className="subtitle text-center">{t('auth.signup_subtitle', 'Join our community of fashion lovers today.')}</p>
 
                     {step === 1 && (socialSettings?.google_enabled || socialSettings?.facebook_enabled || socialSettings?.twitter_enabled || socialSettings?.apple_enabled) && (
                         <>
@@ -171,7 +181,7 @@ export default function Register() {
                                     <button type="button" className="social-btn" onClick={() => window.location.href = `${axios.defaults.baseURL}/api/auth/apple`}><FaApple className="text-dark" /> Apple</button>
                                 )}
                             </div>
-                            <div className="divider"><span>Or sign up with email</span></div>
+                            <div className="divider"><span>{t('auth.or_continue_with', 'Or continue with email')}</span></div>
                         </>
                     )}
 
@@ -181,7 +191,7 @@ export default function Register() {
                         {step === 1 ? (
                             <>
                                 <div className="auth-field">
-                                    <label className="auth-label">Display Name</label>
+                                    <label className="auth-label">{t('auth.display_name', 'Display Name (Username)')}</label>
                                     <div className="auth-input-wrapper">
                                         <span className="auth-icon"><FaUser /></span>
                                         <input
@@ -199,7 +209,7 @@ export default function Register() {
                                 <div className="row">
                                     <div className="col-md-6">
                                         <div className="auth-field">
-                                            <label className="auth-label">First Name</label>
+                                            <label className="auth-label">{t('auth.first_name', 'First Name')}</label>
                                             <div className="auth-input-wrapper">
                                                 <span className="auth-icon"><FaUser /></span>
                                                 <input
@@ -216,7 +226,7 @@ export default function Register() {
                                     </div>
                                     <div className="col-md-6">
                                         <div className="auth-field">
-                                            <label className="auth-label">Last Name</label>
+                                            <label className="auth-label">{t('auth.last_name', 'Last Name')}</label>
                                             <div className="auth-input-wrapper">
                                                 <span className="auth-icon"><FaUser /></span>
                                                 <input
@@ -234,7 +244,7 @@ export default function Register() {
                                 </div>
 
                                 <div className="auth-field">
-                                    <label className="auth-label">Email Address</label>
+                                    <label className="auth-label">{t('auth.email_address', 'Email Address')}</label>
                                     <div className="auth-input-wrapper">
                                         <span className="auth-icon"><FaEnvelope /></span>
                                         <input
@@ -250,7 +260,7 @@ export default function Register() {
                                 </div>
 
                                 <div className="auth-field">
-                                    <label className="auth-label">Password</label>
+                                    <label className="auth-label">{t('auth.password', 'Password')}</label>
                                     <div className="auth-input-wrapper">
                                         <span className="auth-icon"><FaLock /></span>
                                         <input
@@ -273,19 +283,17 @@ export default function Register() {
                                 </div>
 
                                 <div className="auth-terms">
-                                    By creating an account, you agree to our{' '}
-                                    <Link href="/terms">Terms of Service</Link> and{' '}
-                                    <Link href="/privacy">Privacy Policy</Link>.
+                                    {t('auth.terms_agree', 'By creating an account, you agree to our')} <Link href="/pages/terms-of-service">Terms of Service</Link> and <Link href="/pages/privacy-policy">Privacy Policy</Link>.
                                 </div>
 
                                 <button type="submit" className="btn-submit" disabled={loading}>
-                                    {loading ? 'Checking Email...' : 'Continue to Verify'}
+                                    {loading ? t('auth.checking_email', 'Checking Email...') : t('auth.continue_verify', 'Continue to Verify')}
                                 </button>
                             </>
                         ) : (
                             <>
                                 <div className="auth-field">
-                                    <label className="auth-label">Enter 6-Digit Code</label>
+                                    <label className="auth-label">{t('auth.enter_code', 'Enter 6-Digit Code')}</label>
                                     <div className="auth-input-wrapper">
                                         <span className="auth-icon"><FaKey /></span>
                                         <input
@@ -300,24 +308,24 @@ export default function Register() {
                                         />
                                     </div>
                                     <p className="mt-2" style={{fontSize: '13px', color: '#64748b'}}>
-                                        Check your inbox (and spam folder) for the verification code.
+                                        {t('auth.check_inbox', 'Check your inbox (and spam folder) for the verification code.')}
                                     </p>
                                 </div>
 
                                 <button type="submit" className="btn-submit" disabled={loading}>
-                                    {loading ? 'Verifying...' : 'Complete Registration'}
+                                    {loading ? t('auth.verifying', 'Verifying...') : t('auth.complete_registration', 'Complete Registration')}
                                 </button>
 
                                 <p className="text-center mt-3" style={{fontSize: '14px', color: '#64748b'}}>
-                                    Didn't receive it? <span onClick={handleSendOTP} style={{color: '#0ea5e9', cursor: 'pointer', fontWeight: '500'}}>Resend Code</span>
+                                    {t('auth.didnt_receive', "Didn't receive it?")} <span onClick={handleSendOTP} style={{color: '#0ea5e9', cursor: 'pointer', fontWeight: '500'}}>{t('auth.resend_code', 'Resend Code')}</span>
                                 </p>
                             </>
                         )}
                     </form>
 
                     <div className="auth-footer">
-                        <span>Already have an account? </span>
-                        <Link href="/login">Log in</Link>
+                        <span>{t('auth.have_account', 'Already have an account?')} </span>
+                        <Link href="/login">{t('auth.login_link', 'Log in')}</Link>
                     </div>
                 </div>
             </div>

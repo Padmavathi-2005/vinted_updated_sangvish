@@ -12,6 +12,7 @@ import { useLocalization } from '../context/LocalizationContext';
 import { useSettings } from '../context/SettingsContext';
 import { showToast, showConfirm } from '../utils/swal';
 import { safeString } from '../utils/constants';
+import { formatAdminDate } from '../utils/dateFormatter';
 
 const Orders = () => {
     const location = useLocation();
@@ -36,6 +37,7 @@ const Orders = () => {
     const [saving, setSaving] = useState(false);
 
     const { formatPrice, t } = useLocalization();
+    const { globalSettings } = useSettings();
 
     useEffect(() => {
         fetchOrders();
@@ -88,8 +90,8 @@ const Orders = () => {
                 t.total_amount || 0,
                 t.payment_status?.toUpperCase() || '',
                 t.order_status?.toUpperCase() || '',
-                new Date(t.created_at).toLocaleDateString()
-            ].map(v => `"${v}"`).join(','))
+                (t.created_at || t.createdAt) ? formatAdminDate(t.created_at || t.createdAt, globalSettings) : ''
+            ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
         ];
 
         const csvContent = csvRows.join('\n');
@@ -111,7 +113,7 @@ const Orders = () => {
         doc.text('Orders Report', 14, 22);
         doc.setFontSize(11);
         doc.setTextColor(100);
-        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+        doc.text(`Generated on: ${formatAdminDate(new Date(), globalSettings, { hour: '2-digit', minute: '2-digit' })}`, 14, 30);
 
         const tableColumn = ['Order No', 'Item Title', 'Buyer', 'Seller', 'Amount', 'Payment Status', 'Order Status', 'Date'];
         const tableRows = filteredOrders.map(t => [
@@ -122,7 +124,7 @@ const Orders = () => {
             formatPrice(t.total_amount || 0),
             t.payment_status?.toUpperCase() || '',
             t.order_status?.toUpperCase() || '',
-            new Date(t.created_at).toLocaleDateString()
+            t.created_at ? formatAdminDate(t.created_at, globalSettings) : ''
         ]);
 
         autoTable(doc, {
@@ -239,7 +241,7 @@ const Orders = () => {
                     'refunded': 'secondary',
                     'partially_refunded': 'info'
                 };
-                return <Badge bg={config[order.payment_status] || 'secondary'} className="text-capitalize">{t(`orders.status.${order.payment_status?.toLowerCase()}`)}</Badge>;
+                return <Badge bg={config[order.payment_status] || 'secondary'} className="text-capitalize">{t(`orders.status.${order.payment_status?.toLowerCase()}`, order.payment_status?.replace(/_/g, ' '))}</Badge>;
             }
         },
         {
@@ -263,7 +265,7 @@ const Orders = () => {
                 };
                 return (
                     <div className="d-flex flex-column gap-1">
-                        <Badge bg={config[order.order_status] || 'secondary'} className="text-capitalize">{t(`orders.status.${order.order_status?.toLowerCase()}`)}</Badge>
+                        <Badge bg={config[order.order_status] || 'secondary'} className="text-capitalize">{t(`orders.status.${order.order_status?.toLowerCase()}`, order.order_status?.replace(/_/g, ' '))}</Badge>
                         {order.tracking_id && <Badge bg="light" text="dark" className="border extra-small fw-normal">Trk: {order.tracking_id}</Badge>}
                     </div>
                 );
@@ -272,7 +274,7 @@ const Orders = () => {
         {
             header: t('orders.table.date'),
             accessor: 'created_at',
-            render: (order) => new Date(order.created_at).toLocaleDateString()
+            render: (order) => formatAdminDate(order.created_at, globalSettings)
         }
     ];
 
@@ -288,14 +290,14 @@ const Orders = () => {
                         <div className="d-flex gap-2">
                             <Dropdown>
                                 <Dropdown.Toggle variant="primary" id="dropdown-export" className="d-flex align-items-center gap-2">
-                                    <FaDownload /> {t('common.export')}
+                                    <FaDownload /> {t('common.export', 'Export')}
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu className="shadow border-0">
                                     <Dropdown.Item onClick={exportToCSV} className="d-flex align-items-center gap-2 py-2">
-                                        <FaFileCsv className="text-success" /> {t('common.export_csv')}
+                                        <FaFileCsv className="text-success" /> {t('common.export_csv', 'Export CSV')}
                                     </Dropdown.Item>
                                     <Dropdown.Item onClick={exportToPDF} className="d-flex align-items-center gap-2 py-2">
-                                        <FaFilePdf className="text-danger" /> {t('common.export_pdf')}
+                                        <FaFilePdf className="text-danger" /> {t('common.export_pdf', 'Export PDF')}
                                     </Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown>
@@ -350,9 +352,9 @@ const Orders = () => {
                 <Modal
                     show={showEditModal}
                     onHide={() => setShowEditModal(false)}
-                    title={`${t('orders.modal.edit_title')} ${selectedOrder?.order_number}`}
+                    title={`${t('orders.modal.edit_title', 'Edit Order')} ${selectedOrder?.order_number}`}
                     onSubmit={onEditSuccess}
-                    submitText={saving ? t('orders.modal.saving') : t('orders.modal.save')}
+                    submitText={saving ? t('orders.modal.saving', 'Saving...') : t('orders.modal.save', 'Save')}
                     disabled={saving}
                 >
                     {selectedOrder && (
@@ -361,41 +363,43 @@ const Orders = () => {
                             <div className="mb-4 p-3 rounded" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
                                 <div className="fw-bold mb-1">{safeString(selectedOrder.item_id?.title) || 'Unknown Item'}</div>
                                 <div className="text-muted small">
-                                    {t('orders.modal.order_summary')} #{selectedOrder.order_number} · {t('orders.table.buyer')}: <strong>{safeString(selectedOrder.buyer_id?.username) || '—'}</strong>
+                                    {t('orders.modal.order_summary', 'Order Summary')} #{selectedOrder.order_number} • {t('orders.table.buyer', 'Buyer')}: <strong>{safeString(selectedOrder.buyer_id?.username) || '—'}</strong>
                                 </div>
                             </div>
 
                             <Row>
                                 <Col md={6} className="mb-3">
                                     <Form.Group>
-                                        <Form.Label>{t('orders.modal.order_status')}</Form.Label>
+                                        <Form.Label>{t('orders.modal.order_status', 'Order Status')}</Form.Label>
                                         <Form.Select
                                             value={formData.order_status}
                                             onChange={(e) => setFormData({ ...formData, order_status: e.target.value })}
+                                            className="admin-rtl-select"
                                         >
-                                            <option value="pending">Pending</option>
-                                            <option value="confirmed">Confirmed</option>
+                                            <option value="pending">{t('orders.status.pending', 'Pending')}</option>
+                                            <option value="confirmed">{t('orders.status.confirmed', 'Confirmed')}</option>
                                             <option value="packed">Packed</option>
                                             <option value="shipped">Shipped</option>
-                                            <option value="out_for_delivery">Out for Delivery</option>
-                                            <option value="delivered">Delivered</option>
-                                            <option value="cancelled">Cancelled</option>
-                                            <option value="return_requested">Return Requested</option>
-                                            <option value="returned">Returned</option>
+                                            <option value="out_for_delivery">{t('orders.status.out_for_delivery', 'Out for Delivery')}</option>
+                                            <option value="delivered">{t('orders.status.delivered', 'Delivered')}</option>
+                                            <option value="cancelled">{t('orders.status.cancelled', 'Cancelled')}</option>
+                                            <option value="return_requested">{t('orders.status.return_requested', 'Return Requested')}</option>
+                                            <option value="returned">{t('orders.status.returned', 'Returned')}</option>
                                         </Form.Select>
                                     </Form.Group>
                                 </Col>
                                 <Col md={6} className="mb-3">
                                     <Form.Group>
-                                        <Form.Label>{t('orders.modal.payment_status')}</Form.Label>
+                                        <Form.Label>{t('orders.modal.payment_status', 'Payment Status')}</Form.Label>
                                         <Form.Select
                                             value={formData.payment_status}
                                             onChange={(e) => setFormData({ ...formData, payment_status: e.target.value })}
+                                            className="admin-rtl-select"
                                         >
-                                            <option value="pending">{t('orders.status.pending')}</option>
-                                            <option value="paid">{t('orders.status.paid')}</option>
-                                            <option value="failed">{t('orders.status.failed')}</option>
-                                            <option value="refunded">{t('orders.status.refunded')}</option>
+                                            <option value="pending">{t('orders.status.pending', 'Pending')}</option>
+                                            <option value="paid">{t('orders.status.paid', 'Paid')}</option>
+                                            <option value="failed">{t('orders.status.failed', 'Failed')}</option>
+                                            <option value="refunded">{t('orders.status.refunded', 'Refunded')}</option>
                                         </Form.Select>
                                     </Form.Group>
                                 </Col>
@@ -403,12 +407,13 @@ const Orders = () => {
                             <Row>
                                 <Col md={6} className="mb-3">
                                     <Form.Group>
-                                        <Form.Label>Courier Company</Form.Label>
+                                        <Form.Label>{t('orders.modal.courier_company', 'Courier Company')}</Form.Label>
                                         <Form.Select
                                             value={formData.shipping_company_id}
                                             onChange={(e) => setFormData({ ...formData, shipping_company_id: e.target.value })}
+                                            className="admin-rtl-select"
                                         >
-                                            <option value="">-- No Courier --</option>
+                                            <option value="">{t('orders.modal.no_courier', '-- No Courier --')}</option>
                                             {shippingCompanies.map(c => (
                                                 <option key={c._id} value={c._id}>{c.company_name}</option>
                                             ))}
@@ -417,10 +422,10 @@ const Orders = () => {
                                 </Col>
                                 <Col md={6} className="mb-3">
                                     <Form.Group>
-                                        <Form.Label>Tracking ID</Form.Label>
+                                        <Form.Label>{t('orders.modal.tracking_id', 'Tracking ID')}</Form.Label>
                                         <Form.Control
                                             type="text"
-                                            placeholder="Enter Tracking ID"
+                                            placeholder={t('orders.modal.tracking_placeholder', 'Enter Tracking ID')}
                                             value={formData.tracking_id}
                                             onChange={(e) => setFormData({ ...formData, tracking_id: e.target.value })}
                                         />

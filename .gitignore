@@ -13,3 +13,5 @@ build/
 **/database_store/
 **/debug_logs/
 *.json.bak
+*.zip
+**/*.zip

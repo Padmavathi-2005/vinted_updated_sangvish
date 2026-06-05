@@ -30,8 +30,8 @@ const createReport = asyncHandler(async (req, res) => {
         message,
     });
 
-    // Notify all active admins
-    const admins = await Admin.find({ is_active: true });
+    // Notify all admins (who are not explicitly inactive)
+    const admins = await Admin.find({ is_active: { $ne: false } });
     
     for (const admin of admins) {
         // Create Notification
@@ -41,7 +41,7 @@ const createReport = asyncHandler(async (req, res) => {
             title: `🚩 New Product Report: ${item.title}`,
             message: `User ${req.user.username} reported item "${item.title}" for: ${reason}.`,
             type: 'request',
-            link: `/product-reports`
+            link: `/reports`
         });
 
         // Send a Message (Conversation) to Admin

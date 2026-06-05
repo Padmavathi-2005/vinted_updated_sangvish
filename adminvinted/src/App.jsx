@@ -9,6 +9,7 @@ import Orders from './pages/Orders';
 import DynamicSettings from './pages/DynamicSettings';
 import UnifiedCategories from './pages/UnifiedCategories';
 import Languages from './pages/Languages';
+import LanguageTranslations from './pages/LanguageTranslations';
 import Currencies from './pages/Currencies';
 import Transactions from './pages/Transactions';
 import PaymentMethods from './pages/PaymentMethods';
@@ -55,6 +56,7 @@ function App() {
                     <Route path="/categories/subcategories" element={<UnifiedCategories />} />
                     <Route path="/categories/item-types" element={<UnifiedCategories />} />
                     <Route path="/settings/languages" element={<Languages />} />
+                    <Route path="/settings/languages/:id/translations" element={<LanguageTranslations />} />
                     <Route path="/settings/currencies" element={<Currencies />} />
                     <Route path="/settings/:type" element={<DynamicSettings />} />
                     <Route path="/frontend/content" element={<FrontendContent />} />

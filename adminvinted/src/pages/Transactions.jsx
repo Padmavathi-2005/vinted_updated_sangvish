@@ -8,6 +8,8 @@ import {
 import Table from '../components/Table';
 import axios from '../utils/axios';
 import { useLocalization } from '../context/LocalizationContext';
+import { useSettings } from '../context/SettingsContext';
+import { formatAdminDate } from '../utils/dateFormatter';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import '../styles/WalletPages.css';
@@ -23,7 +25,8 @@ const purposeLabel = (p = '') =>
 
 /* ── Component ───────────────────────────────────────────── */
 const Transactions = () => {
-    const { formatPrice } = useLocalization();
+    const { formatPrice, currency, availableCurrencies } = useLocalization();
+    const { globalSettings } = useSettings();
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -87,10 +90,10 @@ const Transactions = () => {
             render: (row) => (
                 <div style={{ whiteSpace: 'nowrap' }}>
                     <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#334155' }}>
-                        {new Date(row.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {formatAdminDate(row.created_at, globalSettings)}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                        {new Date(row.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                        {formatAdminDate(row.created_at, globalSettings, { year: undefined, month: undefined, day: undefined, hour: '2-digit', minute: '2-digit' })}
                     </div>
                 </div>
             )
@@ -153,7 +156,7 @@ const Transactions = () => {
         setExportOpen(false);
         const headers = ['Date', 'User', 'Email', 'Type', 'Amount', 'Purpose', 'Status'];
         const rows = filteredData.map(t => [
-            new Date(t.created_at).toLocaleDateString(),
+            formatAdminDate(t.created_at, globalSettings),
             t.user_id?.username || 'System',
             t.user_id?.email || '',
             t.type?.toUpperCase() || '',
@@ -174,6 +177,15 @@ const Transactions = () => {
     const exportToPDF = () => {
         if (!filteredData.length) return;
         setExportOpen(false);
+
+        // Helper to format amount without non-ASCII symbols (like Rupee symbol) for jsPDF
+        const formatPdfAmount = (amount) => {
+            const curr = availableCurrencies?.find(c => c.code === currency);
+            if (!curr) return `${amount} ${currency}`;
+            const converted = amount * curr.exchange_rate;
+            return `${converted.toFixed(curr.decimal_places)} ${currency}`;
+        };
+
         const doc = new jsPDF();
         doc.setFontSize(16); doc.setFont(undefined, 'bold');
         doc.text('Transactions Report', 14, 20);
@@ -182,10 +194,10 @@ const Transactions = () => {
         autoTable(doc, {
             head: [['Date', 'User', 'Type', 'Amount', 'Purpose', 'Status']],
             body: filteredData.map(t => [
-                new Date(t.created_at).toLocaleDateString(),
+                formatAdminDate(t.created_at, globalSettings),
                 t.user_id?.username || 'System',
                 t.type?.toUpperCase() || '',
-                `${t.type === 'credit' ? '+' : '−'}${formatPrice(t.amount)}`,
+                `${t.type === 'credit' ? '+' : '-'}${formatPdfAmount(t.amount)}`,
                 purposeLabel(t.purpose),
                 t.status?.toUpperCase() || ''
             ]),
@@ -204,7 +216,7 @@ const Transactions = () => {
                     <div className="wallet-user-avatar">{getInitials(row.user_id?.username)}</div>
                     <div>
                         <div className="wallet-user-name">{row.user_id?.username || 'System'}</div>
-                        <div className="wallet-user-email">{new Date(row.created_at).toLocaleDateString()}</div>
+                        <div className="wallet-user-email">{formatAdminDate(row.created_at, globalSettings)}</div>
                     </div>
                 </div>
                 <span className={row.type === 'credit' ? 'wallet-amount-credit' : 'wallet-amount-debit'} style={{ fontSize: '1.1rem' }}>

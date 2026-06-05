@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Button, Card, Form, InputGroup, Spinner, Row, Col } from 'react-bootstrap';
-import { FaPlus, FaSearch, FaTrash, FaEdit, FaGlobe } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaTrash, FaEdit, FaGlobe, FaLanguage } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
 import Toggle from '../components/Toggle';
@@ -9,6 +10,7 @@ import { useSettings } from '../context/SettingsContext';
 import { showToast, showConfirm } from '../utils/swal';
 
 const Languages = () => {
+    const navigate = useNavigate();
     const [languages, setLanguages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -171,6 +173,21 @@ const Languages = () => {
                     onChange={(checked) => handleStatusToggle(row, checked)}
                     label={row.is_active ? "Active" : "Inactive"}
                 />
+            )
+        },
+        {
+            header: 'Translations',
+            accessor: 'translate',
+            render: (row) => (
+                <Button 
+                    variant="outline-primary" 
+                    size="sm" 
+                    onClick={() => navigate(`/settings/languages/${row._id}/translations`)}
+                    className="fw-bold"
+                    style={{ fontSize: '11px' }}
+                >
+                    <FaLanguage className="me-1" size={14} /> TRANSLATE
+                </Button>
             )
         }
     ];

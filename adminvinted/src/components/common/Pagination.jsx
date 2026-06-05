@@ -1,8 +1,10 @@
 import React from 'react';
 import { FaChevronLeft, FaChevronRight, FaAngleDoubleLeft, FaAngleDoubleRight } from 'react-icons/fa';
+import { useLocalization } from '../../context/LocalizationContext';
 import './Pagination.css';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+    const { t } = useLocalization();
     if (totalPages <= 1) return null;
 
     const getPageNumbers = () => {
@@ -41,7 +43,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
                 className="admin-nav-item first" 
                 onClick={() => onPageChange(1)} 
                 disabled={currentPage === 1}
-                title="First Page"
+                title={t('table.first_page', 'First Page')}
             >
                 <FaAngleDoubleLeft size={10} />
             </button>
@@ -49,7 +51,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
                 className="admin-nav-item prev" 
                 onClick={() => onPageChange(currentPage - 1)} 
                 disabled={currentPage === 1}
-                title="Previous Page"
+                title={t('table.prev_page', 'Previous Page')}
             >
                 <FaChevronLeft size={10} />
             </button>
@@ -74,7 +76,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
                 className="admin-nav-item next" 
                 onClick={() => onPageChange(currentPage + 1)} 
                 disabled={currentPage === totalPages}
-                title="Next Page"
+                title={t('table.next_page', 'Next Page')}
             >
                 <FaChevronRight size={10} />
             </button>
@@ -82,7 +84,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
                 className="admin-nav-item last" 
                 onClick={() => onPageChange(totalPages)} 
                 disabled={currentPage === totalPages}
-                title="Last Page"
+                title={t('table.last_page', 'Last Page')}
             >
                 < FaAngleDoubleRight size={10} />
             </button>

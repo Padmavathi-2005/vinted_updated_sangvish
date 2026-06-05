@@ -483,3 +483,7 @@
 .nc-mobile-back-btn {
     display: none;
 }
+
+/* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
+.nc-goto-msg-btn { position: relative; }
+.nc-goto-msg-btn::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }

@@ -196,20 +196,22 @@ const SellerProfile = () => {
                                 />
                             )}
                         </div>
-                        <h2 className="sp-seller-name">{safeString(seller.name || seller.username)}</h2>
-                        <p className="sp-seller-email">{seller.email || ''}</p>
-                        {renderStars(seller.rating_avg, seller.rating_count)}
-                        <div className="sp-meta-row">
-                            <FaCalendarAlt className="sp-meta-icon" />
-                            <span>{t('seller_profile.member_since', 'Member since')} {memberYear}</span>
-                        </div>
-                        {seller.location && (
+                        <div className="sp-seller-info">
+                            <h2 className="sp-seller-name">{safeString(seller.name || seller.username)}</h2>
+                            <p className="sp-seller-email">{seller.email || ''}</p>
+                            {renderStars(seller.rating_avg, seller.rating_count)}
                             <div className="sp-meta-row">
-                                <FaMapMarkerAlt className="sp-meta-icon" />
-                                <span>{seller.location}</span>
+                                <FaCalendarAlt className="sp-meta-icon" />
+                                <span>{t('seller_profile.member_since', 'Member since')} {memberYear}</span>
                             </div>
-                        )}
-                        {seller.bio && <p className="sp-bio">{safeString(seller.bio)}</p>}
+                            {seller.location && (
+                                <div className="sp-meta-row">
+                                    <FaMapMarkerAlt className="sp-meta-icon" />
+                                    <span>{seller.location}</span>
+                                </div>
+                            )}
+                            {seller.bio && <p className="sp-bio">{safeString(seller.bio)}</p>}
+                        </div>
                     </div>
 
                     {/* Vertical Nav */}

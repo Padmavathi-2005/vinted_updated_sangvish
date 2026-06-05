@@ -16,8 +16,15 @@
       "active": "نشيط",
       "inactive": "غير نشط",
       "pending": "قيد الانتظار",
-      "blocked": "محظور"
-    }
+      "blocked": "محظور",
+      "available": "Available",
+      "sold": "Sold"
+    },
+    "refresh": "Refresh",
+    "export": "تصدير",
+    "export_csv": "تصدير CSV",
+    "export_pdf": "تصدير PDF",
+    "optional": "(اختياري)"
   },
   "dashboard": {
     "overview": "نظرة عامة على لوحة القيادة",
@@ -42,7 +49,9 @@
     "revenue": {
       "title": "ربح",
       "total_income": "إجمالي الدخل",
-      "total_sales": "إجمالي المبيعات"
+      "total_sales": "إجمالي المبيعات",
+      "today_income": "دخل اليوم",
+      "today_sales": "مبيعات اليوم"
     },
     "categories": {
       "title": "فئات",
@@ -76,32 +85,65 @@
       "name": "اسم",
       "seller": "بائع",
       "status": "حالة"
+    },
+    "content": {
+      "title": "المحتوى والعمليات",
+      "pending_withdrawals": "عمليات السحب المعلقة",
+      "pending_items": "العناصر المعلقة",
+      "total_categories": "إجمالي الفئات"
     }
   },
   "users": {
-    "title": "إدارة المستخدمين",
-    "subtitle": "مراجعة وإدارة كافة المستخدمين المسجلين",
+    "title": "المستخدمين",
+    "subtitle": "إدارة المستخدمين المسجلين",
     "add_new": "إضافة مستخدم",
-    "search_placeholder": "البحث حسب اسم المستخدم أو البريد الإلكتروني...",
-    "filter_all": "كافة المستخدمين",
-    "filter_today": "التسجيلات اليوم",
+    "search_placeholder": "البحث عن المستخدمين...",
+    "filter_all": "جميع المستخدمين",
+    "filter_today": "تسجيلات اليوم",
     "table": {
-      "user": "مستخدم",
-      "email": "بريد إلكتروني",
-      "balance": "توازن",
-      "status": "حالة",
-      "verified": "تم التحقق منه"
+      "user": "المستخدم",
+      "status": "الحالة",
+      "ratings": "التقييمات",
+      "network": "الشبكة",
+      "followers": "متابعون",
+      "following": "يتابع",
+      "joined": "تاريخ الانضمام",
+      "updated": "آخر تحديث"
     },
     "modal": {
-      "edit_title": "تحرير المستخدم",
+      "bio": "السيرة الذاتية",
+      "is_verified": "موثق",
+      "not_verified": "غير موثق",
       "add_title": "إضافة مستخدم جديد",
+      "edit_title": "تعديل ملف المستخدم",
+      "create_user": "إنشاء مستخدم",
+      "update_user": "تحديث المستخدم",
+      "upload_image": "رفع صورة",
+      "change_image": "تغيير الصورة",
+      "remove_image": "إزالة",
       "username": "اسم المستخدم",
+      "username_placeholder": "مثال: john_doe",
+      "first_name": "الاسم الأول",
+      "first_name_placeholder": "مثال: John",
+      "last_name": "اسم العائلة",
+      "last_name_placeholder": "مثال: Doe",
+      "email": "البريد الإلكتروني",
+      "email_placeholder": "مثال: john@example.com",
+      "new_password": "كلمة المرور الجديدة (اختياري)",
       "password": "كلمة المرور",
-      "email": "بريد إلكتروني",
-      "verification": "حالة التحقق",
-      "is_verified": "تم التحقق",
-      "not_verified": "لم يتم التحقق منها",
-      "profile_image": "صورة الملف الشخصي"
+      "password_keep": "اتركه فارغًا للاحتفاظ بالحالية",
+      "password_placeholder": "أدخل كلمة مرور آمنة",
+      "bio_label": "السيرة الذاتية (وصف)",
+      "bio_placeholder": "أدخل وصف السيرة الذاتية...",
+      "status_label": "الحالة (نشط/محظور)",
+      "status_active": "مستخدم نشط",
+      "status_inactive": "مستخدم غير نشط / محظور",
+      "status_select": "اختر الحالة...",
+      "status_search": "البحث عن نشط/غير نشط...",
+      "verification_label": "حالة التوثيق",
+      "verification_unverified": "غير موثق",
+      "verification_verified": "حساب موثق",
+      "verification_search": "البحث عن موثق..."
     }
   },
   "listings": {
@@ -117,7 +159,8 @@
       "price": "سعر",
       "category": "فئة",
       "condition": "حالة",
-      "status": "حالة"
+      "status": "حالة",
+      "availability": "التوفر"
     },
     "modal": {
       "edit_title": "تحرير القائمة",
@@ -146,7 +189,37 @@
       "size_placeholder": "أدخل المقاس...",
       "color": "لون",
       "color_placeholder": "أدخل اللون...",
-      "specifications": "مواصفات"
+      "specifications": "مواصفات",
+      "category_error": "الرجاء تحديد فئة",
+      "fill_required": "الرجاء ملء العنوان والسعر",
+      "blocked": "محظور",
+      "images": "الصور",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "add_detail": "+ إضافة تفاصيل",
+      "seo_settings": "إعدادات تحسين محركات البحث",
+      "seo_title": "عنوان SEO",
+      "seo_title_placeholder": "أدخل عنوان SEO",
+      "seo_description": "وصف SEO",
+      "seo_description_placeholder": "أدخل وصف SEO",
+      "seo_keywords": "كلمات SEO المفتاحية",
+      "seo_keywords_placeholder": "مثال: عتيق، سترة، جينز، أزرق",
+      "seo_keywords_hint": "افصل بين الكلمات المفتاحية بفواصل"
+    },
+    "no_listings": "No listings found.",
+    "toast": {
+      "create_success": "Listing created successfully",
+      "update_success": "Listing updated successfully",
+      "delete_success": "Listing deleted successfully",
+      "status_update_success": "Listing status updated successfully",
+      "status_update_error": "Failed to update listing status",
+      "save_error": "Failed to save listing details",
+      "delete_error": "Failed to delete listing"
+    },
+    "delete": {
+      "title": "حذف القائمة؟",
+      "confirm": "هل أنت متأكد أنك تريد حذف \"{{title}}\"؟",
+      "yes": "نعم، احذف"
     }
   },
   "orders": {
@@ -165,6 +238,45 @@
       "payment_status": "حالة الدفع",
       "order_status": "حالة الطلب",
       "date": "تاريخ"
+    },
+    "no_orders": "No orders found.",
+    "toast": {
+      "update_success": "Order updated successfully",
+      "delete_success": "Order deleted"
+    },
+    "status": {
+      "placed": "Placed",
+      "dispatched": "Dispatched",
+      "on_the_way": "On the Way",
+      "delivered": "تم التوصيل",
+      "cancelled": "ملغى",
+      "pending": "قيد الانتظار",
+      "paid": "مدفوع",
+      "failed": "فشل",
+      "refunded": "مسترد",
+      "partially_refunded": "Partially Refunded",
+      "confirmed": "مؤكد",
+      "packed": "Packed",
+      "shipped": "Shipped",
+      "out_for_delivery": "في الطريق للتسليم",
+      "return_requested": "طلب إرجاع",
+      "returned": "مرتجع"
+    },
+    "modal": {
+      "edit_title": "تعديل الطلب",
+      "order_summary": "ملخص الطلب",
+      "order_status": "حالة الطلب",
+      "payment_status": "حالة الدفع",
+      "tracking_code": "Tracking Code",
+      "tracking_code_placeholder": "Enter tracking number...",
+      "tracking_help": "Updating the tracking code will notify the buyer.",
+      "save": "حفظ",
+      "cancel": "Cancel",
+      "saving": "جاري الحفظ...",
+      "courier_company": "شركة الشحن",
+      "tracking_id": "رقم التتبع",
+      "tracking_placeholder": "أدخل رقم التتبع",
+      "no_courier": "-- بدون شركة شحن --"
     }
   },
   "sidebar": {
@@ -176,7 +288,8 @@
       "title": "محفظة",
       "withdrawal_requests": "طلبات السحب",
       "transactions": "المعاملات",
-      "payment_methods": "طرق الدفع"
+      "payment_methods": "طرق الدفع",
+      "payout_methods": "User Payout Methods"
     },
     "categories": {
       "title": "فئات",
@@ -194,7 +307,303 @@
       "site_settings": "إعدادات الموقع",
       "payment_settings": "إعدادات الدفع",
       "social_settings": "الإعدادات الاجتماعية",
-      "notification_settings": "إعدادات الإخطار"
+      "notification_settings": "إعدادات الإخطار",
+      "footer_settings": "إعدادات التذييل",
+      "api_settings": "إعدادات API",
+      "cookie_settings": "إعدادات ملفات تعريف الارتباط",
+      "recaptcha_settings": "إعدادات Recaptcha",
+      "social_login_settings": "إعدادات تسجيل الدخول الاجتماعي",
+      "map_settings": "إعدادات الخريطة"
+    },
+    "notifications": "الإشعارات",
+    "messages": "الرسائل",
+    "shipping_companies": "شركات الشحن",
+    "newsletter": "النشرة الإخبارية",
+    "static_pages": "الصفحات الثابتة",
+    "product_reports": "تقارير المنتجات",
+    "contact_inquiries": "استفسارات الاتصال",
+    "frontend_content": "Frontend Content"
+  },
+  "messages": {
+    "title": "الرسائل",
+    "start_chat": "بدء محادثة جديدة",
+    "search_placeholder": "البحث في المحادثات...",
+    "select_conversation": "اختر محادثة",
+    "select_prompt": "اختر مستخدمًا من القائمة على اليسار لبدء محادثة في الوقت الفعلي.",
+    "type_message": "اكتب رسالة...",
+    "send_prompt": "أرسل رسالة لبدء هذه المحادثة",
+    "new_message": "رسالة جديدة",
+    "search_users": "ابحث عن المستخدمين بالاسم أو البريد الإلكتروني...",
+    "message_btn": "رسالة",
+    "no_users": "لم يتم العثور على مستخدمين يطابقون بحثك."
+  },
+  "header": {
+    "select_language": "Select Language",
+    "search_language": "Search language...",
+    "select_currency": "Select Currency",
+    "search_currency": "Search currency...",
+    "recent_messages": "Recent Messages",
+    "recent_notifications": "Recent Notifications",
+    "view_all": "View All",
+    "mark_all_read": "All Read",
+    "no_messages": "No messages yet",
+    "no_notifications": "No notifications yet"
+  },
+  "notifications_page": {
+    "title": "الإشعارات",
+    "all": "الكل",
+    "unread": "غير مقروء",
+    "search_placeholder": "البحث في الإشعارات...",
+    "no_notifications": "لم يتم العثور على إشعارات",
+    "select_notification": "حدد إشعارًا لعرض التفاصيل",
+    "view_details": "عرض التفاصيل",
+    "info": "معلومات"
+  },
+  "table": {
+    "rows_per_page": "الصفوف لكل صفحة:",
+    "of": "من",
+    "no_records": "لا توجد سجلات لعرضها هنا حتى الآن.",
+    "first_page": "الصفحة الأولى",
+    "prev_page": "الصفحة السابقة",
+    "next_page": "الصفحة التالية",
+    "last_page": "الصفحة الأخيرة",
+    "actions": "الإجراءات"
+  },
+  "conditions": {
+    "new": "جديد",
+    "very_good": "جيد جدًا",
+    "good": "جيد",
+    "normal": "عادي",
+    "bad": "سيء",
+    "very_bad": "سيء جدًا"
+  },
+  "shipping": {
+    "title": "شركات الشحن",
+    "subtitle": "إدارة شركاء توصيل المتجر",
+    "add_new": "إضافة شركة جديدة",
+    "no_data": "لا توجد شركات شحن",
+    "table": {
+      "logo": "الشعار",
+      "company_name": "اسم الشركة",
+      "tracking_url": "رابط التتبع",
+      "status": "الحالة",
+      "created_at": "تاريخ الإنشاء"
+    }
+  },
+  "withdrawals": {
+    "title": "طلبات السحب",
+    "subtitle": "مراجعة ومعالجة طلبات دفع المستخدم",
+    "total_requests": "إجمالي الطلبات",
+    "pending": "قيد الانتظار",
+    "approved": "موافق عليه",
+    "rejected": "مرفوض",
+    "all_statuses": "جميع الحالات",
+    "search_placeholder": "...البحث عن مستخدم، بريد إلكتروني، طريقة الدفع",
+    "table": {
+      "date": "التاريخ",
+      "user": "المستخدم",
+      "amount": "الكمية",
+      "payout_method": "طريقة الدفع",
+      "status": "الحالة",
+      "actions": "الإجراءات"
+    },
+    "status": {
+      "approved": "موافق عليه",
+      "pending": "قيد الانتظار",
+      "rejected": "مرفوض",
+      "completed": "مكتمل"
+    },
+    "processed": "تمت المعالجة",
+    "no_data": "لا توجد طلبات",
+    "modal": {
+      "title": "معالجة طلب السحب",
+      "request_label": "طلب سحب",
+      "by": "بواسطة",
+      "payout_details": "تفاصيل الدفع",
+      "admin_note": "ملاحظة المشرف",
+      "optional": "(اختياري)",
+      "required": "(مطلوب)",
+      "approve": "موافقة على السحب",
+      "reject": "رفض السحب",
+      "cancel": "إلغاء"
+    }
+  },
+  "categories": {
+    "title": "فئات",
+    "subtitle": "إدارة الفئات والفئات الفرعية وأنواع العناصر",
+    "add_category": "إضافة فئة",
+    "add_subcategory": "إضافة فئة فرعية",
+    "add_item_type": "إضافة نوع عنصر",
+    "tabs": {
+      "categories": "الفئات",
+      "subcategories": "الفئات الفرعية",
+      "item_types": "أنواع العناصر"
+    },
+    "search_placeholder": "البحث في الفئات...",
+    "table": {
+      "category": "الفئة",
+      "subcategories": "الفئات الفرعية",
+      "status": "الحالة",
+      "description": "الوصف",
+      "actions": "الإجراءات",
+      "item_types": "أنواع العناصر",
+      "parent_category": "الفئة الرئيسية",
+      "subcategory": "الفئة الفرعية",
+      "item_type": "نوع العنصر"
+    },
+    "no_data": "لا توجد فئات",
+    "modal": {
+      "add": "إضافة",
+      "edit": "تعديل",
+      "name": "الاسم *",
+      "enter_name": "أدخل اسم",
+      "slug": "الرابط (Slug)",
+      "auto_generated": "يتم إنشاؤه تلقائيًا",
+      "parent_category": "الفئة الرئيسية *",
+      "select_category": "اختر فئة...",
+      "parent_subcategory": "الفئة الفرعية *",
+      "select_subcategory": "اختر فئة فرعية...",
+      "image": "الصورة",
+      "click_upload": "انقر لرفع صورة",
+      "image_formats": "PNG أو JPG أو SVG",
+      "description": "الوصف",
+      "brief_desc": "وصف موجز...",
+      "active": "نشط"
+    }
+  },
+  "subscribers": {
+    "title": "مشتركو النشرة الإخبارية",
+    "subtitle": "إدارة قائمة النشرة الإخبارية والمشتركين",
+    "export": "تصدير",
+    "all_statuses": "جميع الحالات",
+    "search_placeholder": "...البحث بالبريد الإلكتروني",
+    "table": {
+      "actions": "الإجراءات",
+      "subscribed_at": "تاريخ الاشتراك",
+      "status": "الحالة",
+      "source": "المصدر",
+      "email": "البريد الإلكتروني"
+    },
+    "no_data": "لا يوجد مشتركون"
+  },
+  "pages": {
+    "title": "الصفحات الثابتة",
+    "subtitle": "إدارة الصفحات الإعلامية الثابتة لموقعك",
+    "create_page": "إنشاء صفحة",
+    "search_placeholder": "...البحث بالعنوان أو الرابط",
+    "table": {
+      "title": "العنوان",
+      "slug": "الرابط (URL)",
+      "status": "الحالة",
+      "actions": "الإجراءات"
+    },
+    "no_data": "لا توجد صفحات"
+  },
+  "product_reports": {
+    "title": "تقارير المنتجات",
+    "subtitle": "إدارة ومراجعة الشكاوى المتعلقة بالقوائم",
+    "search_placeholder": "...البحث في التقارير",
+    "table": {
+      "item": "العنصر",
+      "reporter": "المبلّغ",
+      "reason": "السبب",
+      "status": "الحالة",
+      "date": "التاريخ",
+      "actions": "الإجراءات"
+    },
+    "no_data": "لم يتم العثور على تقارير",
+    "no_data_sub": "لا توجد سجلات لعرضها هنا بعد"
+  },
+  "reports": {
+    "title": "تقارير الأعمال",
+    "subtitle": "رؤى شاملة لأداء المنصة",
+    "filter": {
+      "from": "من",
+      "to": "إلى",
+      "button": "تصفية"
+    },
+    "charts": {
+      "revenue_commission": "اتجاهات الإيرادات والعمولات",
+      "total_sales": "إجمالي المبيعات",
+      "admin_commission": "عمولة الإدارة"
+    },
+    "map": {
+      "title": "تتبع خريطة التوصيل",
+      "subtitle": "خريطة حرارية لعناوين الحجز عالمياً"
+    },
+    "stream": {
+      "title": "سجل الطلبات المتتبعة",
+      "subtitle": "مرر الماوس فوق الطلب لتحديد عنوانه على الخريطة، انقر للعرض.",
+      "order_id": "رقم الطلب",
+      "location": "تلميح الموقع",
+      "price": "السعر"
+    },
+    "top_sellers": {
+      "title": "أفضل البائعين (تحليل كامل)",
+      "profile": "ملف البائع",
+      "email": "البريد الإلكتروني",
+      "orders": "إجمالي الطلبات المكتملة",
+      "sales": "إجمالي المبيعات الإجمالية",
+      "commission": "صافي عمولة المنصة",
+      "no_data": "لا تتوفر بيانات للبائعين"
+    }
+  },
+  "settings": {
+    "fields": {
+      "site_name_en": "اسم الموقع (إنجليزي)",
+      "site_description_en": "وصف الموقع (إنجليزي)",
+      "site_url": "رابط الموقع",
+      "site_keywords_en": "كلمات مفتاحية (إنجليزي)",
+      "site_logo": "شعار الموقع",
+      "site_name_ar": "اسم الموقع (عربي)",
+      "site_description_ar": "وصف الموقع (عربي)",
+      "site_keywords_ar": "كلمات مفتاحية (عربي)",
+      "primary_color": "اللون الأساسي",
+      "pagination_limit": "حد الصفحات",
+      "pagination_mode": "وضع التصفح",
+      "maintenance_mode": "وضع الصيانة",
+      "support_phone": "هاتف الدعم",
+      "support_email": "بريد الدعم",
+      "support_address": "عنوان الدعم",
+      "timezone": "المنطقة الزمنية",
+      "admin_commission": "عمولة الإدارة",
+      "default_language_id": "معرف اللغة الافتراضية",
+      "default_currency_id": "معرف العملة الافتراضية",
+      "footer_tagline_en": "شعار التذييل (إنجليزي)",
+      "footer_tagline_ar": "شعار التذييل (عربي)",
+      "footer_copyright_en": "حقوق النشر (إنجليزي)",
+      "footer_copyright_ar": "حقوق النشر (عربي)",
+      "cookie_heading_en": "عنوان ملفات تعريف الارتباط (إنجليزي)",
+      "cookie_heading_ar": "عنوان ملفات تعريف الارتباط (عربي)",
+      "cookie_message_en": "رسالة ملفات تعريف الارتباط (إنجليزي)",
+      "cookie_message_ar": "رسالة ملفات تعريف الارتباط (عربي)",
+      "cookie_page_id": "معرف صفحة ملفات تعريف الارتباط",
+      "cookie_button_text_en": "نص زر ملفات تعريف الارتباط (إنجليزي)",
+      "cookie_button_text_ar": "نص زر ملفات تعريف الارتباط (عربي)"
+    },
+    "save_settings": "حفظ الإعدادات",
+    "select_language": "اختر اللغة...",
+    "theme": {
+      "title": "المظهر والتصميم",
+      "subtitle": "تخصيص الألوان وتخطيط الإعدادات"
+    },
+    "pagination": {
+      "classic": "التصفح الكلاسيكي (صفحات)",
+      "infinite": "التمرير اللانهائي"
+    },
+    "social_links": {
+      "title": "الروابط والملفات الشخصية الاجتماعية",
+      "add_btn": "إضافة ملف اجتماعي",
+      "platform": "اسم المنصة",
+      "icon": "أيقونة (اختر أو ارفع)",
+      "url": "رابط الملف الشخصي",
+      "select_icon": "اختر أيقونة...",
+      "no_profiles": "لم تتم إضافة أي ملفات شخصية اجتماعية بعد. انقر على الزر للإضافة.",
+      "platform_placeholder": "مثال: فيسبوك",
+      "url_placeholder": "https://facebook.com/your-page"
+    },
+    "cookie": {
+      "select_page": "اختر صفحة سياسة ملفات تعريف الارتباط..."
     }
   }
 }

@@ -2,6 +2,7 @@ import { createContext, useState, useEffect, useContext } from 'react';
 import axios from '../utils/axios';
 import AuthContext from './AuthContext';
 import getSocket from '../utils/socket';
+import { Toast, ToastContainer } from 'react-bootstrap';
 
 const NotificationContext = createContext();
 
@@ -10,6 +11,7 @@ export const NotificationProvider = ({ children }) => {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [toasts, setToasts] = useState([]);
 
     const fetchNotifications = async () => {
         if (!user) return;
@@ -30,22 +32,27 @@ export const NotificationProvider = ({ children }) => {
             fetchNotifications();
             
             // Socket logic
-            const socket = getSocket();
+            const notifSocket = getSocket();
             let joinRoom;
-            if (socket) {
-                joinRoom = () => socket.emit('join_user', user._id || user.id);
+            if (notifSocket) {
+                joinRoom = () => notifSocket.emit('join_user', user._id || user.id);
                 
                 // Join personal room immediately
                 joinRoom();
 
                 // Re-join automatically if socket reconnects
-                socket.on('connect', joinRoom);
+                notifSocket.on('connect', joinRoom);
 
                 // Listen for new notifications
-                socket.on('new_notification', (notif) => {
+                notifSocket.on('new_notification', (notif) => {
                     console.log('🔔 New real-time notification received:', notif);
                     setNotifications(prev => [notif, ...prev]);
                     setUnreadCount(prev => prev + 1);
+
+                    // Show a toast push notification
+                    const id = Date.now() + Math.random();
+                    setToasts(prev => [...prev, { id, title: notif.title, message: notif.message, type: notif.type }]);
+                    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 5000);
                 });
             }
 
@@ -53,9 +60,9 @@ export const NotificationProvider = ({ children }) => {
             const interval = setInterval(fetchNotifications, 30000);
             return () => {
                 clearInterval(interval);
-                if (socket) {
-                    if (joinRoom) socket.off('connect', joinRoom);
-                    socket.off('new_notification');
+                if (notifSocket) {
+                    if (joinRoom) notifSocket.off('connect', joinRoom);
+                    notifSocket.off('new_notification');
                 }
             };
         } else {
@@ -96,6 +103,16 @@ export const NotificationProvider = ({ children }) => {
             markAllAsRead
         }}>
             {children}
+            <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1050, position: 'fixed' }}>
+                {toasts.map(toast => (
+                    <Toast key={toast.id} onClose={() => setToasts(prev => prev.filter(t => t.id !== toast.id))} autohide delay={5000} bg={toast.type === 'success' ? 'success' : toast.type === 'alert' || toast.type === 'error' ? 'danger' : 'primary'}>
+                        <Toast.Header closeButton>
+                            <strong className="me-auto text-dark">{toast.title}</strong>
+                        </Toast.Header>
+                        <Toast.Body className="text-white">{toast.message}</Toast.Body>
+                    </Toast>
+                ))}
+            </ToastContainer>
         </NotificationContext.Provider>
     );
 };

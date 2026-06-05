@@ -134,11 +134,6 @@ const requestWithdrawal = asyncHandler(async (req, res) => {
 
     const wallet = await getOrCreateWallet(req.user._id, 'User');
 
-    if (wallet.balance < amount) {
-        res.status(400);
-        throw new Error('Insufficient balance');
-    }
-
     // Get the payout method details
     const payoutMethod = await UserPayoutMethod.findOne({ _id: payout_method_id, user_id: req.user._id });
     if (!payoutMethod) {
@@ -157,8 +152,23 @@ const requestWithdrawal = asyncHandler(async (req, res) => {
     }
     if (!withdrawalCurrency) withdrawalCurrency = 'INR'; // Fallback
 
+    const walletCurrencyDoc = await Currency.findOne({ code: wallet.currency });
+    const reqCurrencyDoc = await Currency.findOne({ code: withdrawalCurrency });
+
+    const walletRate = walletCurrencyDoc?.exchange_rate || 1;
+    const reqRate = reqCurrencyDoc?.exchange_rate || 1;
+
+    // Convert requested amount to wallet base currency
+    // amount is in withdrawalCurrency
+    const amountInWalletCurrency = Number(((amount / reqRate) * walletRate).toFixed(2));
+
+    if (wallet.balance < amountInWalletCurrency) {
+        res.status(400);
+        throw new Error('Insufficient balance in wallet for the requested amount');
+    }
+
     // Deduct from wallet immediately (mark as pending transaction)
-    wallet.balance -= amount;
+    wallet.balance -= amountInWalletCurrency;
     await wallet.save();
 
     // KEEP USER BALANCE IN SYNC
@@ -178,7 +188,7 @@ const requestWithdrawal = asyncHandler(async (req, res) => {
         user_id: req.user._id,
         user_type: 'User',
         wallet_id: wallet._id,
-        amount,
+        amount: amountInWalletCurrency,
         type: 'debit',
         purpose: 'withdrawal',
         reference_id: request._id,
@@ -188,7 +198,7 @@ const requestWithdrawal = asyncHandler(async (req, res) => {
     });
 
     // Notify Admins
-    const admins = await Admin.find({ is_active: true });
+    const admins = await Admin.find({ is_active: { $ne: false } });
 
     for (const admin of admins) {
         // 1. Send Notification

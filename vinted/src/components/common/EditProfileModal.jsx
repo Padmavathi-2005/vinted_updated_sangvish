@@ -5,6 +5,7 @@ import '../../styles/EditProfileModal.css';
 import { getImageUrl } from '../../utils/constants';
 import { useTranslation } from 'react-i18next';
 import ImageCropModal from './ImageCropModal';
+import AddressAutocomplete from './AddressAutocomplete';
 
 const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
     const { t } = useTranslation();
@@ -64,6 +65,22 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
         } else {
             setFormData({ ...formData, [name]: value });
         }
+    };
+
+    const handleAddressSelect = (location) => {
+        setFormData(prev => ({
+            ...prev,
+            address: {
+                ...prev.address,
+                address_line: location.address_line || prev.address.address_line,
+                city: location.city || prev.address.city,
+                state: location.state || prev.address.state,
+                country: location.country || prev.address.country,
+                pincode: location.pincode || prev.address.pincode,
+                lat: location.lat,
+                lng: location.lng
+            }
+        }));
     };
 
     const handleImageChange = (e) => {
@@ -291,18 +308,12 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
                     </div>
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" style={{ zIndex: 10 }}>
                     <label>{t('profile.street_address', 'Street Address')}</label>
-                    <div className="input-with-icon">
-                        <FaMapMarkerAlt className="input-icon" />
-                        <input
-                            type="text"
-                            name="address.address_line"
-                            value={formData.address.address_line}
-                            onChange={handleChange}
-                            placeholder="House No, Street, Landmark"
-                        />
-                    </div>
+                    <AddressAutocomplete 
+                        initialValue={formData.address.address_line}
+                        onSelect={handleAddressSelect}
+                    />
                 </div>
 
                 <div className="row">

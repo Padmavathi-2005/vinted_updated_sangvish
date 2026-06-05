@@ -670,7 +670,7 @@ const DynamicSettings = () => {
         };
 
         const icons = [
-            { label: 'Select Icon...', value: '' },
+            { label: t('settings.social_links.select_icon', 'Select Icon...'), value: '' },
             { label: 'Facebook', value: 'FaFacebookF' },
             { label: 'X (Twitter)', value: 'FaXTwitter' },
             { label: 'Instagram', value: 'FaInstagram' },
@@ -684,14 +684,14 @@ const DynamicSettings = () => {
             <Col key="social_links" md={12} className="mb-4">
                 <div className="ds-section-card p-4 border rounded bg-white">
                     <div className="d-flex justify-content-between align-items-center mb-4">
-                        <div className="fw-bold text-uppercase small tracking-wider"><FaGlobe className="me-2" /> Social Links & Profiles</div>
+                        <div className="fw-bold text-uppercase small tracking-wider"><FaGlobe className="me-2" /> {t('settings.social_links.title', 'Social Links & Profiles')}</div>
                         <Button variant="primary" size="sm" onClick={handleAddLink}>
-                            <FaPlus className="me-2" /> Add Social Profile
+                            <FaPlus className="me-2" /> {t('settings.social_links.add_btn', 'Add Social Profile')}
                         </Button>
                     </div>
                     {links.length === 0 ? (
                         <div className="py-5 text-center bg-light rounded text-muted">
-                            No social profiles added yet. Click the button to add.
+                            {t('settings.social_links.no_profiles', 'No social profiles added yet. Click the button to add.')}
                         </div>
                     ) : (
                         <Row className="gy-4">
@@ -701,19 +701,19 @@ const DynamicSettings = () => {
                                         <Row className="gy-3 align-items-center">
                                             <Col md={3}>
                                                 <Form.Group>
-                                                    <Form.Label className="xx-small fw-bold">Platform Name</Form.Label>
+                                                    <Form.Label className="xx-small fw-bold">{t('settings.social_links.platform', 'Platform Name')}</Form.Label>
                                                     <Form.Control
                                                         type="text"
                                                         value={link.platform || ''}
                                                         onChange={(e) => handleLinkChange(idx, 'platform', e.target.value)}
-                                                        placeholder="e.g. Facebook"
+                                                        placeholder={t('settings.social_links.platform_placeholder', 'e.g. Facebook')}
                                                         size="sm"
                                                     />
                                                 </Form.Group>
                                             </Col>
                                             <Col md={3}>
                                                 <Form.Group>
-                                                    <Form.Label className="xx-small fw-bold">Icon (Select or Upload)</Form.Label>
+                                                    <Form.Label className="xx-small fw-bold">{t('settings.social_links.icon', 'Icon (Select or Upload)')}</Form.Label>
                                                     <div className="d-flex gap-2">
                                                         <Form.Select
                                                             value={link.icon && !link.icon.startsWith('images/') ? link.icon : ''}
@@ -750,12 +750,12 @@ const DynamicSettings = () => {
                                             </Col>
                                             <Col md={5}>
                                                 <Form.Group>
-                                                    <Form.Label className="xx-small fw-bold">Profile URL</Form.Label>
+                                                    <Form.Label className="xx-small fw-bold">{t('settings.social_links.url', 'Profile URL')}</Form.Label>
                                                     <Form.Control
                                                         type="text"
                                                         value={link.url || ''}
                                                         onChange={(e) => handleLinkChange(idx, 'url', e.target.value)}
-                                                        placeholder="https://facebook.com/your-page"
+                                                        placeholder={t('settings.social_links.url_placeholder', 'https://facebook.com/your-page')}
                                                         size="sm"
                                                     />
                                                 </Form.Group>
@@ -1190,7 +1190,8 @@ const DynamicSettings = () => {
         // Skip gateway fields if we are in payment_settings (they are handled by renderPaymentGateways)
         if (type === 'payment_settings' && (key.startsWith('stripe_') || key.startsWith('paypal_'))) return null;
 
-        const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const defaultLabel = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const label = t(`settings.fields.${key}`, defaultLabel);
 
         if (['site_logo', 'site_favicon', 'site_og_image'].includes(key)) {
             return (
@@ -1229,8 +1230,8 @@ const DynamicSettings = () => {
                         <Form.Label className="mb-2">{label}</Form.Label>
                         <AdminSearchSelect
                             options={[
-                                { value: 'paginate', label: 'Classic Pagination (Pages)' },
-                                { value: 'scroll', label: 'Infinite Scroll' }
+                                { value: 'paginate', label: t('settings.pagination.classic', 'Classic Pagination (Pages)') },
+                                { value: 'scroll', label: t('settings.pagination.infinite', 'Infinite Scroll') }
                             ]}
                             value={formData[key] || 'paginate'}
                             onChange={(val) => setFormData({ ...formData, [key]: val })}
@@ -1446,9 +1447,9 @@ const DynamicSettings = () => {
                 <div className="ds-header">
                     <div>
                         <div className="ds-breadcrumb">
-                            <Link to="/dashboard">Dashboard</Link>
+                            <Link to="/dashboard">{t('sidebar.dashboard', 'Dashboard')}</Link>
                             <span className="separator"><FaChevronRight size={10} /></span>
-                            <span>Setting</span>
+                            <span>{t('sidebar.settings', 'Setting')}</span>
                             <span className="separator"><FaChevronRight size={10} /></span>
                             <span>{t(`sidebar.settings.${type}`) !== `sidebar.settings.${type}` ? t(`sidebar.settings.${type}`) : type.replace(/_/g, ' ')}</span>
                         </div>
@@ -1461,12 +1462,12 @@ const DynamicSettings = () => {
                                     options={languages.map(l => ({ label: l.name, value: l.code }))}
                                     value={activeGlobalLang}
                                     onChange={(val) => setActiveGlobalLang(val)}
-                                    placeholder="Select Language..."
+                                    placeholder={t('settings.select_language', 'Select Language...')}
                                 />
                             </div>
                         )}
                         <Button className="ds-btn-save" onClick={handleSubmit} disabled={saving}>
-                            {saving ? <div className="spinner-border spinner-border-sm" role="status"></div> : <><FaSave /> Save settings</>}
+                            {saving ? <div className="spinner-border spinner-border-sm" role="status"></div> : <><FaSave /> {t('settings.save_settings', 'Save settings')}</>}
                         </Button>
                     </div>
                 </div>
@@ -1515,9 +1516,9 @@ const DynamicSettings = () => {
                                         {type === 'general_settings' && key === 'primary_color' && (
                                             <Col md={12} className="mb-4 mt-3">
                                                 <div className="ds-section-title mb-1">
-                                                    THEME & APPEARANCE
+                                                    {t('settings.theme.title', 'THEME & APPEARANCE')}
                                                 </div>
-                                                <p className="ds-section-subtitle mb-3">Customize colors and layout settings</p>
+                                                <p className="ds-section-subtitle mb-3">{t('settings.theme.subtitle', 'Customize colors and layout settings')}</p>
                                             </Col>
                                         )}
                                         {renderField(key)}

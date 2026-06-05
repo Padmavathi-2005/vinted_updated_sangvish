@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from '../utils/axios';
-import { FaImage, FaTimes, FaInfoCircle, FaEllipsisH, FaPlusCircle } from 'react-icons/fa';
+import { FaImage, FaTimes, FaInfoCircle, FaEllipsisH, FaPlusCircle, FaPen, FaTrash } from 'react-icons/fa';
 import AuthContext from '../context/AuthContext';
 import CurrencyContext from '../context/CurrencyContext';
 import CustomSelect from '../components/common/CustomSelect';
@@ -51,6 +51,7 @@ const SellItem = () => {
     // Custom Add Modal State
     const [showAddModal, setShowAddModal] = useState(false);
     const [addModalType, setAddModalType] = useState(''); // 'category', 'subcategory', 'itemtype'
+    const [addModalMode, setAddModalMode] = useState('add'); // 'add', 'edit'
     const [addModalValue, setAddModalValue] = useState('');
     
     // Crop Modal State
@@ -58,31 +59,77 @@ const SellItem = () => {
     const [tempImage, setTempImage] = useState(null);
     const [pendingPhotos, setPendingPhotos] = useState([]);
 
-    const openAddModal = (type) => {
+    const openAddModal = (type, mode = 'add') => {
         setAddModalType(type);
-        setAddModalValue('');
+        setAddModalMode(mode);
+        if (mode === 'edit') {
+            if (type === 'category') setAddModalValue(categories.find(c => c._id === selectedCategory)?.name || '');
+            if (type === 'subcategory') setAddModalValue(subcategories.find(s => s._id === selectedSubcategory)?.name || '');
+            if (type === 'itemtype') setAddModalValue(itemTypes.find(i => i._id === selectedItemType)?.name || '');
+        } else {
+            setAddModalValue('');
+        }
         setShowAddModal(true);
     };
 
     const handleAddModalSubmit = async () => {
         if (!addModalValue) return;
         try {
-            if (addModalType === 'category') {
-                const res = await axios.post('/api/categories', { name: addModalValue });
-                setCategories([...categories, res.data]);
-                setSelectedCategory(res.data._id);
-            } else if (addModalType === 'subcategory') {
-                const res = await axios.post('/api/categories/subcategories', { name: addModalValue, category_id: selectedCategory });
-                setSubcategories([...subcategories, res.data]);
-                setSelectedSubcategory(res.data._id);
-            } else if (addModalType === 'itemtype') {
-                const res = await axios.post('/api/categories/itemtypes', { name: addModalValue, subcategory_id: selectedSubcategory, category_id: selectedCategory });
-                setItemTypes([...itemTypes, res.data]);
-                setSelectedItemType(res.data._id);
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            if (addModalMode === 'edit') {
+                if (addModalType === 'category') {
+                    await axios.put(`/api/admin/categories/${selectedCategory}`, { name: addModalValue }, config);
+                    setCategories(categories.map(c => c._id === selectedCategory ? { ...c, name: addModalValue } : c));
+                } else if (addModalType === 'subcategory') {
+                    await axios.put(`/api/admin/subcategories/${selectedSubcategory}`, { name: addModalValue }, config);
+                    setSubcategories(subcategories.map(s => s._id === selectedSubcategory ? { ...s, name: addModalValue } : s));
+                } else if (addModalType === 'itemtype') {
+                    await axios.put(`/api/admin/item-types/${selectedItemType}`, { name: addModalValue }, config);
+                    setItemTypes(itemTypes.map(i => i._id === selectedItemType ? { ...i, name: addModalValue } : i));
+                }
+            } else {
+                if (addModalType === 'category') {
+                    const res = await axios.post('/api/categories', { name: addModalValue });
+                    setCategories([...categories, res.data]);
+                    setSelectedCategory(res.data._id);
+                } else if (addModalType === 'subcategory') {
+                    const res = await axios.post('/api/categories/subcategories', { name: addModalValue, category_id: selectedCategory });
+                    setSubcategories([...subcategories, res.data]);
+                    setSelectedSubcategory(res.data._id);
+                } else if (addModalType === 'itemtype') {
+                    const res = await axios.post('/api/categories/itemtypes', { name: addModalValue, subcategory_id: selectedSubcategory, category_id: selectedCategory });
+                    setItemTypes([...itemTypes, res.data]);
+                    setSelectedItemType(res.data._id);
+                }
             }
             setShowAddModal(false);
         } catch (err) {
-            alert('Failed to create item');
+            alert('Failed to save item. ' + (err.response?.data?.message || ''));
+        }
+    };
+
+    const handleDeleteOption = async (type) => {
+        if (!window.confirm(`Are you sure you want to delete this ${type}?`)) return;
+        try {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            if (type === 'category') {
+                await axios.delete(`/api/admin/categories/${selectedCategory}`, config);
+                setCategories(categories.filter(c => c._id !== selectedCategory));
+                setSelectedCategory('');
+                setSubcategories([]);
+                setItemTypes([]);
+            } else if (type === 'subcategory') {
+                await axios.delete(`/api/admin/subcategories/${selectedSubcategory}`, config);
+                setSubcategories(subcategories.filter(s => s._id !== selectedSubcategory));
+                setSelectedSubcategory('');
+                setItemTypes([]);
+            } else if (type === 'itemtype') {
+                await axios.delete(`/api/admin/item-types/${selectedItemType}`, config);
+                setItemTypes(itemTypes.filter(i => i._id !== selectedItemType));
+                setSelectedItemType('');
+            }
+        } catch (err) {
+            alert('Failed to delete item. ' + (err.response?.data?.message || ''));
         }
     };
 
@@ -463,9 +510,17 @@ const SellItem = () => {
                                 <div className="si-label-row d-flex justify-content-between">
                                     <label className="si-label">{t('sell_item.category')}</label>
                                     {user?.role === 'admin' && (
-                                        <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" onClick={() => openAddModal('category')}>
-                                            {t('sell_item.add_category', '+ Add Category')}
-                                        </button>
+                                        <div className="d-flex align-items-center gap-2">
+                                            {selectedCategory && (
+                                                <>
+                                                    <button type="button" className="btn btn-sm btn-light py-0 px-2 text-primary border" onClick={() => openAddModal('category', 'edit')} title="Edit"><FaPen size={12} /></button>
+                                                    <button type="button" className="btn btn-sm btn-light py-0 px-2 text-danger border" onClick={() => handleDeleteOption('category')} title="Delete"><FaTrash size={12} /></button>
+                                                </>
+                                            )}
+                                            <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" onClick={() => openAddModal('category')}>
+                                                {t('sell_item.add_category', '+ Add Category')}
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                                 <CustomSelect
@@ -480,9 +535,23 @@ const SellItem = () => {
                             <div className="si-field">
                                 <div className="si-label-row d-flex justify-content-between">
                                     <label className="si-label">{t('sell_item.subcategory')}</label>
-                                    <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!selectedCategory} onClick={() => openAddModal('subcategory')}>
-                                        {t('sell_item.add_subcategory', '+ Add Subcategory')}
-                                    </button>
+                                    {user?.role === 'admin' ? (
+                                        <div className="d-flex align-items-center gap-2">
+                                            {selectedSubcategory && (
+                                                <>
+                                                    <button type="button" className="btn btn-sm btn-light py-0 px-2 text-primary border" onClick={() => openAddModal('subcategory', 'edit')} title="Edit"><FaPen size={12} /></button>
+                                                    <button type="button" className="btn btn-sm btn-light py-0 px-2 text-danger border" onClick={() => handleDeleteOption('subcategory')} title="Delete"><FaTrash size={12} /></button>
+                                                </>
+                                            )}
+                                            <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!selectedCategory} onClick={() => openAddModal('subcategory')}>
+                                                {t('sell_item.add_subcategory', '+ Add Subcategory')}
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!selectedCategory} onClick={() => openAddModal('subcategory')}>
+                                            {t('sell_item.add_subcategory', '+ Add Subcategory')}
+                                        </button>
+                                    )}
                                 </div>
                                 <CustomSelect
                                     placeholder={t('sell_item.select_subcategory')}
@@ -497,9 +566,23 @@ const SellItem = () => {
                             <div className="si-field">
                                 <div className="si-label-row d-flex justify-content-between">
                                     <label className="si-label">{t('sell_item.item_type')}</label>
-                                    <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!selectedSubcategory} onClick={() => openAddModal('itemtype')}>
-                                        {t('sell_item.add_item_type', '+ Add Item Type')}
-                                    </button>
+                                    {user?.role === 'admin' ? (
+                                        <div className="d-flex align-items-center gap-2">
+                                            {selectedItemType && (
+                                                <>
+                                                    <button type="button" className="btn btn-sm btn-light py-0 px-2 text-primary border" onClick={() => openAddModal('itemtype', 'edit')} title="Edit"><FaPen size={12} /></button>
+                                                    <button type="button" className="btn btn-sm btn-light py-0 px-2 text-danger border" onClick={() => handleDeleteOption('itemtype')} title="Delete"><FaTrash size={12} /></button>
+                                                </>
+                                            )}
+                                            <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!selectedSubcategory} onClick={() => openAddModal('itemtype')}>
+                                                {t('sell_item.add_item_type', '+ Add Item Type')}
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button type="button" className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!selectedSubcategory} onClick={() => openAddModal('itemtype')}>
+                                            {t('sell_item.add_item_type', '+ Add Item Type')}
+                                        </button>
+                                    )}
                                 </div>
                                 <CustomSelect
                                     placeholder={t('sell_item.select_item_type')}
@@ -681,9 +764,9 @@ const SellItem = () => {
 
             {/* Add Custom Category/Subcategory Modal */}
             <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>
-                <Modal.Header closeButton>
+                <Modal.Header closeButton className="gap-3">
                     <Modal.Title>
-                        {addModalType === 'category' ? 'Add New Category' : addModalType === 'subcategory' ? 'Add New Subcategory' : 'Add New Item Type'}
+                        {addModalMode === 'edit' ? 'Edit' : 'Add New'} {addModalType === 'category' ? 'Category' : addModalType === 'subcategory' ? 'Subcategory' : 'Item Type'}
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
@@ -704,7 +787,7 @@ const SellItem = () => {
                         Cancel
                     </Button>
                     <Button variant="primary" onClick={handleAddModalSubmit}>
-                        Add
+                        {addModalMode === 'edit' ? 'Save' : 'Add'}
                     </Button>
                 </Modal.Footer>
             </Modal>

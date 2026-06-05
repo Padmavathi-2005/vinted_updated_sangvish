@@ -172,7 +172,6 @@
 .icon-wrapper:hover {
     color: #00bcd4 !important;
     /* Teal color on hover */
-    transform: translateY(-1px);
 }
 
 .categories-toggle {

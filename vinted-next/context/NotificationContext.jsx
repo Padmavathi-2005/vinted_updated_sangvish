@@ -4,6 +4,7 @@ import { createContext, useState, useEffect, useContext } from 'react';
 import axios from '@/utils/axios';
 import AuthContext from '@/context/AuthContext';
 import getSocket from '@/utils/socket';
+import { Toast, ToastContainer } from 'react-bootstrap';
 
 const NotificationContext = createContext();
 
@@ -12,6 +13,7 @@ export const NotificationProvider = ({ children }) => {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [toasts, setToasts] = useState([]);
 
     const fetchNotifications = async () => {
         if (!user) return;
@@ -49,8 +51,10 @@ export const NotificationProvider = ({ children }) => {
                     setNotifications(prev => [notif, ...prev]);
                     setUnreadCount(prev => prev + 1);
                     
-                    // Show a simple browser notification or visual feedback if desired
-                    // (Optional: can be expanded with a toast library)
+                    // Show a toast push notification
+                    const id = Date.now() + Math.random();
+                    setToasts(prev => [...prev, { id, title: notif.title, message: notif.message, type: notif.type }]);
+                    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 5000);
                 });
             }
 
@@ -67,7 +71,7 @@ export const NotificationProvider = ({ children }) => {
             setNotifications([]);
             setUnreadCount(0);
         }
-    }, [user]);
+    }, [user?._id, user?.token]);
 
     const markAsRead = async (id) => {
         try {
@@ -101,6 +105,16 @@ export const NotificationProvider = ({ children }) => {
             markAllAsRead
         }}>
             {children}
+            <ToastContainer position="top-end" className="p-3 mt-5" style={{ zIndex: 1050, position: 'fixed' }}>
+                {toasts.map(toast => (
+                    <Toast key={toast.id} onClose={() => setToasts(prev => prev.filter(t => t.id !== toast.id))} autohide delay={5000} bg={toast.type === 'success' ? 'success' : toast.type === 'alert' || toast.type === 'error' ? 'danger' : 'primary'}>
+                        <Toast.Header closeButton>
+                            <strong className="me-auto text-dark">{toast.title}</strong>
+                        </Toast.Header>
+                        <Toast.Body className="text-white">{toast.message}</Toast.Body>
+                    </Toast>
+                ))}
+            </ToastContainer>
         </NotificationContext.Provider>
     );
 };

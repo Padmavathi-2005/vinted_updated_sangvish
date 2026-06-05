@@ -21,7 +21,7 @@ export const WishlistProvider = ({ children }) => {
         } else {
             setWishlist([]);
         }
-    }, [user]);
+    }, [user?._id, user?.token]);
 
     const fetchWishlist = async (token) => {
         try {

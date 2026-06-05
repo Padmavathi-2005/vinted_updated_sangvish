@@ -10,16 +10,18 @@ import Modal from '../components/Modal';
 import axios from '../utils/axios';
 import { showToast } from '../utils/swal';
 import { useLocalization } from '../context/LocalizationContext';
+import { useSettings } from '../context/SettingsContext';
+import { formatAdminDate } from '../utils/dateFormatter';
 import '../styles/WalletPages.css';
 
 /* ── helpers ─────────────────────────────────────────────── */
-const getInitials = (name = '') => name.slice(0, 2).toUpperCase() || 'U?';
+const getInitials = (name = '') => name.slice(0, 2).toUpperCase() || '?';
 
 const statusConf = {
-    approved: { cls: 'success', label: 'Approved' },
-    pending: { cls: 'pending', label: 'Pending' },
-    rejected: { cls: 'danger', label: 'Rejected' },
-    completed: { cls: 'info', label: 'Completed' },
+    approved: { cls: 'success', labelKey: 'approved' },
+    pending: { cls: 'pending', labelKey: 'pending' },
+    rejected: { cls: 'danger', labelKey: 'rejected' },
+    completed: { cls: 'info', labelKey: 'completed' },
 };
 
 const PayoutIcon = ({ method }) => {
@@ -39,6 +41,7 @@ const PayoutIconClass = (method) => {
 /* ── Component ───────────────────────────────────────────── */
 const WithdrawalRequests = () => {
     const { formatPrice } = useLocalization();
+    const { globalSettings } = useSettings();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -119,21 +122,21 @@ const WithdrawalRequests = () => {
     /* ── Columns ───────────────────────────────────────────── */
     const columns = [
         {
-            header: 'Date',
+            header: t('withdrawals.table.date', 'Date'),
             accessor: 'created_at',
             render: (row) => (
                 <div style={{ whiteSpace: 'nowrap' }}>
                     <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#334155' }}>
-                        {new Date(row.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {formatAdminDate(row.created_at, globalSettings)}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                        {new Date(row.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                        {formatAdminDate(row.created_at, globalSettings, { year: undefined, month: undefined, day: undefined, hour: '2-digit', minute: '2-digit' })}
                     </div>
                 </div>
             )
         },
         {
-            header: 'User',
+            header: t('withdrawals.table.user', 'User'),
             accessor: 'user',
             render: (row) => (
                 <div className="wallet-user-cell">
@@ -146,7 +149,7 @@ const WithdrawalRequests = () => {
             )
         },
         {
-            header: 'Amount',
+            header: t('withdrawals.table.amount', 'Amount'),
             accessor: 'amount',
             render: (row) => (
                 <span style={{ fontWeight: 700, fontSize: '1rem', color: '#1a2332' }}>
@@ -155,7 +158,7 @@ const WithdrawalRequests = () => {
             )
         },
         {
-            header: 'Payout Method',
+            header: t('withdrawals.table.payout_method', 'Payout Method'),
             accessor: 'payment_method',
             render: (row) => {
                 const d = row.payment_details;
@@ -177,18 +180,19 @@ const WithdrawalRequests = () => {
             }
         },
         {
-            header: 'Status',
+            header: t('withdrawals.table.status', 'Status'),
             accessor: 'status',
             render: (row) => {
-                const conf = statusConf[row.status] || { cls: 'secondary', label: row.status };
-                return <span className={`wallet-badge wallet-badge-${conf.cls}`}>{conf.label.toUpperCase()}</span>;
+                const conf = statusConf[row.status] || { cls: 'secondary', labelKey: row.status };
+                const label = t(`withdrawals.status.${conf.labelKey}`, row.status);
+                return <span className={`wallet-badge wallet-badge-${conf.cls}`}>{label.toUpperCase()}</span>;
             }
         },
         {
-            header: 'Actions',
+            header: t('withdrawals.table.actions', 'Actions'),
             accessor: 'actions',
             render: (row) => row.status !== 'pending' ? (
-                <span className="wallet-processed-label">Processed</span>
+                <span className="wallet-processed-label">{t('withdrawals.processed', 'Processed')}</span>
             ) : (
                 <div className="wallet-row-actions">
                     <button
@@ -212,7 +216,8 @@ const WithdrawalRequests = () => {
 
     /* ── Mobile card ───────────────────────────────────────── */
     const MobileCard = ({ row }) => {
-        const conf = statusConf[row.status] || { cls: 'secondary', label: row.status };
+        const conf = statusConf[row.status] || { cls: 'secondary', labelKey: row.status };
+        const label = t(`withdrawals.status.${conf.labelKey}`, row.status);
         return (
             <div className="wallet-mobile-card">
                 <div className="wallet-mobile-card-header">
@@ -220,7 +225,7 @@ const WithdrawalRequests = () => {
                         <div className="wallet-user-avatar">{getInitials(row.user_id?.username)}</div>
                         <div>
                             <div className="wallet-user-name">{row.user_id?.username || 'Unknown'}</div>
-                            <div className="wallet-user-email">{new Date(row.created_at).toLocaleDateString()}</div>
+                            <div className="wallet-user-email">{formatAdminDate(row.created_at, globalSettings)}</div>
                         </div>
                     </div>
                     <span style={{ fontWeight: 700, color: '#1a2332', fontSize: '1rem' }}>
@@ -228,20 +233,20 @@ const WithdrawalRequests = () => {
                     </span>
                 </div>
                 <div className="wallet-mobile-card-row">
-                    <span className="wallet-mobile-card-key">Method</span>
+                    <span className="wallet-mobile-card-key">{t('withdrawals.table.payout_method', 'Payout Method')}</span>
                     <span className="wallet-mobile-card-val">{row.payment_method}</span>
                 </div>
                 <div className="wallet-mobile-card-row">
-                    <span className="wallet-mobile-card-key">Status</span>
-                    <span className={`wallet-badge wallet-badge-${conf.cls}`}>{conf.label.toUpperCase()}</span>
+                    <span className="wallet-mobile-card-key">{t('withdrawals.table.status', 'Status')}</span>
+                    <span className={`wallet-badge wallet-badge-${conf.cls}`}>{label.toUpperCase()}</span>
                 </div>
                 {row.status === 'pending' && (
                     <div className="wallet-mobile-card-actions">
                         <button className="wallet-btn wallet-btn-success wallet-btn-sm" onClick={() => openAction(row, 'approved')}>
-                            <FaCheck size={11} /> Approve
+                            <FaCheck size={11} /> {t('withdrawals.approve', 'Approve')}
                         </button>
                         <button className="wallet-btn wallet-btn-danger wallet-btn-sm" onClick={() => openAction(row, 'rejected')}>
-                            <FaTimes size={11} /> Reject
+                            <FaTimes size={11} /> {t('withdrawals.reject', 'Reject')}
                         </button>
                     </div>
                 )}
@@ -260,8 +265,8 @@ const WithdrawalRequests = () => {
                         <FaRegMoneyBillAlt />
                     </div>
                     <div>
-                        <h1 className="wallet-page-title">Withdrawal Requests</h1>
-                        <p className="wallet-page-subtitle">Review and process user payout requests</p>
+                        <h1 className="wallet-page-title">{t('withdrawals.title', 'Withdrawal Requests')}</h1>
+                        <p className="wallet-page-subtitle">{t('withdrawals.subtitle', 'Review and process user payout requests')}</p>
                     </div>
                 </div>
                 <div className="wallet-header-actions">
@@ -272,19 +277,19 @@ const WithdrawalRequests = () => {
             <div className="wallet-stats-row">
                 <div className="wallet-stat-card">
                     <div className="wallet-stat-icon-wrap blue"><FaWallet /></div>
-                    <div><div className="wallet-stat-value">{stats.total}</div><div className="wallet-stat-label">Total Requests</div></div>
+                    <div><div className="wallet-stat-value">{stats.total}</div><div className="wallet-stat-label">{t('withdrawals.total', 'Total Requests')}</div></div>
                 </div>
                 <div className="wallet-stat-card">
                     <div className="wallet-stat-icon-wrap amber"><FaClock /></div>
-                    <div><div className="wallet-stat-value">{stats.pending}</div><div className="wallet-stat-label">Pending</div></div>
+                    <div><div className="wallet-stat-value">{stats.pending}</div><div className="wallet-stat-label">{t('withdrawals.pending', 'Pending')}</div></div>
                 </div>
                 <div className="wallet-stat-card">
                     <div className="wallet-stat-icon-wrap green"><FaCheckCircle /></div>
-                    <div><div className="wallet-stat-value">{stats.approved}</div><div className="wallet-stat-label">Approved</div></div>
+                    <div><div className="wallet-stat-value">{stats.approved}</div><div className="wallet-stat-label">{t('withdrawals.approved', 'Approved')}</div></div>
                 </div>
                 <div className="wallet-stat-card">
                     <div className="wallet-stat-icon-wrap red"><FaTimesCircle /></div>
-                    <div><div className="wallet-stat-value">{stats.rejected}</div><div className="wallet-stat-label">Rejected</div></div>
+                    <div><div className="wallet-stat-value">{stats.rejected}</div><div className="wallet-stat-label">{t('withdrawals.rejected', 'Rejected')}</div></div>
                 </div>
             </div>
 
@@ -297,36 +302,36 @@ const WithdrawalRequests = () => {
                             <FaSearch style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '0.85rem', pointerEvents: 'none' }} />
                             <input
                                 className="wallet-search-input"
-                                placeholder="Search user, email, method…"
+                                placeholder={t('withdrawals.search_placeholder', 'Search user, email, method…')}
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <select className="wallet-filter-select" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-                            <option value="all">All Statuses</option>
-                            <option value="pending">Pending</option>
-                            <option value="approved">Approved</option>
-                            <option value="rejected">Rejected</option>
-                            <option value="completed">Completed</option>
+                            <option value="all">{t('withdrawals.all_statuses', 'All Statuses')}</option>
+                            <option value="pending">{t('withdrawals.pending', 'Pending')}</option>
+                            <option value="approved">{t('withdrawals.approved', 'Approved')}</option>
+                            <option value="rejected">{t('withdrawals.rejected', 'Rejected')}</option>
+                            <option value="completed">{t('withdrawals.completed', 'Completed')}</option>
                         </select>
                     </div>
                     <div className="wallet-controls-right" style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>
-                        {filteredData.length} result{filteredData.length !== 1 ? 's' : ''}
+                        {filteredData.length} {t('withdrawals.results', 'result(s)')}
                     </div>
                 </div>
 
                 {loading ? (
-                    <div className="wallet-loading"><Spinner animation="border" variant="primary" size="sm" /> Loading requests…</div>
+                    <div className="wallet-loading"><Spinner animation="border" variant="primary" size="sm" /> {t('withdrawals.loading', 'Loading requests…')}</div>
                 ) : filteredData.length === 0 ? (
                     <div className="wallet-empty">
                         <div className="wallet-empty-icon"><FaRegMoneyBillAlt /></div>
-                        <div className="wallet-empty-title">No withdrawal requests found</div>
-                        <div className="wallet-empty-sub">All pending requests will appear here</div>
+                        <div className="wallet-empty-title">{t('withdrawals.no_requests', 'No withdrawal requests found')}</div>
+                        <div className="wallet-empty-sub">{t('withdrawals.no_requests_sub', 'All pending requests will appear here')}</div>
                     </div>
                 ) : (
                     <>
                         <div className="wallet-table-wrapper">
-                            <Table columns={columns} data={filteredData} pagination={true} emptyMessage="No requests found" />
+                            <Table columns={columns} data={filteredData} pagination={true} emptyMessage={t('withdrawals.no_data', 'No requests found')} />
                         </div>
                         <div className="wallet-mobile-list">
                             {filteredData.map((row, i) => <MobileCard key={row._id || i} row={row} />)}
@@ -339,29 +344,29 @@ const WithdrawalRequests = () => {
             <Modal
                 show={showModal}
                 onHide={() => setShowModal(false)}
-                title={statusUpdate === 'approved' ? '✅ Approve Withdrawal' : '❌ Reject Withdrawal'}
+                title={statusUpdate === 'approved' ? t('withdrawals.modal.title_approve', '✅ Approve Withdrawal') : t('withdrawals.modal.title_reject', '❌ Reject Withdrawal')}
                 size="md"
                 footer={
                     <>
-                        <button className="wallet-btn wallet-btn-outline" onClick={() => setShowModal(false)}>Cancel</button>
+                        <button className="wallet-btn wallet-btn-outline" onClick={() => setShowModal(false)}>{t('withdrawals.modal.cancel', 'Cancel')}</button>
                         <button
                             className={`wallet-btn ${statusUpdate === 'approved' ? 'wallet-btn-success' : 'wallet-btn-danger'}`}
                             onClick={confirmAction}
                             disabled={saving}
                         >
-                            {saving ? <Spinner size="sm" animation="border" /> : (statusUpdate === 'approved' ? 'Confirm Approval' : 'Confirm Rejection')}
+                            {saving ? <Spinner size="sm" animation="border" /> : (statusUpdate === 'approved' ? t('withdrawals.modal.confirm_approve', 'Confirm Approval') : t('withdrawals.modal.confirm_reject', 'Confirm Rejection'))}
                         </button>
                     </>
                 }
             >
                 {/* Amount summary */}
                 <div className="wallet-confirm-box">
-                    <div className="wallet-confirm-label">Withdrawal Request</div>
+                    <div className="wallet-confirm-label">{t('withdrawals.modal.request_label', 'Withdrawal Request')}</div>
                     <div className="wallet-confirm-amount">
                         {selected?.currency || 'INR'} {Number(selected?.amount || 0).toLocaleString()}
                     </div>
                     <div className="wallet-confirm-label">
-                        by <strong>{selected?.user_id?.username}</strong>
+                        {t('withdrawals.modal.by', 'by')} <strong>{selected?.user_id?.username}</strong>
                     </div>
                 </div>
 
@@ -371,30 +376,30 @@ const WithdrawalRequests = () => {
                         <div className={`wallet-pm-icon ${PayoutIconClass(selected?.payment_method)}`} style={{ width: 24, height: 24, borderRadius: 6, fontSize: '0.75rem' }}>
                             <PayoutIcon method={selected?.payment_method} />
                         </div>
-                        Payout Details — {selected?.payment_method}
+                        {t('withdrawals.modal.payout_details', 'Payout Details')} — {selected?.payment_method}
                     </label>
                     <div className="wallet-payout-box">
                         {selected?.payment_method === 'Bank' && selected?.payment_details && (
                             <>
                                 <div className="wallet-payout-row">
-                                    <span className="wallet-payout-row-key">Bank</span>
+                                    <span className="wallet-payout-row-key">{t('withdrawals.modal.bank', 'Bank')}</span>
                                     <span className="wallet-payout-row-val">{selected.payment_details.bank_name}</span>
                                 </div>
                                 <div className="wallet-payout-row">
-                                    <span className="wallet-payout-row-key">Holder</span>
+                                    <span className="wallet-payout-row-key">{t('withdrawals.modal.holder', 'Holder')}</span>
                                     <span className="wallet-payout-row-val">{selected.payment_details.account_holder_name}</span>
                                 </div>
                                 <div className="wallet-payout-row">
-                                    <span className="wallet-payout-row-key">Account</span>
+                                    <span className="wallet-payout-row-key">{t('withdrawals.modal.account', 'Account')}</span>
                                     <span className="wallet-payout-row-val">{selected.payment_details.account_number}</span>
                                 </div>
                                 <div className="wallet-payout-row">
-                                    <span className="wallet-payout-row-key">IFSC</span>
+                                    <span className="wallet-payout-row-key">{t('withdrawals.modal.ifsc', 'IFSC')}</span>
                                     <span className="wallet-payout-row-val">{selected.payment_details.ifsc_code}</span>
                                 </div>
                                 {selected.payment_details.branch_city && (
                                     <div className="wallet-payout-row">
-                                        <span className="wallet-payout-row-key">Branch</span>
+                                        <span className="wallet-payout-row-key">{t('withdrawals.modal.branch', 'Branch')}</span>
                                         <span className="wallet-payout-row-val">{selected.payment_details.branch_city}</span>
                                     </div>
                                 )}
@@ -402,13 +407,13 @@ const WithdrawalRequests = () => {
                         )}
                         {selected?.payment_method === 'UPI' && (
                             <div className="wallet-payout-row">
-                                <span className="wallet-payout-row-key">UPI ID</span>
+                                <span className="wallet-payout-row-key">{t('withdrawals.modal.upi_id', 'UPI ID')}</span>
                                 <span className="wallet-payout-row-val">{selected?.payment_details?.upi_id}</span>
                             </div>
                         )}
                         {selected?.payment_method === 'PayPal' && (
                             <div className="wallet-payout-row">
-                                <span className="wallet-payout-row-key">Email</span>
+                                <span className="wallet-payout-row-key">{t('withdrawals.modal.email', 'Email')}</span>
                                 <span className="wallet-payout-row-val">{selected?.payment_details?.paypal_email}</span>
                             </div>
                         )}
@@ -418,13 +423,13 @@ const WithdrawalRequests = () => {
                 {/* Admin note */}
                 <div className="wallet-form-group">
                     <label className="wallet-form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <FaCommentDots /> Admin Note {statusUpdate === 'rejected' ? '(required)' : '(optional)'}
+                        <FaCommentDots /> {t('withdrawals.modal.admin_note', 'Admin Note')} {statusUpdate === 'rejected' ? t('withdrawals.modal.required', '(required)') : t('withdrawals.modal.optional', '(optional)')}
                     </label>
                     <textarea
                         className="wallet-admin-note"
                         placeholder={statusUpdate === 'rejected'
-                            ? 'Please explain why this request is rejected…'
-                            : 'Optional: add a transaction ID or reference…'}
+                            ? t('withdrawals.modal.note_placeholder_reject', 'Please explain why this request is rejected…')
+                            : t('withdrawals.modal.note_placeholder_default', 'Optional: add a transaction ID or reference…')}
                         value={adminNote}
                         onChange={e => setAdminNote(e.target.value)}
                         rows={3}

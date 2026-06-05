@@ -497,7 +497,7 @@ const Header = () => {
                                 overflow: 'visible'
                             }}
                         >
-                            <div style={{ paddingLeft: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ paddingInlineStart: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <FaSearch className="search-icon-svg" style={{ color: settings.primary_color, fontSize: '0.95rem', opacity: 1, transition: 'color 0.3s' }} />
                             </div>
                             <input
@@ -506,7 +506,7 @@ const Header = () => {
                                 style={{
                                     flex: 1,
                                     padding: '0 16px',
-                                    paddingRight: searchTerm.trim() ? '140px' : '50px', // Wider padding when search button is visible
+                                    paddingInlineEnd: searchTerm.trim() ? '140px' : '50px', // Wider padding when search button is visible
                                     border: 'none',
                                     background: 'transparent',
                                     fontSize: '0.95rem',
@@ -539,40 +539,42 @@ const Header = () => {
                                 onChange={handleImageChange}
                             />
 
-                            <div style={{
-                                position: 'absolute',
-                                right: searchTerm.trim() ? '105px' : '15px', // Shift left when search button appears
-                                display: 'flex',
-                                alignItems: 'center',
-                                transition: 'all 0.3s ease'
-                            }}>
-                                <button
-                                    onClick={handleImageSearchClick}
-                                    style={{
-                                        background: 'transparent',
-                                        border: 'none',
-                                        color: isImageSearching ? settings.primary_color : '#adb5bd',
-                                        fontSize: '1.1rem',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        padding: '5px'
-                                    }}
-                                    disabled={isImageSearching}
-                                    title="Search by image"
-                                >
-                                    {isImageSearching ? (
-                                        <div className="spinner-border spinner-border-sm" role="status" style={{ width: '1rem', height: '1rem' }} />
-                                    ) : (
-                                        <FaCamera />
-                                    )}
-                                </button>
-                            </div>
-
-                            {searchingImage && (
+                            {settings.visual_search_enabled !== false && (
                                 <div style={{
                                     position: 'absolute',
-                                    right: searchTerm.trim() ? '145px' : '55px',
+                                    insetInlineEnd: searchTerm.trim() ? '105px' : '15px', // Shift left when search button appears
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    transition: 'all 0.3s ease'
+                                }}>
+                                    <button
+                                        onClick={handleImageSearchClick}
+                                        style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: isImageSearching ? settings.primary_color : '#adb5bd',
+                                            fontSize: '1.1rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            padding: '5px'
+                                        }}
+                                        disabled={isImageSearching}
+                                        title="Search by image"
+                                    >
+                                        {isImageSearching ? (
+                                            <div className="spinner-border spinner-border-sm" role="status" style={{ width: '1rem', height: '1rem' }} />
+                                        ) : (
+                                            <FaCamera />
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+
+                            {settings.visual_search_enabled !== false && searchingImage && (
+                                <div style={{
+                                    position: 'absolute',
+                                    insetInlineEnd: searchTerm.trim() ? '145px' : '55px',
                                     top: '50%',
                                     transform: 'translateY(-50%)',
                                     width: '32px',
@@ -597,7 +599,7 @@ const Header = () => {
                                     onClick={() => handleSearchSubmit(searchTerm)}
                                     style={{
                                         position: 'absolute',
-                                        right: '6px',
+                                        insetInlineEnd: '6px',
                                         backgroundColor: settings.primary_color,
                                         color: 'white',
                                         border: 'none',
@@ -921,7 +923,7 @@ const Header = () => {
                                                 {/* Last 5 notifications */}
                                                 {notifState.length === 0 ? (
                                                     <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
-                                                        No notifications yet
+                                                        {t('header.no_notifications', 'No notifications yet')}
                                                     </div>
                                                 ) : (
                                                     notifState.slice(0, 5).map(n => {
@@ -1004,7 +1006,7 @@ const Header = () => {
                                                         borderTop: '1px solid #f1f5f9'
                                                     }}
                                                 >
-                                                    View all notifications →
+                                                    {t('header.view_all_notifications', 'View all notifications')} ➔
                                                 </div>
                                             </div>
                                         </div>
@@ -1224,15 +1226,19 @@ const Header = () => {
                             />
 
                             {/* Visual Search in Mobile Bar */}
-                            <div style={{ position: 'absolute', right: searchTerm.trim() ? '105px' : '15px', display: 'flex', alignItems: 'center' }}>
-                                <button
-                                    onClick={handleImageSearchClick}
-                                    style={{ background: 'transparent', border: 'none', color: isImageSearching ? settings.primary_color : '#adb5bd', fontSize: '1.1rem', cursor: 'pointer' }}
-                                    disabled={isImageSearching}
-                                >
-                                    {isImageSearching ? <div className="spinner-border spinner-border-sm" /> : <FaCamera />}
-                                </button>
-                                {imageSearchMessage && (
+                            {settings.visual_search_enabled !== false && (
+                                <div style={{ position: 'absolute', right: searchTerm.trim() ? '105px' : '15px', display: 'flex', alignItems: 'center' }}>
+                                    <button
+                                        onClick={handleImageSearchClick}
+                                        style={{ background: 'transparent', border: 'none', color: isImageSearching ? settings.primary_color : '#adb5bd', fontSize: '1.1rem', cursor: 'pointer' }}
+                                        disabled={isImageSearching}
+                                    >
+                                        {isImageSearching ? <div className="spinner-border spinner-border-sm" /> : <FaCamera />}
+                                    </button>
+                                </div>
+                            )}
+                            
+                            {imageSearchMessage && (
                                     <div style={{
                                         position: 'absolute',
                                         bottom: '-45px',
@@ -1251,7 +1257,6 @@ const Header = () => {
                                         {imageSearchMessage}
                                     </div>
                                 )}
-                            </div>
 
                             {searchingImage && (
                                 <div style={{ position: 'absolute', right: searchTerm.trim() ? '145px' : '55px', top: '50%', transform: 'translateY(-50%)', width: '32px', height: '32px', borderRadius: '6px', overflow: 'hidden', border: `2px solid ${settings.primary_color}` }}>
@@ -1627,8 +1632,8 @@ const Header = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <Link href="/login" className="mobile-link" onClick={closeMobileMenu}>Login</Link>
-                                        <Link href="/register" className="mobile-link" onClick={closeMobileMenu}>Sign Up</Link>
+                                        <Link href="/login" className="mobile-link" onClick={closeMobileMenu}>{t('header.login', 'Log in')}</Link>
+                                        <Link href="/register" className="mobile-link" onClick={closeMobileMenu}>{t('header.signup', 'Sign Up')}</Link>
                                     </>
                                 )}
                                 <Link href="/sell" className="mobile-btn" style={{ backgroundColor: settings.primary_color, marginTop: '20px' }} onClick={closeMobileMenu}>

@@ -236,6 +236,7 @@
 .bottom-links {
     display: flex;
     gap: 32px;
+    padding-right: 60px;
 }
 
 .bottom-links a {
@@ -274,5 +275,12 @@
         justify-content: center;
         flex-wrap: wrap;
         gap: 16px;
+        padding-right: 0;
     }
 }
+
+/* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
+.social-link { position: relative; }
+.social-link::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.payment-icon { position: relative; }
+.payment-icon::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }

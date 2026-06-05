@@ -184,7 +184,7 @@ const updateSettingsByType = asyncHandler(async (req, res) => {
         req.files.forEach(file => {
             const fieldName = file.fieldname;
             const filePath = `images/site/${file.filename}`;
-            
+
             if (fieldName.startsWith('social_icon_')) {
                 const parts = fieldName.split('_');
                 const index = parseInt(parts[parts.length - 1]);
@@ -206,7 +206,8 @@ const updateSettingsByType = asyncHandler(async (req, res) => {
                 if (val === undefined || val === 'undefined') return;
 
                 // Force null for empty ObjectId fields to prevent casting errors
-                if (key.endsWith('_id')) {
+                const socialIdFields = ['google_client_id', 'facebook_client_id', 'twitter_client_id', 'apple_client_id', 'apple_team_id', 'apple_key_id'];
+                if (key.endsWith('_id') && !socialIdFields.includes(key)) {
                     if (val === '' || val === null || val === 'null' || val === 'undefined') {
                         setting.set(key, null);
                     } else {
@@ -219,12 +220,18 @@ const updateSettingsByType = asyncHandler(async (req, res) => {
                 if (['pagination_limit', 'admin_commission'].includes(key)) {
                     const numVal = parseFloat(val);
                     setting.set(key, isNaN(numVal) ? null : numVal);
+                    setting.markModified(key);
                     return;
                 }
 
                 setting.set(key, val);
+                setting.markModified(key);
             });
+            console.log(`[Settings] All fields mapped to Mongoose. Waiting for setting.save()...`);
             const updatedSetting = await setting.save();
+            console.log(`[Settings] ==============================================`);
+            console.log(`[Settings] SUCCESSFULLY SAVED ${type} TO DATABASE!`);
+            console.log(`[Settings] ==============================================`);
             res.json(updatedSetting);
         } else {
             const newSetting = await Setting.create({ ...updateData, type });

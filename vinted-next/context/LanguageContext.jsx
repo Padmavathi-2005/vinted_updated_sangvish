@@ -29,9 +29,7 @@ export const LanguageProvider = ({ children }) => {
                     axios.get('/api/languages').catch(() => ({ data: [] }))
                 ]);
 
-                // Filter to only include our supported 4 languages
-                const supportedCodes = ['en', 'ar', 'de', 'fr'];
-                let filteredLangs = [
+                let finalLangs = [
                     { _id: 'en', name: 'English', code: 'en', native_name: 'English', direction: 'ltr' },
                     { _id: 'ar', name: 'Arabic', code: 'ar', native_name: 'العربية', direction: 'rtl' },
                     { _id: 'de', name: 'German', code: 'de', native_name: 'Deutsch', direction: 'ltr' },
@@ -39,33 +37,42 @@ export const LanguageProvider = ({ children }) => {
                 ];
 
                 if (Array.isArray(languagesRes.data) && languagesRes.data.length > 0) {
-                    // Update metadata if backend has more accurate data, but keep only the 4 codes
-                    const fromBackend = languagesRes.data.filter(l => supportedCodes.includes(l.code));
-                    if (fromBackend.length > 0) {
-                        filteredLangs = fromBackend;
+                    // Use all active languages from the database!
+                    const activeBackendLangs = languagesRes.data.filter(l => l.is_active !== false);
+                    if (activeBackendLangs.length > 0) {
+                        finalLangs = activeBackendLangs;
                     }
                 }
-                setLanguages(filteredLangs);
+                setLanguages(finalLangs);
 
                 // Determine default language from settings or fallback to English
-                const defLanguage = filteredLangs.find(l => l.code === (settingsRes.data?.default_language || 'en')) || filteredLangs[0];
+                const defLanguage = finalLangs.find(l => l._id === settingsRes.data?.default_language_id) || finalLangs.find(l => l.code === 'en') || finalLangs[0];
                 setDefaultLanguage(defLanguage);
 
                 // Check local storage for user's preferred language
                 const storedLanguageCode = typeof window !== 'undefined' ? localStorage.getItem('user_language') : null;
 
+                let selectedLang = defLanguage;
                 if (storedLanguageCode) {
-                    const found = filteredLangs.find(l => l.code === storedLanguageCode);
+                    const found = finalLangs.find(l => l.code === storedLanguageCode);
                     if (found) {
-                        setCurrentLanguage(found);
-                    } else if (defLanguage) {
-                        setCurrentLanguage(defLanguage);
+                        selectedLang = found;
                     }
-                } else if (defLanguage) {
-                    setCurrentLanguage(defLanguage);
-                } else if (filteredLangs.length > 0) {
-                    setCurrentLanguage(filteredLangs[0]); // Fallback to first available
+                } else if (!defLanguage && finalLangs.length > 0) {
+                    selectedLang = finalLangs[0];
                 }
+                
+                setCurrentLanguage(selectedLang);
+
+                if (selectedLang) {
+                    try {
+                        const { data } = await axios.get(`/api/frontend-content/${selectedLang.code}`);
+                        setDynamicContent(data);
+                    } catch (error) {
+                        console.error('Failed to update dynamic content on load:', error);
+                    }
+                }
+                setContentLoading(false);
 
             } catch (error) {
                 console.error("Failed to fetch language data:", error);

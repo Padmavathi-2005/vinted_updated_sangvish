@@ -123,7 +123,15 @@ export const LocalizationProvider = ({ children }) => {
         if (!curr) return `${amount} ${currency}`;
 
         const converted = amount * curr.exchange_rate;
-        const formatted = converted.toFixed(curr.decimal_places);
+        
+        // Let the browser handle the numeral digits based on the selected language
+        // We use parts to extract the number and append the symbol where appropriate.
+        const formatter = new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : language, {
+            minimumFractionDigits: curr.decimal_places,
+            maximumFractionDigits: curr.decimal_places
+        });
+        
+        const formatted = formatter.format(converted);
 
         if (curr.symbol_position === 'before') {
             return `${curr.symbol}${formatted}`;
@@ -132,17 +140,34 @@ export const LocalizationProvider = ({ children }) => {
         }
     };
 
-    const t = (path, params = {}) => {
+    const t = (path, fallbackOrParams, paramsObj) => {
+        let fallback = path;
+        let params = {};
+        
+        if (typeof fallbackOrParams === 'string') {
+            fallback = fallbackOrParams;
+            params = paramsObj || {};
+        } else if (typeof fallbackOrParams === 'object' && fallbackOrParams !== null) {
+            params = fallbackOrParams;
+        }
+
         const keys = path.split('.');
         let result = translations;
+        let found = true;
+
         for (const key of keys) {
-            if (!result || result[key] === undefined) return path;
+            if (!result || result[key] === undefined) {
+                found = false;
+                break;
+            }
             result = result[key];
         }
 
-        if (typeof result === 'string' && params) {
+        if (!found) result = fallback;
+
+        if (typeof result === 'string' && params && Object.keys(params).length > 0) {
             Object.keys(params).forEach(key => {
-                result = result.replace(`{${key}}`, params[key]);
+                result = result.replace(new RegExp(`\\{\\{?${key}\\}?\\}`, 'g'), params[key]);
             });
         }
 

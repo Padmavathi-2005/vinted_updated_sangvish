@@ -46,6 +46,17 @@ export const SettingsProvider = ({ children }) => {
                     // Dynamic Font Loading - Disabled as per request to use system-ui always
                     document.documentElement.style.setProperty('--body-font', 'system-ui, -apple-system, sans-serif');
 
+                    // Dynamically update document title if site name changed
+                    if (data.site_name) {
+                        const newSiteName = safeString(data.site_name, 'Resale');
+                        const oldTitle = document.title;
+                        if (oldTitle && oldTitle.includes('|')) {
+                            document.title = `${oldTitle.split('|')[0].trim()} | ${newSiteName}`;
+                        } else {
+                            document.title = newSiteName;
+                        }
+                    }
+
 
 
                     if (data.site_favicon || data.favicon) {

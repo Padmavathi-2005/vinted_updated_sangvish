@@ -143,7 +143,7 @@ const UserPayoutMethods = () => {
             header: 'Default',
             accessor: 'is_default',
             render: (row) => row.is_default
-                ? <FaShieldAlt style={{ color: '#0ea5e9', fontSize: '1rem' }} title="Default method" />
+                ? <FaShieldAlt style={{ color: 'var(--primary-color)', fontSize: '1rem' }} title="Default method" />
                 : <span style={{ color: '#e2e8f0', fontSize: '1rem' }}>—</span>
         }
     ];

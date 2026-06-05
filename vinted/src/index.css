@@ -44,7 +44,11 @@ body {
 
 /* Force-enable Sticky behaviors across the app */
 html,
-body,
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 #root,
 .min-vh-100,
 main {

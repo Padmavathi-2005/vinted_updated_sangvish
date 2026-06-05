@@ -672,6 +672,12 @@ const ItemDetail = () => {
                                     </div>
                                 )}
                             </>
+                        ) : (item.is_sold || item.status === 'sold') ? (
+                            <div className="id-cta-group no-offer">
+                                <button className="id-btn-buy" style={{ gridColumn: '1 / -1', opacity: 0.6, cursor: 'not-allowed', backgroundColor: '#64748b' }} disabled>
+                                    <FaShoppingBag /> {t('item_detail.sold_out', 'Sold Out')}
+                                </button>
+                            </div>
                         ) : (
                             <div className={`id-cta-group${!item.negotiable ? ' no-offer' : ''}`}>
                                 {/* Row 1: Buy Now */}

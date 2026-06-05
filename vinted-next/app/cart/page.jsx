@@ -14,14 +14,16 @@ import AuthContext from '@/context/AuthContext';
 import { getImageUrl, getItemImageUrl, safeString } from '@/utils/constants';
 import { usePopup } from '@/components/common/Popup';
 import Meta from '@/components/common/Meta';
+import { useTranslation } from 'react-i18next';
 import '@/app/styles/Cart.css';
 
 const SHIPPING_FEE = 200; // ₹200 temp flat fee
 
 const Cart = () => {
     const navigate = useRouter();
+    const { t } = useTranslation();
     const { user } = useContext(AuthContext);
-    const { formatPrice, currencies } = useContext(CurrencyContext);
+    const { formatPrice, currencies, defaultCurrency } = useContext(CurrencyContext);
     const {
         cartItems, removeFromCart, toggleSelect, selectAll,
         deselectAll, selectedItems, cartCount, removeSelected
@@ -33,7 +35,7 @@ const Cart = () => {
     // Helper to group items by seller
     const groupedItems = cartItems.reduce((groups, item) => {
         const sellerId = item.seller_id?._id || item.seller_id;
-        const sellerName = safeString(item.seller_id?.username) || 'Unknown Seller';
+        const sellerName = safeString(item.seller_id?.username) || t('cart.unknown_seller', 'Unknown Seller');
         if (!groups[sellerId]) groups[sellerId] = { items: [], sellerName, seller: item.seller_id };
         groups[sellerId].items.push(item);
         return groups;
@@ -41,9 +43,24 @@ const Cart = () => {
 
     // Calculate bundle-aware totals
     const calculateBundleTotals = () => {
-        let subtotal = 0;
-        let shippingTotal = 0;
-        let discountTotal = 0;
+        let subtotal = 0; // In default currency
+        let shippingTotal = 0; // In default currency
+        let discountTotal = 0; // In default currency
+
+        const getInDefault = (price, currId) => {
+            if (!price) return 0;
+            if (!defaultCurrency?.exchange_rate) return price;
+            
+            const targetCurr = currencies.find(c => 
+                c._id === (currId?._id || currId) || 
+                c.code?.toLowerCase() === (currId?.code || currId || '').toString().toLowerCase()
+            );
+            
+            // If it's 'inr' and not found in list, use rate 1.0 (internal base)
+            const itemRate = targetCurr ? targetCurr.exchange_rate : (currId === 'inr' || currId?.code === 'INR' ? 1 : defaultCurrency.exchange_rate);
+            
+            return (price / itemRate) * defaultCurrency.exchange_rate;
+        };
 
         // Group selected items by seller to calculate shipping and discounts
         const selectedBySeller = selectedItems.reduce((acc, item) => {
@@ -57,35 +74,19 @@ const Cart = () => {
             const { items, seller } = group;
             if (items.length === 0) return;
 
-            let groupSubtotalRaw = 0;
-
+            // 1. Add item prices to subtotal
             items.forEach(item => {
-                // To sum correctly, we must convert each item to a common base (e.g., default currency)
-                // We'll simulate the formatPrice logic but without the final target conversion
-                let itemPrice = Number(item.price || 0);
-                let itemCurrencyId = typeof item.currency_id === 'object' ? item.currency_id?._id : item.currency_id;
-
-                // Find currency for base rate
-                let baseRate = 1;
-                const found = currencies.find(c => c._id === itemCurrencyId);
-                if (found) {
-                    baseRate = found.exchange_rate || 1;
-                }
-
-                // Convert to "base units" (price / its_rate)
-                const baseValue = itemPrice / baseRate;
-                subtotal += baseValue;
-                groupSubtotalRaw += baseValue;
+                subtotal += getInDefault(item.price, item.currency_id);
             });
 
-            // Shipping: One fee per seller unless any item has free shipping
-            // Note: SHIPPING_FEE is assumed to be in base currency units for this calculation
-            const hasFreeShipping = items.some(i => i.shipping_included);
-            if (!hasFreeShipping) {
-                shippingTotal += (SHIPPING_FEE / (currencies.find(c => c.code === 'INR')?.exchange_rate || 80));
+            // 2. Calculate Combined Shipping (200 INR per seller if not free)
+            const anyFreeShipping = items.some(i => i.shipping_included);
+            if (!anyFreeShipping) {
+                // SHIPPING_FEE in backend is 200 INR
+                shippingTotal += getInDefault(SHIPPING_FEE, 'inr');
             }
 
-            // Discount: Check seller bundle discounts
+            // 3. Calculate Bundle Discount
             if (seller && seller.bundle_discounts?.enabled) {
                 const count = items.length;
                 let pct = 0;
@@ -94,19 +95,13 @@ const Cart = () => {
                 else if (count >= 2) pct = seller.bundle_discounts.two_items;
 
                 if (pct > 0) {
-                    discountTotal += (groupSubtotalRaw * pct) / 100;
+                    const groupSubtotal = items.reduce((s, i) => s + getInDefault(i.price, i.currency_id), 0);
+                    discountTotal += (groupSubtotal * pct) / 100;
                 }
             }
         });
 
-        // The final subtotal, shipping, and discount are now in "base units".
-        // formatPrice(value) will then convert them to the current user currency.
-        return {
-            subtotal,
-            shippingTotal,
-            discountTotal,
-            total: subtotal + shippingTotal - discountTotal
-        };
+        return { subtotal, shippingTotal, discountTotal, total: subtotal + shippingTotal - discountTotal };
     };
 
     const { subtotal, shippingTotal, discountTotal, total } = calculateBundleTotals();
@@ -114,10 +109,10 @@ const Cart = () => {
     const handleRemove = (item) => {
         showPopup({
             type: 'confirm',
-            title: 'Remove Item?',
-            message: `Remove "${item.title}" from your cart?`,
-            confirmText: 'Remove',
-            cancelText: 'Keep',
+            title: t('cart.remove_item_title', 'Remove Item?'),
+            message: t('cart.remove_item_msg', 'Remove "{{item}}" from your cart?').replace('{{item}}', item.title),
+            confirmText: t('cart.remove', 'Remove'),
+            cancelText: t('cart.keep', 'Keep'),
             onConfirm: () => removeFromCart(item._id)
         });
     };
@@ -126,21 +121,21 @@ const Cart = () => {
         if (selectedItems.length === 0) return;
         showPopup({
             type: 'confirm',
-            title: `Remove ${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''}?`,
-            message: 'These items will be removed from your cart.',
-            confirmText: 'Remove',
-            cancelText: 'Cancel',
+            title: t('cart.remove_items_title', 'Remove {{count}} item(s)?').replace('{{count}}', selectedItems.length),
+            message: t('cart.remove_items_msg', 'These items will be removed from your cart.'),
+            confirmText: t('cart.remove', 'Remove'),
+            cancelText: t('cart.cancel', 'Cancel'),
             onConfirm: removeSelected
         });
     };
 
     const handleCheckout = () => {
         if (!user) {
-            showPopup({ type: 'warning', title: 'Login Required', message: 'Please log in to proceed to checkout.' });
+            showPopup({ type: 'warning', title: t('cart.login_required_title', 'Login Required'), message: t('cart.login_required_msg', 'Please log in to proceed to checkout.') });
             return;
         }
         if (selectedItems.length === 0) {
-            showPopup({ type: 'info', title: 'No Items Selected', message: 'Please select at least one item to checkout.' });
+            showPopup({ type: 'info', title: t('cart.no_items_title', 'No Items Selected'), message: t('cart.no_items_msg', 'Please select at least one item to checkout.') });
             return;
         }
         navigate.push('/checkout');
@@ -150,10 +145,9 @@ const Cart = () => {
         return (
             <div className="cart-page">
                 <div className="cart-empty-state">
-                    <FaShoppingCart className="cart-empty-icon" />
-                    <h2>Login to see your cart</h2>
-                    <p>You need to be logged in to manage your shopping cart.</p>
-                    <Link href="/login" className="cart-btn-primary">Login</Link>
+                    <div className="cart-empty-icon"><FaShoppingCart /></div>
+                    <p>{t('cart.login_required', 'You need to be logged in to manage your shopping cart.')}</p>
+                    <Link href="/login" className="cart-shop-btn">{t('cart.login_btn', 'Log In / Sign Up')}</Link>
                 </div>
                 <PopupComponent />
             </div>
@@ -164,10 +158,10 @@ const Cart = () => {
         return (
             <div className="cart-page">
                 <div className="cart-empty-state">
-                    <FaBoxOpen className="cart-empty-icon" />
-                    <h2>Your cart is empty</h2>
-                    <p>Browse items and add them to your cart to get started.</p>
-                    <Link href="/products" className="cart-btn-primary">Browse Products</Link>
+                    <div className="cart-empty-icon"><FaShoppingCart /></div>
+                    <h2>{t('cart.empty_cart', 'Your cart is empty')}</h2>
+                    <p>{t('cart.start_shopping', 'Browse items and add them to your cart to get started.')}</p>
+                    <Link href="/products" className="cart-shop-btn">{t('cart.browse_items', 'Browse Items')}</Link>
                 </div>
                 <PopupComponent />
             </div>
@@ -180,40 +174,32 @@ const Cart = () => {
             <div className="cart-container">
                 {/* Breadcrumb */}
                 <div className="cart-breadcrumb">
-                    <Link href="/">Home</Link>
-                    <FaChevronRight />
-                    <span>Shopping Cart</span>
+                    <Link href="/products">Home</Link> <FaChevronRight size={10} />
+                    <span>{t('cart.shopping_cart', 'Shopping Cart')}</span>
                 </div>
 
-                <div className="cart-header-row">
-                    <h1 className="cart-heading">
-                        <FaShoppingCart /> Shopping Cart
-                        <span className="cart-count-badge">{cartCount}</span>
-                    </h1>
-                    {selectedItems.length > 1 && (
-                        <div className="cart-bundle-badge">
-                            <FaTag /> Bundle Discovery: Multiple items from same seller group automatically!
-                        </div>
-                    )}
-                </div>
-
-                <div className="cart-layout">
-                    {/* ── Left: Items List Grouped by Seller ── */}
+                <div className="cart-grid">
                     <div className="cart-items-panel">
+                        <h1 className="cart-main-title">
+                            <FaShoppingCart /> {t('cart.shopping_cart', 'Shopping Cart')}
+                        </h1>
+                        <span className="cart-count-badge">{cartCount}</span>
+                        {selectedItems.length > 1 && (
+                            <div className="cart-bundle-badge">
+                                <FaTag /> {t('cart.bundle_discovery', 'Bundle Discovery: Multiple items from same seller group automatically!')}
+                            </div>
+                        )}
                         {/* Toolbar */}
                         <div className="cart-toolbar">
-                            <button
-                                className="cart-select-all-btn"
-                                onClick={allSelected ? deselectAll : selectAll}
-                            >
+                            <button className="cart-global-select" onClick={allSelected ? deselectAll : selectAll}>
                                 {allSelected
-                                    ? <><FaCheckSquare className="cart-check-icon checked" /> Deselect All</>
-                                    : <><FaSquare className="cart-check-icon" /> Select All</>
+                                    ? <><FaCheckSquare className="cart-check-icon checked" /> {t('cart.deselect_all', 'Deselect All')}</>
+                                    : <><FaSquare className="cart-check-icon" /> {t('cart.select_all', 'Select All')}</>
                                 }
                             </button>
                             {selectedItems.length > 0 && (
-                                <button className="cart-remove-sel-btn" onClick={handleRemoveSelected}>
-                                    <FaTrash /> Remove Selected ({selectedItems.length})
+                                <button className="cart-global-remove" onClick={handleRemoveSelected}>
+                                    <FaTrash /> {t('cart.remove_selected_count', 'Remove Selected ({{count}})').replace('{{count}}', selectedItems.length)}
                                 </button>
                             )}
                         </div>
@@ -226,23 +212,10 @@ const Cart = () => {
 
                                 return (
                                     <div key={sellerId} className="cart-seller-group">
-                                        <div className="cart-group-header">
-                                            <div className="d-flex align-items-center gap-2">
-                                                <span className="cart-group-seller-label">Seller:</span>
-                                                <Link href={`/seller/${sellerId}`} className="cart-group-seller-name">{group.sellerName}</Link>
-                                                {selectedInGroup.length > 1 && (
-                                                    <span className="cart-group-bundle-tag">
-                                                        <FaBoxOpen /> Bundle ({selectedInGroup.length} items)
-                                                    </span>
-                                                )}
-                                            </div>
-                                            {group.seller?.bundle_discounts?.enabled && (
-                                                <div className="cart-group-promo-tag">
-                                                    <FaTag /> Bundle discounts available
-                                                </div>
-                                            )}
+                                        <div className="cart-group-header-right">
+                                            <span className="cart-seller-name">{group.sellerName}</span>
+                                            <span className="cart-seller-badge">{t('cart.seller', 'SELLER')}</span>
                                         </div>
-
                                         <div className="cart-items-list">
                                             {group.items.map(item => {
                                                 const imgUrl = getItemImageUrl(item.images?.[0]);
@@ -253,17 +226,20 @@ const Cart = () => {
                                                         className={`cart-item-row ${item.selected ? 'selected' : ''} ${isSold ? 'sold' : ''}`}
                                                     >
                                                         {/* Checkbox */}
-                                                        <button
-                                                            className="cart-item-check"
-                                                            onClick={() => isSold ? null : toggleSelect(item._id)}
-                                                            disabled={isSold}
-                                                            aria-label={item.selected ? 'Deselect' : 'Select'}
-                                                        >
-                                                            {item.selected
-                                                                ? <FaCheckSquare className="cart-check-icon checked" />
-                                                                : <FaSquare className="cart-check-icon" />
-                                                            }
-                                                        </button>
+                                                        {!isSold ? (
+                                                            <button
+                                                                className="cart-item-check"
+                                                                onClick={() => toggleSelect(item._id)}
+                                                                aria-label={item.selected ? 'Deselect' : 'Select'}
+                                                            >
+                                                                {item.selected
+                                                                    ? <FaCheckSquare className="cart-check-icon checked" />
+                                                                    : <FaSquare className="cart-check-icon" />
+                                                                }
+                                                            </button>
+                                                        ) : (
+                                                            <div className="cart-item-check-placeholder" style={{ width: '24px', marginRight: '15px' }}></div>
+                                                        )}
 
                                                         {/* Image */}
                                                         <Link href={`/items/${item.slug || item._id}`} className="cart-item-img-link">
@@ -277,15 +253,15 @@ const Cart = () => {
                                                             </Link>
                                                             <div className="cart-item-meta">
                                                                 {item.condition && <span className="cart-meta-chip">{item.condition}</span>}
-                                                                {item.size && <span className="cart-meta-chip">Size: {item.size}</span>}
+                                                                {item.size && <span className="cart-meta-chip">{t('cart.size', 'Size:')} {item.size}</span>}
                                                             </div>
                                                             {isSold && (
                                                                 <div className="cart-item-sold-tag">
-                                                                    ORDERED
+                                                                    {t('cart.ordered', 'ORDERED')}
                                                                 </div>
                                                             )}
                                                             <div className="cart-item-shipping-note">
-                                                                {item.shipping_included && <span className="ship-free">Free shipping</span>}
+                                                                {item.shipping_included && <span className="ship-free">{t('cart.free_shipping', 'Free shipping')}</span>}
                                                             </div>
                                                         </div>
 
@@ -314,13 +290,13 @@ const Cart = () => {
                                                 <div className="cart-group-shipping-info">
                                                     <FaTruck />
                                                     {selectedInGroup.some(i => i.shipping_included)
-                                                        ? ' Combined shipping: Free'
-                                                        : ` Combined shipping: ${formatPrice(SHIPPING_FEE)}`
+                                                        ? ` ${t('cart.combined_shipping_free', 'Combined shipping: Free')}`
+                                                        : ` ${t('cart.combined_shipping_cost', 'Combined shipping:')} ${formatPrice(SHIPPING_FEE)}`
                                                     }
                                                 </div>
                                                 {hasDiscount && (
                                                     <div className="cart-group-discount-info">
-                                                        <FaTag /> Bundle savings applied!
+                                                        <FaTag /> {t('cart.bundle_savings', 'Bundle savings applied!')}
                                                     </div>
                                                 )}
                                             </div>
@@ -334,21 +310,21 @@ const Cart = () => {
                     {/* ── Right: Order Summary ── */}
                     <aside className="cart-summary-panel">
                         <div className="cart-summary-card">
-                            <h2 className="cart-summary-title">Order Summary</h2>
+                            <h2 className="cart-summary-title">{t('cart.order_summary', 'Order Summary')}</h2>
 
                             <div className="cart-summary-row">
-                                <span>Subtotal</span>
+                                <span>{t('cart.subtotal', 'Subtotal')}</span>
                                 <span>{formatPrice(subtotal)}</span>
                             </div>
                             <div className="cart-summary-row">
-                                <span>Combined Shipping</span>
+                                <span>{t('cart.combined_shipping', 'Combined Shipping')}</span>
                                 <span className={shippingTotal === 0 ? 'cart-free-tag' : ''}>
-                                    {shippingTotal === 0 ? 'FREE' : formatPrice(shippingTotal)}
+                                    {shippingTotal === 0 ? t('cart.free', 'FREE') : formatPrice(shippingTotal)}
                                 </span>
                             </div>
                             {discountTotal > 0 && (
                                 <div className="cart-summary-row cart-discount-row">
-                                    <span>Bundle Discount</span>
+                                    <span>{t('cart.bundle_discount', 'Bundle Discount')}</span>
                                     <span>-{formatPrice(discountTotal)}</span>
                                 </div>
                             )}
@@ -356,7 +332,7 @@ const Cart = () => {
                             <div className="cart-summary-divider" />
 
                             <div className="cart-summary-row cart-summary-total">
-                                <span>To Pay</span>
+                                <span>{t('cart.to_pay', 'To Pay')}</span>
                                 <span>{formatPrice(total)}</span>
                             </div>
 
@@ -365,20 +341,20 @@ const Cart = () => {
                                 onClick={handleCheckout}
                                 disabled={selectedItems.length === 0}
                             >
-                                Checkout ({selectedItems.length}) <FaArrowRight />
+                                {t('cart.checkout_count', 'Checkout ({{count}})').replace('{{count}}', selectedItems.length)} <FaArrowRight />
                             </button>
 
 
                             <div className="cart-trust-row">
-                                <span><FaShieldAlt /> Buyer Protection</span>
-                                <span><FaLock /> Secure Payment</span>
+                                <span><FaShieldAlt /> {t('cart.buyer_protection', 'Buyer Protection')}</span>
+                                <span><FaLock /> {t('cart.secure_payment', 'Secure Payment')}</span>
                             </div>
                         </div>
 
                         {/* Selected Items preview */}
                         {selectedItems.length > 0 && (
                             <div className="cart-selected-preview">
-                                <p className="cart-preview-label">Selected Items</p>
+                                <p className="cart-preview-label">{t('cart.selected_items', 'Selected Items')}</p>
                                 {selectedItems.map(item => (
                                     <div key={item._id} className="cart-preview-row">
                                         <img

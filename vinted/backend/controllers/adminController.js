@@ -1,6 +1,9 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import asyncHandler from 'express-async-handler';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import Admin from '../models/Admin.js';
 import User from '../models/User.js';
 import Item from '../models/Item.js';
@@ -244,7 +247,38 @@ const getLanguages = asyncHandler(async (req, res) => {
 // @access  Private (Admin)
 const createLanguage = asyncHandler(async (req, res) => {
     const { name, code, native_name, direction, is_active } = req.body;
+    
+    // Check if language already exists
+    const exists = await Language.findOne({ code });
+    if (exists) {
+        res.status(400);
+        throw new Error('Language code already exists');
+    }
+
     const language = await Language.create({ name, code, native_name, direction, is_active });
+
+    // Copy base english translations
+    try {
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const localesDir = path.join(__dirname, '..', 'locales');
+        
+        const enDir = path.join(localesDir, 'en');
+        const newLangDir = path.join(localesDir, code);
+        
+        if (fs.existsSync(path.join(enDir, 'translation.json'))) {
+            if (!fs.existsSync(newLangDir)) {
+                fs.mkdirSync(newLangDir, { recursive: true });
+            }
+            fs.copyFileSync(
+                path.join(enDir, 'translation.json'),
+                path.join(newLangDir, 'translation.json')
+            );
+        }
+    } catch (err) {
+        console.error('Failed to create translation file for new language:', err);
+    }
+
     res.status(201).json(language);
 });
 
@@ -279,6 +313,67 @@ const deleteLanguage = asyncHandler(async (req, res) => {
         res.status(404);
         throw new Error('Language not found');
     }
+});
+
+// @desc    Get translations for a language
+// @route   GET /api/admin/languages/:id/translations
+// @access  Private (Admin)
+const getLanguageTranslations = asyncHandler(async (req, res) => {
+    const language = await Language.findById(req.params.id);
+    if (!language) {
+        res.status(404);
+        throw new Error('Language not found');
+    }
+
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+
+    // Load master keys from English file
+    const enPath = path.join(__dirname, '..', 'locales', 'en', 'translation.json');
+    let masterKeys = {};
+    if (fs.existsSync(enPath)) {
+        const enJson = JSON.parse(fs.readFileSync(enPath, 'utf8'));
+        // Flatten the object to get key paths (e.g. 'home.hero_title')
+        const flatten = (obj, prefix = '') => {
+            return Object.keys(obj).reduce((acc, k) => {
+                const pre = prefix.length ? prefix + '.' : '';
+                if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k])) {
+                    Object.assign(acc, flatten(obj[k], pre + k));
+                } else {
+                    acc[pre + k] = obj[k];
+                }
+                return acc;
+            }, {});
+        };
+        masterKeys = flatten(enJson);
+    }
+
+    // Convert Map or object to regular object
+    let overrides = {};
+    if (language.translations) {
+        overrides = language.translations instanceof Map 
+            ? Object.fromEntries(language.translations) 
+            : language.translations;
+    }
+
+    res.json({ masterKeys, overrides });
+});
+
+// @desc    Update translations for a language
+// @route   PUT /api/admin/languages/:id/translations
+// @access  Private (Admin)
+const updateLanguageTranslations = asyncHandler(async (req, res) => {
+    const language = await Language.findById(req.params.id);
+    if (!language) {
+        res.status(404);
+        throw new Error('Language not found');
+    }
+
+    // Replace the translations with the new overrides map
+    language.translations = req.body;
+    await language.save();
+
+    res.json({ message: 'Translations updated successfully' });
 });
 
 // @desc    Get all currencies
@@ -809,7 +904,9 @@ const updateUser = asyncHandler(async (req, res) => {
     if (followers_count !== undefined) user.followers_count = followers_count;
     if (following_count !== undefined) user.following_count = following_count;
 
-    if (req.file) {
+    if (req.body.remove_image === 'true') {
+        user.profile_image = '';
+    } else if (req.file) {
         user.profile_image = `images/profile/${req.file.filename}`;
     }
 
@@ -916,7 +1013,8 @@ const getItemOptions = asyncHandler(async (req, res) => {
 const createItem = asyncHandler(async (req, res) => {
     const { 
         title, price, description, brand, condition, status,
-        category_id, subcategory_id, item_type_id, seller_id, currency_id 
+        category_id, subcategory_id, item_type_id, seller_id, currency_id,
+        seo_title, seo_description, seo_keywords
     } = req.body;
 
     // Robust validation for required fields
@@ -952,7 +1050,10 @@ const createItem = asyncHandler(async (req, res) => {
             item_type_id: (item_type_id && item_type_id !== '' && item_type_id !== 'null') ? item_type_id : null,
             currency_id: finalCurrencyId,
             images: itemImages,
-            original_price: parseFloat(price)
+            original_price: parseFloat(price),
+            seo_title,
+            seo_description,
+            seo_keywords
         });
 
         res.status(201).json(item);
@@ -975,7 +1076,8 @@ const updateItem = asyncHandler(async (req, res) => {
 
     const { 
         title, price, description, brand, condition, status, is_deleted, 
-        category_id, subcategory_id, item_type_id, existingImages, existing_images, seller_id, currency_id
+        category_id, subcategory_id, item_type_id, existingImages, existing_images, seller_id, currency_id,
+        seo_title, seo_description, seo_keywords, is_sold
     } = req.body;
 
     const actualExistingImages = existingImages || existing_images;
@@ -1003,11 +1105,19 @@ const updateItem = asyncHandler(async (req, res) => {
         item.is_deleted = is_deleted === 'true' || is_deleted === true;
     }
 
+    if (is_sold !== undefined) {
+        item.is_sold = is_sold === 'true' || is_sold === true;
+    }
+
     if (category_id && category_id !== '' && category_id !== 'null') item.category_id = category_id;
     if (subcategory_id && subcategory_id !== '' && subcategory_id !== 'null') item.subcategory_id = subcategory_id;
     if (item_type_id !== undefined) item.item_type_id = (item_type_id && item_type_id !== '' && item_type_id !== 'null') ? item_type_id : null;
     if (seller_id && seller_id !== '' && seller_id !== 'null') item.seller_id = seller_id;
     if (currency_id && currency_id !== '' && currency_id !== 'null') item.currency_id = currency_id;
+
+    if (seo_title !== undefined) item.seo_title = seo_title;
+    if (seo_description !== undefined) item.seo_description = seo_description;
+    if (seo_keywords !== undefined) item.seo_keywords = seo_keywords;
 
     // Handle Images
     let updatedImages = [];
@@ -1285,7 +1395,7 @@ const updateWithdrawalRequest = asyncHandler(async (req, res) => {
                 title: 'Withdrawal Update',
                 message: msg,
                 type: 'info',
-                link: '/profile?tab=wallet'
+                link: '/profile?tab=payments&sub=withdrawals'
             });
         }
     }
@@ -1429,6 +1539,8 @@ export {
     createLanguage,
     updateLanguage,
     deleteLanguage,
+    getLanguageTranslations,
+    updateLanguageTranslations,
     getCurrencies,
     createCurrency,
     updateCurrency,

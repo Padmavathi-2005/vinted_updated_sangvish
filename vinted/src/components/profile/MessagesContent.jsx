@@ -10,7 +10,7 @@ import { getImageUrl, safeString } from '../../utils/constants';
 import '../../styles/Messaging.css';
 import getSocket from '../../utils/socket';
 
-const socket = getSocket();
+const messageSocket = getSocket();
 
 const getMarketplaceName = (siteNameStrOrObj) => {
     return safeString(siteNameStrOrObj) || 'Marketplace';
@@ -53,20 +53,20 @@ const MessagesContent = () => {
 
     // Socket: Join Conversation Room
     useEffect(() => {
-        if (!socket || !activeConv || activeConv._id === 'new') return;
+        if (!messageSocket || !activeConv || activeConv._id === 'new') return;
 
-        const joinConv = () => socket.emit('join_conversation', activeConv._id);
+        const joinConv = () => messageSocket.emit('join_conversation', activeConv._id);
         joinConv();
-        socket.on('connect', joinConv);
+        messageSocket.on('connect', joinConv);
 
         return () => {
-            socket.off('connect', joinConv);
+            messageSocket.off('connect', joinConv);
         };
     }, [activeConv]);
 
     // Socket: Listen for Messages
     useEffect(() => {
-        if (!socket) return;
+        if (!messageSocket) return;
         
         const handleReceiveMessage = (data) => {
             const { message, conversation } = data;
@@ -93,10 +93,10 @@ const MessagesContent = () => {
             }
         };
 
-        socket.on('receive_message', handleReceiveMessage);
+        messageSocket.on('receive_message', handleReceiveMessage);
 
         return () => {
-            socket.off('receive_message', handleReceiveMessage);
+            messageSocket.off('receive_message', handleReceiveMessage);
         };
     }, [activeConv]);
 

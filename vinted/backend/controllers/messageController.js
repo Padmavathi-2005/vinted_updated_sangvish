@@ -439,8 +439,8 @@ const toggleBlock = asyncHandler(async (req, res) => {
 // @route   PATCH /api/messages/offer/:id
 // @access  Private
 const respondToOffer = asyncHandler(async (req, res) => {
-    const { status } = req.body; // 'accepted' or 'declined'
-    if (!['accepted', 'declined'].includes(status)) {
+    const { status } = req.body; // 'accepted', 'declined', or 'cancelled'
+    if (!['accepted', 'declined', 'cancelled'].includes(status)) {
         res.status(400);
         throw new Error('Invalid status');
     }
@@ -451,9 +451,16 @@ const respondToOffer = asyncHandler(async (req, res) => {
         throw new Error('Offer not found');
     }
 
-    if (message.receiver_id.toString() !== req.user._id.toString()) {
-        res.status(401);
-        throw new Error('Only the recipient can respond to this offer');
+    if (status === 'cancelled') {
+        if (message.sender_id.toString() !== req.user._id.toString()) {
+            res.status(401);
+            throw new Error('Only the sender can cancel this offer');
+        }
+    } else {
+        if (message.receiver_id.toString() !== req.user._id.toString()) {
+            res.status(401);
+            throw new Error('Only the recipient can respond to this offer');
+        }
     }
 
     message.offer_status = status;
@@ -469,16 +476,21 @@ const respondToOffer = asyncHandler(async (req, res) => {
     }
 
     // Send a system message indicating the outcome
-    const systemMessageText = status === 'accepted'
-        ? `✅ Offer of ${symbol}${message.offer_amount} was accepted!`
-        : `❌ Offer of ${symbol}${message.offer_amount} was declined.`;
+    let systemMessageText = '';
+    if (status === 'accepted') {
+        systemMessageText = `✅ Offer of ${symbol}${message.offer_amount} was accepted!`;
+    } else if (status === 'declined') {
+        systemMessageText = `❌ Offer of ${symbol}${message.offer_amount} was declined.`;
+    } else {
+        systemMessageText = `🚫 Offer of ${symbol}${message.offer_amount} was cancelled.`;
+    }
 
     const systemMsg = await Message.create({
         conversation_id: message.conversation_id,
         sender_id: req.user._id,
         sender_model: 'User',
-        receiver_id: message.sender_id,
-        receiver_model: message.sender_model,
+        receiver_id: status === 'cancelled' ? message.receiver_id : message.sender_id,
+        receiver_model: status === 'cancelled' ? message.receiver_model : message.sender_model,
         message: systemMessageText,
         message_type: 'system',
         item_id: message.item_id || conversation.item_id,
@@ -513,14 +525,22 @@ const respondToOffer = asyncHandler(async (req, res) => {
         await conversation.save();
     }
 
-    // Notify sender of the outcome
+    // Notify the other party of the outcome
+    const notifyUserId = status === 'cancelled' ? message.receiver_id : message.sender_id;
+    const notifyUserModel = status === 'cancelled' ? message.receiver_model : message.sender_model;
+    
+    let notificationTitle = 'Offer Update';
+    if (status === 'accepted') notificationTitle = 'Offer Accepted!';
+    if (status === 'declined') notificationTitle = 'Offer Declined';
+    if (status === 'cancelled') notificationTitle = 'Offer Cancelled';
+
     await Notification.create({
-        user_id: message.sender_id,
-        on_model: message.sender_model,
-        title: status === 'accepted' ? 'Offer Accepted!' : 'Offer Declined',
-        message: `${req.user.username || req.user.name} ${status} your offer.`,
+        user_id: notifyUserId,
+        on_model: notifyUserModel,
+        title: notificationTitle,
+        message: `${req.user.username || req.user.name} ${status} the offer.`,
         type: status === 'accepted' ? 'success' : 'error',
-        link: message.sender_model === 'Admin' ? `/messages` : `/profile?tab=messages&conversation=${message.conversation_id}`,
+        link: notifyUserModel === 'Admin' ? `/messages` : `/profile?tab=messages&conversation=${message.conversation_id}`,
     });
 
     const populatedMessage = await Message.findById(systemMsg._id).populate('sender_id', 'name username profile_image');

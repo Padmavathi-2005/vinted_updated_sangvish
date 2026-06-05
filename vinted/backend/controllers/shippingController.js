@@ -38,6 +38,9 @@ export const dispatchOrder = asyncHandler(async (req, res) => {
         throw new Error('Not authorized to dispatch this order');
     }
 
+    const previousTrackingId = order.tracking_id || '';
+    const previousCompanyId = order.shipping_company_id?.toString() || '';
+
     const allowedStatuses = ['pending', 'confirmed', 'packed', 'placed'];
     if (!allowedStatuses.includes(order.order_status)) {
         res.status(400);
@@ -112,19 +115,24 @@ export const dispatchOrder = asyncHandler(async (req, res) => {
         .populate('shipping_company_id')
         .populate('item_id', 'title');
 
-    // Notify Buyer that tracking is available
-    try {
-        const Notification = (await import('../models/Notification.js')).default;
-        await Notification.create({
-            user_id: updatedOrder.buyer_id,
-            on_model: 'User',
-            title: 'Tracking Info Added',
-            message: `The seller has provided tracking information for your order "${updatedOrder.item_id?.title}" (#${updatedOrder.order_number}). You can now track your package.`,
-            type: 'info',
-            link: `/profile?tab=orders&orderId=${updatedOrder._id}`
-        });
-    } catch (notifyErr) {
-        console.error("Error sending dispatch notification:", notifyErr);
+    const newTrackingId = updatedOrder.tracking_id || '';
+    const newCompanyId = updatedOrder.shipping_company_id?._id?.toString() || updatedOrder.shipping_company_id?.toString() || '';
+
+    if (newTrackingId !== previousTrackingId || newCompanyId !== previousCompanyId) {
+        // Notify Buyer that tracking is available
+        try {
+            const Notification = (await import('../models/Notification.js')).default;
+            await Notification.create({
+                user_id: updatedOrder.buyer_id,
+                on_model: 'User',
+                title: 'Tracking Info Added',
+                message: `The seller has provided tracking information for your order "${updatedOrder.item_id?.title}" (#${updatedOrder.order_number}). You can now track your package.`,
+                type: 'info',
+                link: `/profile?tab=orders&orderId=${updatedOrder._id}`
+            });
+        } catch (notifyErr) {
+            console.error("Error sending dispatch notification:", notifyErr);
+        }
     }
 
     res.json(updatedOrder);
@@ -160,4 +168,65 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 
     await order.save();
     res.json({ message: `Order status updated to ${status}`, order });
+});
+
+// @desc    Estimate shipping costs for cart items
+// @route   POST /api/shipping/estimate
+// @access  Private
+export const estimateShippingCosts = asyncHandler(async (req, res) => {
+    const { items, shipping_address } = req.body;
+
+    if (!items || items.length === 0 || !shipping_address) {
+        res.status(400);
+        throw new Error('Items and shipping address are required');
+    }
+
+    const companies = await ShippingCompany.find({ status: 'active' });
+    
+    // Sort companies
+    const sortedCompanies = companies.sort((a, b) => {
+        if (a.company_name === 'DHL Express') return -1;
+        if (b.company_name === 'DHL Express') return 1;
+        return a.company_name.localeCompare(b.company_name);
+    });
+
+    // Calculate total cost for each company
+    const estimates = sortedCompanies.map(company => {
+        let totalCost = 0;
+        const baseRate = company.base_rate || 50;
+        
+        // Distance multipliers
+        const localMult = 1.0;
+        const regionalMult = 1.5;
+        const nationalMult = 2.5;
+
+        for (const cartItem of items) {
+            if (cartItem.shipping_included) continue; // Free shipping
+
+            // Check distance
+            let distanceMult = nationalMult; // Default to national
+
+            const sellerCity = cartItem.city?.toLowerCase().trim();
+            const sellerState = cartItem.state?.toLowerCase().trim();
+            const buyerCity = shipping_address.city?.toLowerCase().trim();
+            const buyerState = shipping_address.state?.toLowerCase().trim();
+
+            if (sellerCity && buyerCity && sellerCity === buyerCity) {
+                distanceMult = localMult;
+            } else if (sellerState && buyerState && sellerState === buyerState) {
+                distanceMult = regionalMult;
+            }
+
+            totalCost += Math.round(baseRate * distanceMult);
+        }
+
+        return {
+            company_id: company._id,
+            company_name: company.company_name,
+            logo: company.logo,
+            estimated_cost: totalCost
+        };
+    });
+
+    res.json(estimates);
 });

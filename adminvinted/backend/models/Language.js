@@ -26,6 +26,10 @@ const languageSchema = mongoose.Schema(
             type: Boolean,
             default: true,
         },
+        translations: {
+            type: mongoose.Schema.Types.Mixed,
+            default: {},
+        },
     },
     {
         timestamps: {

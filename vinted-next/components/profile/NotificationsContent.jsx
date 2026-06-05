@@ -20,23 +20,10 @@ const typeConfig = {
     message: { icon: FaEnvelope, color: '#8b5cf6', bg: '#f5f3ff', labelKey: 'notifications.message' },
     order: { icon: FaBox, color: '#f97316', bg: '#fff7ed', labelKey: 'notifications.order' },
     info: { icon: FaInfoCircle, color: '#64748b', bg: '#f8fafc', labelKey: 'notifications.info' },
+    alert: { icon: FaExclamationCircle, color: '#f59e0b', bg: '#fffbeb', labelKey: 'notifications.alert' },
+    warning: { icon: FaExclamationCircle, color: '#eab308', bg: '#fefce8', labelKey: 'notifications.warning' },
 };
 
-const formatRelativeTime = (dateStr) => {
-    if (!dateStr) return '';
-    const now = new Date();
-    const then = new Date(dateStr);
-    const diffMs = now - then;
-    const mins = Math.floor(diffMs / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}d ago`;
-    if (days < 30) return `${Math.floor(days / 7)}w ago`;
-    return then.toLocaleDateString();
-};
 
 const formatFullDate = (dateStr) => {
     if (!dateStr) return '';
@@ -55,6 +42,22 @@ const NotificationsContent = () => {
     const { user } = useContext(AuthContext);
     const { settings } = useSettings();
     const router = useRouter();
+
+    const formatRelativeTime = (dateStr) => {
+        if (!dateStr) return '';
+        const now = new Date();
+        const then = new Date(dateStr);
+        const diffMs = now - then;
+        const mins = Math.floor(diffMs / 60000);
+        if (mins < 1) return t('time_ago.just_now', 'Just now');
+        if (mins < 60) return t('time_ago.mins_ago_short', '{{count}}m ago').replace('{{count}}', mins);
+        const hours = Math.floor(mins / 60);
+        if (hours < 24) return t('time_ago.hours_ago_short', '{{count}}h ago').replace('{{count}}', hours);
+        const days = Math.floor(hours / 24);
+        if (days < 7) return t('time_ago.days_ago_short', '{{count}}d ago').replace('{{count}}', days);
+        if (days < 30) return t('time_ago.weeks_ago_short', '{{count}}w ago').replace('{{count}}', Math.floor(days / 7));
+        return then.toLocaleDateString();
+    };
 
     const [search, setSearch] = useState('');
     const [activeNotif, setActiveNotif] = useState(null);

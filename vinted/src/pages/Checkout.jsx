@@ -15,13 +15,14 @@ import LanguageContext from '../context/LanguageContext';
 import { getImageUrl, getItemImageUrl, safeString } from '../utils/constants';
 import Meta from '../components/common/Meta';
 import { usePopup } from '../components/common/Popup';
+import AddressAutocomplete from '../components/common/AddressAutocomplete';
 import '../styles/Checkout.css';
 import { useTranslation } from 'react-i18next';
 
 // Promise to be resolved when settings are fetched
 let stripePromise = null;
 
-const SHIPPING_FEE = 2; // In USD ($2.00)
+const SHIPPING_FEE = 200; // In INR (Base currency)
 
 const Checkout = () => {
     const navigate = useNavigate();
@@ -52,13 +53,6 @@ const Checkout = () => {
             return (price / itemRate) * defaultCurrency.exchange_rate;
         };
 
-        selectedItems.forEach(item => {
-            subtotal += getInDefault(item.price, item.currency_id);
-            if (!item.shipping_included) {
-                shippingTotal += getInDefault(SHIPPING_FEE, 'usd');
-            }
-        });
-
         // Group selected items by seller ONLY for bundle discounts
         const selectedBySeller = selectedItems.reduce((acc, item) => {
             const sid = item.seller_id?._id || item.seller_id;
@@ -71,7 +65,19 @@ const Checkout = () => {
             const { items, seller } = group;
             if (items.length === 0) return;
 
-            // Discount: Check seller bundle discounts
+            // 1. Add item prices to subtotal
+            items.forEach(item => {
+                subtotal += getInDefault(item.price, item.currency_id);
+            });
+
+            // 2. Calculate Combined Shipping (200 INR per seller if not free)
+            const anyFreeShipping = items.some(i => i.shipping_included);
+            if (!anyFreeShipping) {
+                // SHIPPING_FEE in backend is 200 INR
+                shippingTotal += getInDefault(SHIPPING_FEE, 'inr');
+            }
+
+            // 3. Calculate Bundle Discount
             if (seller && seller.bundle_discounts?.enabled) {
                 const count = items.length;
                 let pct = 0;
@@ -400,6 +406,29 @@ const Checkout = () => {
         }
     };
 
+    const handleAddressSelect = (location) => {
+        setForm(prev => ({
+            ...prev,
+            address_line: location.address_line || prev.address_line,
+            city: location.city || prev.city,
+            state: location.state || prev.state,
+            country: location.country || prev.country,
+            pincode: location.pincode || prev.pincode,
+            lat: location.lat,
+            lng: location.lng
+        }));
+
+        setFieldErrors(prev => {
+            const updated = { ...prev };
+            delete updated.address_line;
+            delete updated.city;
+            delete updated.state;
+            delete updated.country;
+            delete updated.pincode;
+            return updated;
+        });
+    };
+
     const validateForm = React.useCallback(() => {
         const errors = {};
         const required = ['full_name', 'phone', 'address_line', 'city', 'pincode'];
@@ -544,9 +573,12 @@ const Checkout = () => {
                                     {fieldErrors.phone && <span className="field-error-text">{fieldErrors.phone}</span>}
                                 </div>
                             </div>
-                            <div className={`checkout-field ${fieldErrors.address_line ? 'error' : ''}`}>
+                            <div className={`checkout-field ${fieldErrors.address_line ? 'error' : ''}`} style={{ zIndex: 10 }}>
                                 <label>{t('checkout.street_address')}</label>
-                                <input name="address_line" value={form.address_line} onChange={handleChange} placeholder="123 Main Street, Apt 4B" required />
+                                <AddressAutocomplete 
+                                    initialValue={form.address_line}
+                                    onSelect={handleAddressSelect}
+                                />
                                 {fieldErrors.address_line && <span className="field-error-text">{fieldErrors.address_line}</span>}
                             </div>
                             <div className="checkout-grid-3">
@@ -706,9 +738,9 @@ const Checkout = () => {
                                             {item.condition && <span>{safeString(item.condition)}</span>}
                                         </div>
                                         <div className="checkout-summary-item-price">
-                                            <strong>{formatPrice(item.price, item.currency_id, defaultCurrency)}</strong>
+                                            <strong>{formatDualPrice(getInDefault(item.price, item.currency_id))}</strong>
                                             {!item.shipping_included && (
-                                                <small>+{formatPrice(SHIPPING_FEE, 'usd', defaultCurrency)} {t('checkout.shipping').toLowerCase()}</small>
+                                                <small>+{formatPrice(SHIPPING_FEE, 'inr')} {t('checkout.shipping').toLowerCase()}</small>
                                             )}
                                             {item.shipping_included && (
                                                 <small className="ship-inc">{t('checkout.shipping_included')}</small>

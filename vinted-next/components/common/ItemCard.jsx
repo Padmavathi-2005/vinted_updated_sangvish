@@ -6,6 +6,7 @@ import '@/app/styles/ItemCard.css';
 import AuthContext from '@/context/AuthContext';
 import WishlistContext from '@/context/WishlistContext';
 import CurrencyContext from '@/context/CurrencyContext';
+import { useTranslation } from 'react-i18next';
 
 import { getImageUrl, getItemImageUrl, safeString } from '@/utils/constants';
 
@@ -14,6 +15,7 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
     const { user, mode, setShowLoginModal } = useContext(AuthContext);
     const { isWishlisted, addToWishlist, removeFromWishlist } = useContext(WishlistContext);
     const { formatPrice } = useContext(CurrencyContext);
+    const { t } = useTranslation();
     const [localLikes, setLocalLikes] = useState(item.likes_count || 0);
 
     // Sync local likes if item prop changes
@@ -50,17 +52,17 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
 
     let timeAgoText = '';
     if (diffInDays === 0) {
-        timeAgoText = 'Today';
+        timeAgoText = t('time_ago.today', 'Today');
     } else if (diffInDays === 1) {
-        timeAgoText = 'Yesterday';
+        timeAgoText = t('time_ago.yesterday', 'Yesterday');
     } else if (diffInDays < 30) {
-        timeAgoText = `${diffInDays} days ago`;
+        timeAgoText = t('time_ago.days_ago', '{{count}} days ago').replace('{{count}}', diffInDays);
     } else if (diffInDays < 365) {
         const months = Math.floor(diffInDays / 30);
-        timeAgoText = `${months} month${months > 1 ? 's' : ''} ago`;
+        timeAgoText = t('time_ago.months_ago', '{{count}} months ago').replace('{{count}}', months);
     } else {
         const years = Math.floor(diffInDays / 365);
-        timeAgoText = `${years} year${years > 1 ? 's' : ''} ago`;
+        timeAgoText = t('time_ago.years_ago', '{{count}} years ago').replace('{{count}}', years);
     }
 
     // "New" Logic: Posted within last 48 hours
@@ -171,7 +173,7 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
                             fontWeight: '400',
                             textShadow: '0 1px 4px rgba(0,0,0,0.8)'
                         }}>
-                            {localLikes} likes
+                            {localLikes} {localLikes === 1 ? t('common.like', 'like') : t('common.likes', 'likes')}
                         </span>
                     </button>
                 )}
@@ -199,13 +201,13 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
                 )}
 
                 {/* Top Rated Badge */}
-                {item.isTopRated && <span className="badge-top-rated" style={{ zIndex: 10, position: 'absolute', bottom: '15px', left: '15px' }}>TOP RATED</span>}
+                {item.isTopRated && <span className="badge-top-rated" style={{ zIndex: 10, position: 'absolute', bottom: '15px', left: '15px' }}>{t('common.top_rated', 'TOP RATED')}</span>}
 
                 {/* Condition Badge */}
                 {item.condition && !item.is_sold && item.status !== 'sold' && !item.is_ordered && (
                     <span className="condition-badge" style={{ zIndex: 10 }}>
                         <FaTag style={{ fontSize: '0.6rem' }} />
-                        {safeString(item.condition)}
+                        {t(`condition_labels.${item.condition.toLowerCase().replace(/[^a-z0-9]/g, '_')}`, safeString(item.condition).replace(/-/g, ' '))}
                     </span>
                 )}
 
@@ -213,7 +215,7 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
                 {hasDiscount && (
                     <span className="offer-badge" style={{ zIndex: 10 }}>
                         <FaTag style={{ fontSize: '0.6rem' }} />
-                        {percentOff}% OFF
+                        {percentOff}% {t('common.off', 'OFF')}
                     </span>
                 )}
 
@@ -237,7 +239,7 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
                     {safeString(item.title || item.name, 'Untitled')}
                 </h3>
 
-                <div className="d-flex justify-content-between align-items-end mt-auto">
+                <div className="d-flex justify-content-between align-items-end mt-auto" style={{ gap: '4px', flexWrap: 'wrap' }}>
                     <div className="listing-price d-flex align-items-center gap-1 flex-wrap">
                         <strong style={hasDiscount ? { color: '#ef4444' } : {}}>
                             {formatPrice(item.price, item.currency_id)}
@@ -248,7 +250,7 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
                             </span>
                         )}
                     </div>
-                    <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'flex', alignItems: 'center', marginBottom: '4px', whiteSpace: 'nowrap' }}>
                         <FaClock style={{ fontSize: '0.6rem', marginRight: '4px' }} />
                         {timeAgoText}
                     </span>

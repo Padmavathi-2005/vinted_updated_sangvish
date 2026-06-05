@@ -104,14 +104,24 @@ const MessagesContent = () => {
             // Update messages in current chat if it is active
             if (message && activeConv && activeConv._id === (message.conversation_id?._id || message.conversation_id)) {
                 setMessages(prev => {
-                    if (prev.find(m => m._id === message._id)) return prev; // Avoid duplicate
-                    return [...prev, message];
+                    let newMessages = [...prev];
+                    // Update existing message if updatedMessage is provided
+                    if (data.updatedMessage) {
+                        newMessages = newMessages.map(m => m._id === data.updatedMessage._id ? data.updatedMessage : m);
+                    }
+                    if (!newMessages.find(m => m._id === message._id)) {
+                        newMessages.push(message);
+                    }
+                    return newMessages;
                 });
 
                 // Auto-mark read instantly if chat is active
                 if ((message.receiver_id?._id || message.receiver_id)?.toString() === (user?.id || user?._id)?.toString()) {
                     socket.emit('mark_read', { conversation_id: activeConv._id, user_id: user._id || user.id });
                 }
+            } else if (data.updatedMessage && activeConv && activeConv._id === data.updatedMessage.conversation_id) {
+                // If only an updated message is received
+                setMessages(prev => prev.map(m => m._id === data.updatedMessage._id ? data.updatedMessage : m));
             }
         };
 
@@ -418,27 +428,27 @@ const MessagesContent = () => {
         const diffMs = now - then;
 
         // Handle future timestamps (clock skew) — treat as online now
-        if (diffMs < 0) return 'Active now';
+        if (diffMs < 0) return t('time_ago.active_now', 'Active now');
 
         const diffSecs = Math.floor(diffMs / 1000);
-        if (diffSecs < 30) return 'Active now';
-        if (diffSecs < 90) return 'Just now';
+        if (diffSecs < 30) return t('time_ago.active_now', 'Active now');
+        if (diffSecs < 90) return t('time_ago.just_now', 'Just now');
 
         const diffMins = Math.floor(diffSecs / 60);
-        if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'min' : 'mins'} ago`;
+        if (diffMins < 60) return t('time_ago.mins_ago', '{{count}} mins ago').replace('{{count}}', diffMins);
 
         const diffHours = Math.floor(diffMins / 60);
-        if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+        if (diffHours < 24) return t('time_ago.hours_ago', '{{count}} hours ago').replace('{{count}}', diffHours);
 
         const diffDays = Math.floor(diffHours / 24);
-        if (diffDays === 1) return 'Yesterday';
-        if (diffDays < 7) return `${diffDays} days ago`;
+        if (diffDays === 1) return t('time_ago.yesterday', 'Yesterday');
+        if (diffDays < 7) return t('time_ago.days_ago', '{{count}} days ago').replace('{{count}}', diffDays);
 
         const diffWeeks = Math.floor(diffDays / 7);
-        if (diffWeeks < 5) return `${diffWeeks} ${diffWeeks === 1 ? 'week' : 'weeks'} ago`;
+        if (diffWeeks < 5) return t('time_ago.weeks_ago', '{{count}} weeks ago').replace('{{count}}', diffWeeks);
 
         const diffMonths = Math.floor(diffDays / 30);
-        if (diffMonths < 12) return `${diffMonths} ${diffMonths === 1 ? 'month' : 'months'} ago`;
+        if (diffMonths < 12) return t('time_ago.months_ago', '{{count}} months ago').replace('{{count}}', diffMonths);
 
         // Older than a year — show the actual date
         return then.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
@@ -683,7 +693,7 @@ const MessagesContent = () => {
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
                                         {conv.status !== 'accepted' && (
-                                            <span className={`pd-msg-status ${conv.status}`}>{conv.status.toUpperCase()}</span>
+                                            <span className={`pd-msg-status ${conv.status}`}>{t('profile.conv_status_' + conv.status, conv.status.toUpperCase())}</span>
                                         )}
                                         {conv.unread_count > 0 && <div className="pd-msg-unread-dot" />}
                                     </div>
@@ -765,9 +775,9 @@ const MessagesContent = () => {
                                     </div>
                                     
                                     <div className={`pd-msg-status ${activeConv.status}`}>
-                                        {hasSystemMsgs
-                                            ? (headerOtherOnModel === 'Admin' ? 'OFFICIAL' : 'UPDATES')
-                                            : activeConv.status === 'accepted' ? 'ACCEPTED' : 'PENDING'}
+                                          {hasSystemMsgs
+                                              ? (headerOtherOnModel === 'Admin' ? t('profile.status_official', 'OFFICIAL') : t('profile.status_updates', 'UPDATES'))
+                                              : activeConv.status === 'accepted' ? t('profile.status_accepted', 'ACCEPTED') : t('profile.status_pending', 'PENDING')}
                                     </div>
 
                                     {!hasSystemMsgs && (
@@ -868,7 +878,7 @@ const MessagesContent = () => {
                                                             <div className="pd-rich-system-body">
                                                                 <p className="fw-bold mb-1">{data.is_bundle ? `${data.item_count} items` : data.item_title}</p>
                                                                 <div className="d-flex justify-content-between small text-muted">
-                                                                    <span>Order #{data.order_id}</span>
+                                                                    <span>{t('profile.order_number', 'Order #{{id}}').replace('{{id}}', data.order_id)}</span>
                                                                     <span className="text-primary fw-bold">{formatPrice(data.total_amount || data.item_price)}</span>
                                                                 </div>
                                                             </div>
@@ -1004,7 +1014,7 @@ const MessagesContent = () => {
                                                         )}
                                                         {!isReceiver && msg.offer_status === 'pending' && (
                                                             <div className="pd-msg-offer-actions" style={{ gridTemplateColumns: '1fr' }}>
-                                                                <button className="reject" onClick={() => handleRespondToOffer(msg._id, 'declined')}>Cancel Offer</button>
+                                                                <button className="reject" onClick={() => handleRespondToOffer(msg._id, 'cancelled')}>Cancel Offer</button>
                                                             </div>
                                                         )}
                                                         {msg.offer_status === 'accepted' && currentItem && (

@@ -184,7 +184,7 @@ const registerUser = asyncHandler(async (req, res) => {
         });
 
         // 2. Notify Admin about the new user registration (Stored)
-        const admins = await Admin.find({ is_active: true });
+        const admins = await Admin.find({ is_active: { $ne: false } });
         for (const admin of admins) {
             await Notification.create({
                 user_id: admin._id,
@@ -203,7 +203,7 @@ const registerUser = asyncHandler(async (req, res) => {
             // Get the plain string if it's a map/object
             const displaySiteName = typeof siteName === 'object' ? (Object.values(siteName)[0] || 'Vinted') : siteName;
 
-            const welcomeAdmin = await Admin.findOne({ is_active: true });
+            const welcomeAdmin = await Admin.findOne({ is_active: { $ne: false } });
             if (welcomeAdmin) {
                 const welcomeText = `Hello ${userName}, welcome to ${displaySiteName}! 🌟 We're thrilled to have you join our community. Feel free to explore, buy, or start selling your items. If you need any help, we're here for you!`;
                 
@@ -489,7 +489,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 // @route   GET /api/users
 // @access  Private
 const getAllUsers = asyncHandler(async (req, res) => {
-    const admins = await Admin.find({ is_active: true })
+    const admins = await Admin.find({ is_active: { $ne: false } })
         .select('name profile_image')
         .lean();
 

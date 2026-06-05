@@ -118,6 +118,22 @@ const settingSchema = mongoose.Schema(
         recaptcha_enabled: { type: Boolean, default: false },
         recaptcha_site_key: { type: String, default: '' },
         recaptcha_secret_key: { type: String, default: '' },
+        // Social Login Fields
+        google_enabled: { type: Boolean, default: false },
+        google_client_id: { type: String },
+        google_client_secret: { type: String },
+        facebook_enabled: { type: Boolean, default: false },
+        facebook_client_id: { type: String },
+        facebook_client_secret: { type: String },
+        twitter_enabled: { type: Boolean, default: false },
+        twitter_client_id: { type: String },
+        twitter_client_secret: { type: String },
+        apple_enabled: { type: Boolean, default: false },
+        apple_client_id: { type: String }, // Services ID
+        apple_team_id: { type: String }, // Team ID
+        apple_key_id: { type: String }, // Key ID
+        apple_private_key: { type: String }, // Content of .p8 file
+        apple_client_secret: { type: String }, // Not used by passport-apple but kept for compatibility
     },
     {
         timestamps: {

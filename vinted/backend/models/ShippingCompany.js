@@ -18,6 +18,14 @@ const shippingCompanySchema = mongoose.Schema(
             type: String,
             enum: ['active', 'inactive'],
             default: 'active',
+        },
+        base_rate: {
+            type: Number,
+            default: 50,
+        },
+        per_km_rate: {
+            type: Number,
+            default: 1.5,
         }
     },
     {

@@ -52,16 +52,26 @@ const StripePaymentForm = ({ onPaymentSuccess, amount, formattedAmount, billingD
             } else {
                 setMessage(error.message || "An unexpected error occurred.");
             }
+            setIsLoading(false);
         } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-            onPaymentSuccess(paymentIntent);
+            setMessage("Payment completed, placing your order...");
+            await onPaymentSuccess(paymentIntent);
+            // Do NOT setIsLoading(false) here. Keep button disabled while order places.
         }
-
-        setIsLoading(false);
     };
 
     return (
         <form id="payment-form" onSubmit={handleSubmit} className="stripe-form">
-            <PaymentElement id="payment-element" />
+            <PaymentElement 
+                id="payment-element" 
+                onChange={(e) => {
+                    if (e.error) {
+                        setMessage(e.error.message);
+                    } else {
+                        setMessage(null);
+                    }
+                }}
+            />
             {message && <div id="payment-message" className="payment-error">{message}</div>}
             <button
                 disabled={isLoading || !stripe || !elements}

@@ -1,11 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Card, Form, Button, Row, Col, Spinner } from 'react-bootstrap';
+import { Container, Card, Form, Button, Row, Col, Spinner, Badge } from 'react-bootstrap';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../utils/axios';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css'; // ES6
+
 import { FaArrowLeft, FaSave, FaCode } from 'react-icons/fa';
 import Swal from 'sweetalert2';
+
+const modules = {
+    toolbar: [
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        ['link', 'image'],
+        ['clean']
+    ],
+};
 
 const PageEditor = () => {
     const { id } = useParams();
@@ -14,7 +24,7 @@ const PageEditor = () => {
 
     const [loading, setLoading] = useState(isEditing);
     const [saving, setSaving] = useState(false);
-    const [isHtmlMode, setIsHtmlMode] = useState(false);
+    const [isHtmlMode, setIsHtmlMode] = useState(true);
     const [formData, setFormData] = useState({
         title: '',
         slug: '',
@@ -78,16 +88,7 @@ const PageEditor = () => {
         }
     };
 
-    const modules = {
-        toolbar: [
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-            ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-            [{ 'color': [] }, { 'background': [] }],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link', 'image'],
-            ['clean']
-        ],
-    };
+
 
     if (loading) {
         return (
@@ -168,12 +169,18 @@ const PageEditor = () => {
                                         placeholder="Paste your HTML code here (e.g., <div>Hello World</div>)"
                                     />
                                 ) : (
-                                    <ReactQuill
-                                        theme="snow"
+                                    <Form.Control
+                                        as="textarea"
                                         value={formData.content}
-                                        onChange={content => setFormData({ ...formData, content })}
-                                        style={{ height: '100%' }}
-                                        modules={modules}
+                                        onChange={e => setFormData({ ...formData, content: e.target.value })}
+                                        style={{
+                                            height: '100%',
+                                            fontFamily: 'monospace',
+                                            backgroundColor: '#f8f9fa',
+                                            borderRadius: '8px',
+                                            padding: '15px'
+                                        }}
+                                        placeholder="Paste your HTML code here (e.g., <div>Hello World</div>)"
                                     />
                                 )}
                             </div>

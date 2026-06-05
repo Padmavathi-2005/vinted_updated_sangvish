@@ -657,3 +657,12 @@
         font-size: 1.3rem;
     }
 }
+
+/* ─── Modal Header Fixes ──────────────────────────────────── */
+.modal-header {
+    justify-content: space-between !important;
+}
+
+.modal-header .btn-close {
+    margin: 0 !important;
+}

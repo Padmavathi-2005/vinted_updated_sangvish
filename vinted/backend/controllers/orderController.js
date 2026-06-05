@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
+import Cart from '../models/Cart.js';
 import Order from '../models/Order.js';
 import Item from '../models/Item.js';
 import Notification from '../models/Notification.js';
@@ -9,6 +10,7 @@ import Admin from '../models/Admin.js';
 import sendEmail from '../utils/sendEmail.js';
 import Currency from '../models/Currency.js';
 import Negotiation from '../models/Negotiation.js';
+import ShippingCompany from '../models/ShippingCompany.js';
 import { processOrderPaymentSplit, reverseOrderPayment, processRefundSplit, deductBuyerWallet } from './walletController.js';
 
 // @desc    Create new order
@@ -16,7 +18,7 @@ import { processOrderPaymentSplit, reverseOrderPayment, processRefundSplit, dedu
 // @access  Private
 const createOrder = asyncHandler(async (req, res) => {
     console.log('CREATE ORDER REQUEST:', req.body);
-    const { items, payment_method, paymentMethod, shipping_address, stripe_payment_id } = req.body;
+    const { items, payment_method, paymentMethod, shipping_address, stripe_payment_id, shipping_company_id } = req.body;
     const actualPaymentMethod = payment_method || paymentMethod || 'card';
 
     if (!items || items.length === 0) {
@@ -37,7 +39,7 @@ const createOrder = asyncHandler(async (req, res) => {
             continue;
         }
 
-        if (item.is_sold || item.status === 'sold') {
+        if (item.is_sold || item.status === 'sold' || item.is_ordered) {
             unavailableItems.push(item.title);
             continue;
         }
@@ -123,13 +125,46 @@ const createOrder = asyncHandler(async (req, res) => {
             }
         }
 
-        // Calculate Combined Shipping (200 INR per seller if not free)
-        // Convert 200 INR to item's currency
+        // Calculate Shipping Fee
         const itemCurrencyRate = groupItems[0].currency_id?.exchange_rate || 1;
-        const shippingInItemCurrency = (200 * itemCurrencyRate) / inrRate;
+        let shippingFee = 0;
 
-        const anyFreeShipping = groupItems.some(i => i.shipping_included);
-        const shippingFee = anyFreeShipping ? 0 : shippingInItemCurrency;
+        let shippingCompany = null;
+        if (shipping_company_id) {
+            shippingCompany = await ShippingCompany.findById(shipping_company_id);
+        }
+
+        if (shippingCompany) {
+            const baseRate = shippingCompany.base_rate || 50;
+            const localMult = 1.0;
+            const regionalMult = 1.5;
+            const nationalMult = 2.5;
+
+            for (const item of groupItems) {
+                if (item.shipping_included) continue;
+
+                let distanceMult = nationalMult;
+                const sellerCity = item.city?.toLowerCase().trim();
+                const sellerState = item.state?.toLowerCase().trim();
+                const buyerCity = shipping_address?.city?.toLowerCase().trim();
+                const buyerState = shipping_address?.state?.toLowerCase().trim();
+
+                if (sellerCity && buyerCity && sellerCity === buyerCity) {
+                    distanceMult = localMult;
+                } else if (sellerState && buyerState && sellerState === buyerState) {
+                    distanceMult = regionalMult;
+                }
+
+                const itemShippingInINR = Math.round(baseRate * distanceMult);
+                const shippingInItemCurrency = (itemShippingInINR * itemCurrencyRate) / inrRate;
+                shippingFee += shippingInItemCurrency;
+            }
+        } else {
+            // Fallback to legacy logic
+            const shippingInItemCurrency = (200 * itemCurrencyRate) / inrRate;
+            const anyFreeShipping = groupItems.some(i => i.shipping_included);
+            shippingFee = anyFreeShipping ? 0 : shippingInItemCurrency;
+        }
 
         const discountedItemPrice = itemPriceSum - discountAmount;
         const totalAmount = parseFloat((discountedItemPrice + shippingFee).toFixed(2));
@@ -157,6 +192,8 @@ const createOrder = asyncHandler(async (req, res) => {
     }
 
     // 3. Create actual Orders and Split Profits
+    const adminsList = await Admin.find({ is_active: { $ne: false } });
+
     for (const plan of orderPlans) {
         const { sellerId, groupItems, seller, itemPriceSum, discountAmount, shippingFee, totalAmount, discountedItemPrice } = plan;
         const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -192,16 +229,16 @@ const createOrder = asyncHandler(async (req, res) => {
         order.platform_fee = adminCommission;
         await order.save();
 
-        // Mark items as sold
+        // Mark items as sold safely using updateOne
         for (const item of groupItems) {
-            item.status = 'sold';
-            item.is_sold = true;
-            item.is_ordered = true;
-            await item.save();
+            await Item.updateOne(
+                { _id: item._id },
+                { $set: { status: 'sold', is_sold: true, is_ordered: true } }
+            );
         }
 
         // 4. Notifications
-        const notification = await Notification.create({
+        await Notification.create({
             user_id: sellerId,
             on_model: 'User',
             title: groupItems.length > 1 ? 'New Bundle Order!' : 'New Order Received!',
@@ -211,6 +248,30 @@ const createOrder = asyncHandler(async (req, res) => {
             type: 'order',
             link: `/profile?tab=orders&orderId=${order._id}`
         });
+
+        // Notify Buyer
+        await Notification.create({
+            user_id: req.user._id,
+            on_model: 'User',
+            title: groupItems.length > 1 ? 'Bundle Order Confirmed!' : 'Order Confirmed!',
+            message: groupItems.length > 1
+                ? `Your bundle order of ${groupItems.length} items has been successfully placed. Order ID: #${orderNumber}`
+                : `Your order for "${groupItems[0].title}" has been successfully placed. Order ID: #${orderNumber}`,
+            type: 'success',
+            link: `/profile?tab=orders&orderId=${order._id}`
+        });
+
+        // Notify Admins
+        for (const admin of adminsList) {
+            await Notification.create({
+                user_id: admin._id,
+                on_model: 'Admin',
+                title: 'New Order Placed',
+                message: `Order #${orderNumber} was just placed by ${req.user.username}.`,
+                type: 'info',
+                link: `/orders`
+            });
+        }
 
         // Real-time notification is now handled globally by Notification.js Mongoose middleware
 
@@ -291,6 +352,16 @@ const createOrder = asyncHandler(async (req, res) => {
         createdOrders.push(order);
     }
 
+    try {
+        const purchasedItemIds = items.map(i => new mongoose.Types.ObjectId(i._id));
+        await Cart.updateOne(
+            { user: req.user._id },
+            { $pullAll: { items: purchasedItemIds } }
+        );
+    } catch(err) {
+        console.error('Failed to clear cart after order:', err);
+    }
+
     res.status(201).json(createdOrders);
 });
 
@@ -308,6 +379,7 @@ const getMyOrders = asyncHandler(async (req, res) => {
     const [bought, sold, boughtCount, soldCount] = await Promise.all([
         Order.find(boughtQuery)
             .populate('item_id', 'title images currency_id')
+            .populate('items.item_id', 'title size images currency_id')
             .populate('seller_id', 'username')
             .populate('currency_id')
             .populate('shipping_company_id')
@@ -316,6 +388,7 @@ const getMyOrders = asyncHandler(async (req, res) => {
             .limit(limit),
         Order.find(soldQuery)
             .populate('item_id', 'title images currency_id')
+            .populate('items.item_id', 'title size images currency_id')
             .populate('buyer_id', 'username')
             .populate('currency_id')
             .populate('shipping_company_id')
@@ -330,6 +403,10 @@ const getMyOrders = asyncHandler(async (req, res) => {
     res.json({ 
         bought, 
         sold,
+        boughtCount,
+        soldCount,
+        boughtPages: Math.ceil(boughtCount / limit),
+        soldPages: Math.ceil(soldCount / limit),
         pagination: {
             page,
             limit,
@@ -388,6 +465,11 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
         throw new Error('Not authorized to update this order status');
     }    const prevStatus = order.order_status;
     
+    // Status Guard: Prevent redundant updates
+    if (prevStatus === status) {
+        return res.json(order);
+    }
+
     // Status Guard: Cannot update if already reached terminal state
     if (['delivered', 'cancelled', 'returned'].includes(prevStatus)) {
         res.status(400);
@@ -405,6 +487,34 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 
     // Populate for notifications
     const populatedOrder = await Order.findById(order._id).populate('item_id', 'title').populate('buyer_id', 'username email');
+
+    const adminsList = await Admin.find({ is_active: { $ne: false } });
+
+    // Notify Admins of Status Change (if not cancelled, as cancel is handled later)
+    if (status !== 'cancelled') {
+        for (const admin of adminsList) {
+            await Notification.create({
+                user_id: admin._id,
+                on_model: 'Admin',
+                title: 'Order Status Updated',
+                message: `Order #${order.order_number} status is now ${status}.`,
+                type: 'info',
+                link: `/orders`
+            });
+        }
+    }
+
+    // Notify Seller of Status Change (to confirm their action)
+    if (status !== 'cancelled') {
+        await Notification.create({
+            user_id: order.seller_id,
+            on_model: 'User',
+            title: 'Order Status Updated',
+            message: `Order #${order.order_number} status is now successfully ${status}.`,
+            type: 'success',
+            link: `/profile?tab=orders&orderId=${order._id}`
+        });
+    }
 
     // Notify buyer on status changes
     if (status === 'shipped' || status === 'dispatched') {
@@ -425,6 +535,15 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
                 html: `<p>Hi ${populatedOrder.buyer_id.username},</p><p>Good news! Your order <b>#${order.order_number}</b> for "${populatedOrder.item_id?.title}" has been shipped by the seller.</p>`
             });
         } catch(e) { console.error('Shipped email failed', e); }
+    } else if (status === 'packed') {
+        await Notification.create({
+            user_id: order.buyer_id,
+            on_model: 'User',
+            title: 'Order Packed',
+            message: `Your order "${populatedOrder.item_id?.title}" (#${order.order_number}) has been packed and is getting ready to ship.`,
+            type: 'order',
+            link: `/profile?tab=orders&orderId=${order._id}`
+        });
     } else if (status === 'out_for_delivery' || status === 'on_the_way') {
         await Notification.create({
             user_id: order.buyer_id,
@@ -534,6 +653,18 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             link: `/profile?tab=orders&orderId=${order._id}`
         });
 
+        // Notify Admins
+        for (const admin of adminsList) {
+            await Notification.create({
+                user_id: admin._id,
+                on_model: 'Admin',
+                title: 'Order Cancelled by Seller',
+                message: `Order #${order.order_number} was cancelled by the seller. Refund processed.`,
+                type: 'info',
+                link: `/orders`
+            });
+        }
+
         try {
             await sendEmail({
                 email: populatedOrder.buyer_id.email,
@@ -542,6 +673,45 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
                 html: `<p>Hi ${populatedOrder.buyer_id.username},</p><p>Unfortunately, the seller has cancelled your order <b>#${order.order_number}</b>.</p><p>Reason: ${order.cancel_reason || 'N/A'}</p><p>A full refund has been initiated to your original payment method.</p>`
             });
         } catch(e) { console.error('Seller cancel email failed', e); }
+
+        // Send system message in conversation
+        try {
+            const conversation = await Conversation.findOne({
+                participants: { 
+                    $all: [
+                        { $elemMatch: { user: order.buyer_id, on_model: 'User' } },
+                        { $elemMatch: { user: order.seller_id, on_model: 'User' } }
+                    ]
+                },
+            });
+            if (conversation) {
+                const cancelMeta = JSON.stringify({
+                    type: 'order_cancelled',
+                    item_title: populatedOrder.item_id?.title,
+                    order_id: order.order_number,
+                    reason: order.cancel_reason || 'N/A'
+                });
+                const newMessage = await Message.create({
+                    conversation_id: conversation._id,
+                    sender_id: order.seller_id,
+                    receiver_id: order.buyer_id,
+                    message: `ORDER_NOTIFICATION::${cancelMeta}`,
+                    message_type: 'system'
+                });
+                conversation.last_message = `❌ Order cancelled: "${populatedOrder.item_id?.title}"`;
+                conversation.last_message_at = Date.now();
+                await conversation.save();
+
+                if (req.io) {
+                    req.io.to(conversation._id.toString()).emit('receive_message', {
+                        message: newMessage,
+                        conversation: conversation
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('Error sending cancel message:', err);
+        }
     }
 
     res.json(updatedOrder);
@@ -592,18 +762,63 @@ const cancelOrder = asyncHandler(async (req, res) => {
         link: `/profile?tab=orders&orderId=${order._id}`
     });
 
+    // Notify Buyer
+    await Notification.create({
+        user_id: order.buyer_id,
+        on_model: 'User',
+        title: 'Order Cancelled Successfully',
+        message: `Your cancellation for Order #${order.order_number} was successful. A full refund has been processed.`,
+        type: 'success',
+        link: `/profile?tab=orders&orderId=${order._id}`
+    });
+
     try {
-        const populatedCancelOrder = await Order.findById(order._id).populate('seller_id', 'email username');
+        const populatedCancelOrder = await Order.findById(order._id).populate('seller_id', 'email username').populate('item_id', 'title');
         await sendEmail({
             email: populatedCancelOrder.seller_id.email,
             subject: `Order Cancelled by Buyer: #${order.order_number}`,
             message: `The buyer has cancelled this order.`,
             html: `<p>Hi ${populatedCancelOrder.seller_id.username},</p><p>The buyer has cancelled Order <b>#${order.order_number}</b>.</p><p>Reason: ${order.cancel_reason}</p><p>The items have been automatically re-listed as Available.</p>`
         });
-    } catch(e) { console.error('Buyer cancel email failed', e); }
+
+        // Send system message in conversation
+        const conversation = await Conversation.findOne({
+            participants: { 
+                $all: [
+                    { $elemMatch: { user: order.buyer_id, on_model: 'User' } },
+                    { $elemMatch: { user: order.seller_id, on_model: 'User' } }
+                ]
+            },
+        });
+        if (conversation) {
+            const cancelMeta = JSON.stringify({
+                type: 'order_cancelled',
+                item_title: populatedCancelOrder.item_id?.title,
+                order_id: order.order_number,
+                reason: order.cancel_reason
+            });
+            const newMessage = await Message.create({
+                conversation_id: conversation._id,
+                sender_id: order.buyer_id,
+                receiver_id: order.seller_id,
+                message: `ORDER_NOTIFICATION::${cancelMeta}`,
+                message_type: 'system'
+            });
+            conversation.last_message = `❌ Order cancelled: "${populatedCancelOrder.item_id?.title}"`;
+            conversation.last_message_at = Date.now();
+            await conversation.save();
+
+            if (req.io) {
+                req.io.to(conversation._id.toString()).emit('receive_message', {
+                    message: newMessage,
+                    conversation: conversation
+                });
+            }
+        }
+    } catch(e) { console.error('Buyer cancel email/message failed', e); }
 
     // Notify Admin
-    const adminsList = await Admin.find({ is_active: true });
+    const adminsList = await Admin.find({ is_active: { $ne: false } });
     for (const admin of adminsList) {
         await Notification.create({
             user_id: admin._id,
@@ -675,7 +890,7 @@ const requestReturn = asyncHandler(async (req, res) => {
     });
 
     // Notify Admin
-    const activeAdmins = await Admin.find({ is_active: true });
+    const activeAdmins = await Admin.find({ is_active: { $ne: false } });
     for (const admin of activeAdmins) {
         await Notification.create({
             user_id: admin._id,

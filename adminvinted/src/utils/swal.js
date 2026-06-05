@@ -34,7 +34,7 @@ export const showAlert = (icon, title, text) => {
     });
 };
 
-export const showConfirm = (title, text, confirmButtonText = 'Yes, delete it!') => {
+export const showConfirm = (title, text, confirmButtonText = 'Yes, delete it!', cancelButtonText = 'Cancel') => {
     return Swal.fire({
         title: title,
         text: text,
@@ -43,6 +43,7 @@ export const showConfirm = (title, text, confirmButtonText = 'Yes, delete it!') 
         confirmButtonColor: 'var(--primary-color)',
         cancelButtonColor: '#94a3b8',
         confirmButtonText: confirmButtonText,
+        cancelButtonText: cancelButtonText,
         customClass: {
             popup: 'premium-swal-popup',
             confirmButton: 'premium-swal-confirm',

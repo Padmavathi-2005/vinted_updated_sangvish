@@ -5,8 +5,10 @@ import axios from '../utils/axios';
 import { FaPlus, FaSearch } from 'react-icons/fa';
 import Table from '../components/Table';
 import { showConfirm, showToast } from '../utils/swal';
+import { useLocalization } from '../context/LocalizationContext';
 
 const Pages = () => {
+    const { t } = useLocalization();
     const [pages, setPages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -62,22 +64,22 @@ const Pages = () => {
 
     const columns = [
         {
-            header: 'Title',
+            header: t('pages.table.title', 'Title'),
             accessor: 'title',
             render: (row) => <div className="fw-bold">{row.title}</div>
         },
         {
-            header: 'Slug (URL)',
+            header: t('pages.table.slug', 'Slug (URL)'),
             accessor: 'slug',
             render: (row) => <div className="text-muted">/pages/{row.slug}</div>
         },
         {
-            header: 'Status',
+            header: t('pages.table.status', 'Status'),
             accessor: 'isActive',
             render: (row) => (
                 row.isActive ?
-                    <Badge bg="success" className="px-2 py-1 rounded-pill">Active</Badge> :
-                    <Badge bg="secondary" className="px-2 py-1 rounded-pill">Draft</Badge>
+                    <Badge bg="success" className="px-2 py-1 rounded-pill">{t('common.status.active', 'Active')}</Badge> :
+                    <Badge bg="secondary" className="px-2 py-1 rounded-pill">{t('common.status.inactive', 'Draft')}</Badge>
             )
         }
     ];
@@ -88,26 +90,26 @@ const Pages = () => {
                 <Card className="main-content-card border-0 shadow-sm p-4">
                     <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                         <div>
-                            <h1 className="dashboard-title h3 mb-1 text-users">Static Pages</h1>
-                            <p className="text-muted small mb-0">Manage your website's static informational pages</p>
+                            <h1 className="dashboard-title h3 mb-1 text-users">{t('pages.title', 'Static Pages')}</h1>
+                            <p className="text-muted small mb-0">{t('pages.subtitle', 'Manage your website static informational pages')}</p>
                         </div>
                         <Button
                             variant="primary"
                             onClick={() => navigate('/pages/new')}
                             className="btn-admin-action"
                         >
-                            <FaPlus /> Create Page
+                            <FaPlus /> {t('pages.create_page', 'Create Page')}
                         </Button>
                     </div>
 
                     <div className="d-flex gap-3 flex-wrap mb-4">
-                        <div className="flex-grow-1" style={{ maxWidth: '350px' }}>
+                        <div className="flex-grow-1 search-box-container">
                             <InputGroup>
                                 <InputGroup.Text className="bg-white border-end-0">
                                     <FaSearch className="text-muted" />
                                 </InputGroup.Text>
                                 <Form.Control
-                                    placeholder="Search by title or slug..."
+                                    placeholder={t('pages.search_placeholder', 'Search by title or slug...')}
                                     className="border-start-0 ps-0"
                                     value={searchTerm}
                                     onChange={handleSearch}
@@ -129,7 +131,7 @@ const Pages = () => {
                             onEdit={handleEditClick}
                             onDelete={handleDeleteClick}
                             pagination={true}
-                            emptyMessage="No pages found. Create one to get started!"
+                            emptyMessage={t('pages.no_data', 'No pages found.')}
                         />
                     )}
                 </Card>

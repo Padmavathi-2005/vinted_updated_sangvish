@@ -56,8 +56,7 @@ body {
     grid-column: 1 / -1;
     display: flex;
     align-items: center;
-    justify-content: start;
-    /* Centering the items */
+    justify-content: space-between;
     gap: 8px;
     margin-bottom: 4px;
     background: white;
@@ -66,12 +65,9 @@ body {
     border-radius: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     border: 1px solid #e8edf2;
-    overflow-x: auto;
     position: sticky;
     top: 72px;
     z-index: 100;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
 }
 
 /* Centered group of nav items */
@@ -82,10 +78,10 @@ body {
     flex-wrap: nowrap;
     /* Prevent wrapping on smaller desktops/tablets */
     justify-content: flex-start;
-    overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
     padding: 0 4px;
+    flex: 1;
 }
 
 .pd-nav-items::-webkit-scrollbar {
@@ -98,8 +94,7 @@ body {
 
 /* Toggle Switch Container */
 .pd-mode-toggle-wrapper {
-    position: absolute;
-    right: 6px;
+    position: relative;
     display: flex;
     background-color: #f1f5f9;
     border-radius: 12px;
@@ -109,6 +104,7 @@ body {
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
     flex-shrink: 0;
     z-index: 105;
+    margin-inline-start: 8px;
 }
 
 
@@ -1921,7 +1917,7 @@ body.modal-open {
 }
 
 .pd-sidemenu-item.active {
-    background-color: #e0f2fe;
+    background-color: color-mix(in srgb, var(--primary-color, #0ea5e9) 12%, transparent);
     color: var(--primary-color, #0ea5e9);
 }
 
@@ -2682,3 +2678,17 @@ body.modal-open {
         max-height: 90vh;
     }
 }
+
+/* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
+.pd-stat-card { position: relative; }
+.pd-stat-card::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.pd-stat-card.clickable { position: relative; }
+.pd-stat-card.clickable::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.pd-listing-card { position: relative; }
+.pd-listing-card::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.btn-white { position: relative; }
+.btn-white::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.pd-order-item-card { position: relative; }
+.pd-order-item-card::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.pd-discount-item { position: relative; }
+.pd-discount-item::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }

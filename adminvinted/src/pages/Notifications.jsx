@@ -5,9 +5,14 @@ import { FaBell, FaCheck, FaCircle, FaSearch, FaInfoCircle, FaEnvelope, FaShoppi
 import axios from '../utils/axios';
 import { showToast, showConfirm } from '../utils/swal';
 import '../styles/Notifications.css';
+import { useSettings } from '../context/SettingsContext';
+import { useLocalization } from '../context/LocalizationContext';
+import { formatAdminDate } from '../utils/dateFormatter';
 
 const Notifications = () => {
     const navigate = useNavigate();
+    const { globalSettings } = useSettings();
+    const { t } = useLocalization();
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all'); // 'all', 'unread'
@@ -104,7 +109,7 @@ const Notifications = () => {
 
     return (
         <div className="notifications-container p-4">
-            <h2 className="page-title fw-bold mb-4">Notifications</h2>
+            <h2 className="page-title fw-bold mb-4">{t('notifications_page.title', 'Notifications')}</h2>
 
             <div className="notifications-layout overflow-hidden">
                 <Row className="g-0 flex-grow-1">
@@ -118,7 +123,7 @@ const Notifications = () => {
                                     className="rounded-pill px-3"
                                     onClick={() => setFilter('all')}
                                 >
-                                    All
+                                    {t('notifications_page.all', 'All')}
                                 </Button>
                                 <Button
                                     size="sm"
@@ -126,7 +131,7 @@ const Notifications = () => {
                                     className="rounded-pill px-3"
                                     onClick={() => setFilter('unread')}
                                 >
-                                    Unread
+                                    {t('notifications_page.unread', 'Unread')}
                                 </Button>
                             </div>
                             <InputGroup className="bg-light rounded-3 overflow-hidden border-0">
@@ -134,7 +139,7 @@ const Notifications = () => {
                                     <FaSearch size={14} className="text-secondary" />
                                 </InputGroup.Text>
                                 <Form.Control
-                                    placeholder="Search notifications..."
+                                    placeholder={t('notifications_page.search_placeholder', 'Search notifications...')}
                                     className="bg-transparent border-0 shadow-none ps-2 py-2"
                                     style={{ fontSize: '0.9rem' }}
                                     value={search}
@@ -168,7 +173,7 @@ const Notifications = () => {
                                                 {n.message}
                                             </p>
                                             <span className="notif-date text-muted" style={{ fontSize: '0.75rem' }}>
-                                                {new Date(n.created_at).toLocaleDateString()}
+                                                {formatAdminDate(n.created_at, globalSettings)}
                                             </span>
                                         </div>
                                     </div>
@@ -176,7 +181,7 @@ const Notifications = () => {
                             ) : (
                                 <div className="p-5 text-center text-muted">
                                     <FaBell size={40} className="mb-3 opacity-20" />
-                                    <p style={{ fontSize: '0.9rem' }}>No notifications found</p>
+                                    <p style={{ fontSize: '0.9rem' }}>{t('notifications_page.no_notifications', 'No notifications found')}</p>
                                 </div>
                             )}
                         </div>
@@ -199,11 +204,11 @@ const Notifications = () => {
                                     </div>
                                     <div>
                                         <div className="text-uppercase text-secondary fw-bold" style={{ fontSize: '0.65rem', letterSpacing: '0.05em' }}>
-                                            {selectedNotification.type || 'INFO'}
+                                            {selectedNotification.type ? t(`notifications_page.${selectedNotification.type}`, selectedNotification.type.toUpperCase()) : t('notifications_page.info', 'INFO')}
                                         </div>
                                         <h4 className="mb-0 fw-bold" style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)' }}>{selectedNotification.title}</h4>
                                         <span className="text-muted small">
-                                            {new Date(selectedNotification.created_at).toLocaleString()}
+                                            {formatAdminDate(selectedNotification.created_at, globalSettings, { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </div>
                                     <div className="ms-auto d-flex gap-2">
@@ -227,7 +232,7 @@ const Notifications = () => {
                                                     if (mapped) navigate(mapped);
                                                 }}
                                             >
-                                                <FaEye className="me-2" /> View details
+                                                <FaEye className="me-2" /> {t('notifications_page.view_details', 'View details')}
                                             </Button>
                                         )}
                                     </div>
@@ -236,7 +241,7 @@ const Notifications = () => {
                         ) : (
                             <div className="d-flex flex-column align-items-center justify-content-center flex-grow-1 text-muted p-5">
                                 <FaBell size={64} className="opacity-25 mb-3" />
-                                <h5>Select a notification to view details</h5>
+                                <h5>{t('notifications_page.select_notification', 'Select a notification to view details')}</h5>
                             </div>
                         )}
                     </Col>

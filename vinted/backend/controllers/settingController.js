@@ -8,6 +8,29 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// SECURITY: Define sensitive fields globally so they can be filtered out
+// and protected from accidental overwrites.
+const sensitiveFields = [
+    'recaptcha_secret_key',
+    'google_client_secret',
+    'facebook_client_secret',
+    'twitter_client_secret',
+    'apple_client_secret',
+    'apple_private_key',
+    'mail_password',
+    'stripe_test_secret_key',
+    'stripe_live_secret_key',
+    'stripe_test_webhook_secret',
+    'stripe_live_webhook_secret',
+    'paypal_test_client_secret',
+    'paypal_live_client_secret',
+    'gemini_api_key',
+    'huggingface_api_key',
+    'shiprocket_password',
+    'easypost_api_key',
+    'dhl_api_secret'
+];
+
 // @desc    Get all unique setting types
 // @route   GET /api/settings/types
 // @access  Private (Admin)
@@ -212,26 +235,7 @@ const getSettingsByType = asyncHandler(async (req, res) => {
         }
 
         // SECURITY: Never send secret keys to the public frontend
-        const sensitiveFields = [
-            'recaptcha_secret_key', 
-            'google_client_secret', 
-            'facebook_client_secret', 
-            'twitter_client_secret', 
-            'apple_client_secret',
-            'apple_private_key',
-            'mail_password',
-            'stripe_test_secret_key',
-            'stripe_live_secret_key',
-            'stripe_test_webhook_secret',
-            'stripe_live_webhook_secret',
-            'paypal_test_client_secret',
-            'paypal_live_client_secret',
-            'gemini_api_key',
-            'huggingface_api_key',
-            'shiprocket_password',
-            'easypost_api_key',
-            'dhl_api_secret'
-        ];
+        // Uses the global sensitiveFields array defined at the top
 
         // Only filter for non-admin requests or if we want to be safe
         // (For now, let's just filter them all for simplicity in public GET)
@@ -293,7 +297,7 @@ const updateSettingsByType = asyncHandler(async (req, res) => {
     // even if the admin UI sends them via a general update route.
     const socialFields = ['google_', 'facebook_', 'twitter_', 'apple_'];
     const recaptchaFields = ['recaptcha_'];
-    
+
     const isSocialUpdate = Object.keys(updateData).some(k => socialFields.some(sf => k.startsWith(sf)));
     const isRecaptchaUpdate = Object.keys(updateData).some(k => recaptchaFields.some(rf => k.startsWith(rf)));
 
@@ -301,7 +305,7 @@ const updateSettingsByType = asyncHandler(async (req, res) => {
         console.log(`[Settings] Redirecting social fields update to social_login_settings type`);
         let socialDoc = await Setting.findOne({ type: 'social_login_settings' });
         if (!socialDoc) socialDoc = new Setting({ type: 'social_login_settings' });
-        
+
         Object.keys(updateData).forEach(key => {
             if (socialFields.some(sf => key.startsWith(sf))) {
                 socialDoc.set(key, updateData[key]);
@@ -315,7 +319,7 @@ const updateSettingsByType = asyncHandler(async (req, res) => {
         console.log(`[Settings] Redirecting recaptcha fields update to recaptcha_settings type`);
         let recaptchaDoc = await Setting.findOne({ type: 'recaptcha_settings' });
         if (!recaptchaDoc) recaptchaDoc = new Setting({ type: 'recaptcha_settings' });
-        
+
         Object.keys(updateData).forEach(key => {
             if (recaptchaFields.some(rf => key.startsWith(rf))) {
                 recaptchaDoc.set(key, updateData[key]);
@@ -327,41 +331,58 @@ const updateSettingsByType = asyncHandler(async (req, res) => {
 
     try {
         if (setting) {
-            console.log(`[Settings] Found existing setting for ${type}. Updating fields...`);
-            Object.keys(updateData).forEach(key => {
-                const val = updateData[key];
-                // Skip invalid data
-                if (val === undefined || val === 'undefined') {
-                    console.log(`[Settings] Skipping field ${key} because it is undefined`);
-                    return;
-                }
-
-                console.log(`[Settings] Setting field ${key} to value:`, val);
-
-                // Force null for empty ObjectId fields to prevent casting errors
-                if (key.endsWith('_id')) {
-                    if (val === '' || val === null || val === 'null' || val === 'undefined') {
-                        console.log(`[Settings] Field ${key} is empty ObjectId, setting to null`);
-                        setting.set(key, null);
-                    } else {
-                        setting.set(key, val);
+            console.log(`[Settings] Found existing setting for ${type}. Entering update loop...`);
+            try {
+                for (const key of Object.keys(updateData)) {
+                    const val = updateData[key];
+                    // Skip invalid data
+                    if (val === undefined || val === 'undefined') {
+                        continue;
                     }
-                    return;
-                }
 
-                // Explicit casting for known numeric fields
-                if (['pagination_limit', 'admin_commission', 'flat_shipping_rate'].includes(key)) {
-                    const numVal = parseFloat(val);
-                    console.log(`[Settings] Field ${key} is numeric. Cast to:`, numVal);
-                    setting.set(key, isNaN(numVal) ? null : numVal);
-                    return;
-                }
+                    // SECURITY FIX: If the field is a secret and it's sent as an empty string, 
+                    // it was likely stripped by the GET request on load. Skip updating it 
+                    // so we don't accidentally overwrite the user's saved secret.
+                    if (sensitiveFields.includes(key) && (val === '' || val === null)) {
+                        continue;
+                    }
 
-                setting.set(key, val);
-            });
-            console.log(`[Settings] Saving setting document...`);
+                    console.log(`[Settings] Processing field: ${key} = ${val}`);
+
+                    // Force null for empty ObjectId fields to prevent casting errors
+                    const socialIdFields = ['google_client_id', 'facebook_client_id', 'twitter_client_id', 'apple_client_id', 'apple_team_id', 'apple_key_id'];
+                    if (key.endsWith('_id') && !socialIdFields.includes(key)) {
+                        console.log(`[Settings] Field ${key} ends with _id, mapping to null/ObjectId`);
+                        if (val === '' || val === null || val === 'null' || val === 'undefined') {
+                            setting.set(key, null);
+                        } else {
+                            setting.set(key, val);
+                        }
+                        continue;
+                    }
+
+                    // Explicit casting for known numeric fields
+                    if (['pagination_limit', 'admin_commission', 'flat_shipping_rate'].includes(key)) {
+                        const numVal = parseFloat(val);
+                        setting.set(key, isNaN(numVal) ? null : numVal);
+                        setting.markModified(key);
+                        continue;
+                    }
+
+                    console.log(`[Settings] About to set ${key}`);
+                    setting.set(key, val);
+                    setting.markModified(key);
+                    console.log(`[Settings] Successfully set ${key}`);
+                }
+            } catch (err) {
+                console.error(`[Settings] LOOP ERROR:`, err);
+                throw err;
+            }
+            console.log(`[Settings] All fields mapped to Mongoose. Waiting for setting.save()...`);
             const updatedSetting = await setting.save();
-            console.log(`[Settings] Successfully saved ${type}`);
+            console.log(`[Settings] ==============================================`);
+            console.log(`[Settings] SUCCESSFULLY SAVED ${type} TO DATABASE!`);
+            console.log(`[Settings] ==============================================`);
             res.json(updatedSetting);
             return;
         } else {
@@ -385,14 +406,15 @@ const updateSettingsByType = asyncHandler(async (req, res) => {
 const getSettings = asyncHandler(async (req, res) => {
     const allSettings = await Setting.find({});
     // Order settings so that more specific/important ones come later in the merge
-    const order = ['general_settings', 'site_settings', 'footer_settings', 'cookie_settings', 'social_login_settings', 'social_settings', 'payment_settings'];
+    // Move footer_settings after social_settings so its social_links take priority
+    const order = ['general_settings', 'site_settings', 'social_settings', 'social_login_settings', 'cookie_settings', 'payment_settings', 'footer_settings'];
     allSettings.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
 
     let merged = {};
     allSettings.forEach(s => {
         if (s.type === 'api_settings') return;
         const obj = s.toObject();
-        
+
         // Filtering sensitive keys
         Object.keys(obj).forEach(key => {
             const lowerKey = key.toLowerCase();
@@ -411,7 +433,32 @@ const getSettings = asyncHandler(async (req, res) => {
 
         // Merge the current doc into the accumulator
         // (More specific settings documents processed later will correctly overwrite earlier ones)
-        merged = { ...merged, ...obj };
+        Object.keys(obj).forEach(key => {
+            // For social_links specifically, keep the one that has items
+            if (key === 'social_links') {
+                if (Array.isArray(obj[key]) && obj[key].length > 0) {
+                    merged[key] = obj[key];
+                } else if (!merged[key]) {
+                    merged[key] = obj[key];
+                }
+                return;
+            }
+            
+            // For localized text objects, only overwrite if it has actual keys, or if it's the first time
+            if (key === 'footer_tagline' || key === 'footer_copyright' || key === 'cookie_message' || key === 'cookie_heading') {
+                if (obj[key] && typeof obj[key] === 'object' && Object.keys(obj[key]).length > 0) {
+                    merged[key] = obj[key];
+                } else if (!merged[key]) {
+                    merged[key] = obj[key];
+                }
+                return;
+            }
+
+            // For other fields, overwrite if it's not undefined
+            if (obj[key] !== undefined) {
+                merged[key] = obj[key];
+            }
+        });
     });
 
     // Merge environment overrides
@@ -426,7 +473,7 @@ const getSettings = asyncHandler(async (req, res) => {
 const backupDB = asyncHandler(async (req, res) => {
     const scriptPath = path.join(__dirname, '../backup_db.js');
     console.log(`[Backup] Starting streaming backup at: ${scriptPath}`);
-    
+
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Transfer-Encoding', 'chunked');
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -483,12 +530,12 @@ const restoreDB = asyncHandler(async (req, res) => {
 // @route   GET /api/settings/db/mail_check
 const mailCheck = asyncHandler(async (req, res) => {
     let recipientEmail = req.query.email || req.query.to;
-    
+
     if (!recipientEmail) {
         const settings = await Setting.findOne({ type: 'email_settings' });
         recipientEmail = settings?.mail_from_address || settings?.mail_username || process.env.EMAIL_USER;
     }
-    
+
     if (!recipientEmail) {
         return res.status(400).json({
             success: false,

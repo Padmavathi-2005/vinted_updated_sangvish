@@ -611,13 +611,23 @@
     height: 100%;
     cursor: pointer;
     text-decoration: none !important;
+    position: relative;
+}
+
+/* Fix hover jitter */
+.category-card::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    right: 0;
+    height: 10px;
 }
 
 .category-card:hover,
 .category-card.active {
     background: var(--primary-variation-color, #f0f9ff);
     border-color: var(--primary-color);
-    transform: translateY(-8px);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
 }
 
@@ -889,3 +899,13 @@
         padding: 30px 0;
     }
 }
+
+/* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
+.btn-hero-primary { position: relative; }
+.btn-hero-primary::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.feature-card { position: relative; }
+.feature-card::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.btn-cta { position: relative; }
+.btn-cta::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.btn-black { position: relative; }
+.btn-black::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }

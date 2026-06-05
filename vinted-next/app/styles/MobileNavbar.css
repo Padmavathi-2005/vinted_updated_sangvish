@@ -34,7 +34,7 @@
 }
 
 .nav-item.active {
-    color: #0ea5e9;
+    color: var(--primary-color);
 }
 
 .nav-icon {
@@ -44,7 +44,7 @@
 
 .sell-item {
     position: relative;
-    color: #0ea5e9;
+    color: var(--primary-color);
     top: -5px;
     /* Slight lift */
 }
@@ -52,7 +52,7 @@
 .sell-icon-wrapper {
     position: absolute;
     top: -50px;
-    background: #00bcd4;
+    background: var(--primary-color);
     /* Teal color matching the user image */
     /* clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); Hexagon shape */
     display: flex;
@@ -76,17 +76,17 @@
 @keyframes sellPulse {
     0% {
         transform: scale(1);
-        box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+        box-shadow: 0 4px 15px color-mix(in srgb, var(--primary-color) 40%, transparent);
     }
 
     50% {
         transform: scale(1.05);
-        box-shadow: 0 6px 20px rgba(14, 165, 233, 0.6);
+        box-shadow: 0 6px 20px color-mix(in srgb, var(--primary-color) 60%, transparent);
     }
 
     100% {
         transform: scale(1);
-        box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+        box-shadow: 0 4px 15px color-mix(in srgb, var(--primary-color) 40%, transparent);
     }
 }
 

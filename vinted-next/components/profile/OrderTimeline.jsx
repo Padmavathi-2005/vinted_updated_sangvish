@@ -1,14 +1,23 @@
 import React from 'react';
-import { FaCheckCircle, FaTruck, FaBox, FaHome, FaClock } from 'react-icons/fa';
+import { FaCheckCircle, FaTruck, FaBox, FaHome, FaClock, FaTimesCircle } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 
 const OrderTimeline = ({ status, history = {} }) => {
-    const stages = [
-        { key: 'pending', label: 'Ordered', icon: <FaClock />, date: history.created_at },
-        { key: 'confirmed', label: 'Confirmed', icon: <FaCheckCircle />, date: history.confirmed_at || history.created_at },
-        { key: 'packed', label: 'Packed', icon: <FaBox />, date: history.packed_at },
-        { key: 'shipped', label: 'Shipped', icon: <FaTruck />, date: history.shipped_at },
-        { key: 'delivered', label: 'Delivered', icon: <FaHome />, date: history.delivered_at },
+    const { t } = useTranslation();
+    let stages = [
+        { key: 'pending', label: t('order.ordered', 'Ordered'), icon: <FaClock />, date: history.created_at },
+        { key: 'confirmed', label: t('order.confirmed', 'Confirmed'), icon: <FaCheckCircle />, date: history.confirmed_at || history.created_at },
+        { key: 'packed', label: t('order.packed', 'Packed'), icon: <FaBox />, date: history.packed_at },
+        { key: 'shipped', label: t('order.shipped', 'Shipped'), icon: <FaTruck />, date: history.shipped_at },
+        { key: 'delivered', label: t('order.delivered', 'Delivered'), icon: <FaHome />, date: history.delivered_at },
     ];
+
+    if (status === 'cancelled') {
+        stages = [
+            { key: 'pending', label: t('order.ordered', 'Ordered'), icon: <FaClock />, date: history.created_at },
+            { key: 'cancelled', label: t('order.cancelled', 'Cancelled'), icon: <FaTimesCircle />, date: history.cancelled_at || history.updated_at || new Date() }
+        ];
+    }
 
     // Find the current stage index
     const statusMap = {
@@ -19,6 +28,7 @@ const OrderTimeline = ({ status, history = {} }) => {
         'shipped': 3,
         'out_for_delivery': 3,
         'delivered': 4,
+        'cancelled': 1,
     };
 
     const currentStageIndex = statusMap[status] ?? -1;
@@ -27,11 +37,12 @@ const OrderTimeline = ({ status, history = {} }) => {
         <div className="order-timeline-container my-4">
             <div className="order-timeline">
                 {stages.map((stage, index) => {
-                    const isCompleted = index <= currentStageIndex && status !== 'cancelled';
-                    const isCurrent = index === currentStageIndex && status !== 'cancelled';
+                    const isCompleted = index <= currentStageIndex;
+                    const isCurrent = index === currentStageIndex;
+                    const isCancelled = stage.key === 'cancelled';
                     
                     return (
-                        <div key={stage.key} className={`timeline-step ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
+                        <div key={stage.key} className={`timeline-step ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isCancelled ? 'cancelled-step' : ''}`}>
                             <div className="step-icon-wrapper">
                                 <div className="step-line" />
                                 <div className="step-icon">
@@ -131,6 +142,16 @@ const OrderTimeline = ({ status, history = {} }) => {
                 }
                 .timeline-step.completed .step-label {
                     color: #0ea5e9;
+                }
+
+                /* Cancelled State */
+                .timeline-step.cancelled-step .step-icon {
+                    background: #ef4444;
+                    color: #fff;
+                    box-shadow: 0 0 0 1px #ef4444;
+                }
+                .timeline-step.cancelled-step .step-label {
+                    color: #ef4444;
                 }
 
                 /* Current State */

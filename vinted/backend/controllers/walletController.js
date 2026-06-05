@@ -75,7 +75,7 @@ const deductBuyerWallet = async (buyerId, amount, orderNumbers) => {
         wallet_id: buyerWallet._id,
         amount: totalAmount,
         type: 'debit',
-        purpose: 'order_payment',
+        purpose: 'payment',
         description: `Payment for order(s): ${Array.isArray(orderNumbers) ? orderNumbers.join(', ') : orderNumbers}`
     });
 
@@ -89,25 +89,25 @@ const processOrderPaymentSplit = async (orderData) => {
     const settings = await Setting.findOne();
     const commissionRate = settings?.admin_commission || 2; // Default 2%
 
-    const adminCommission = (item_price * commissionRate) / 100;
+    const adminCommission = Number(((item_price * commissionRate) / 100).toFixed(2));
 
     const actualShippingCost = 200; // Flat fee used throughout
     let deliveryAmount = 0;
-    let sellerEarning = item_price - adminCommission;
+    let sellerEarning = Number((item_price - adminCommission).toFixed(2));
 
     if (shipping_fee > 0) {
         // Buyer paid shipping fee on top of item price
-        deliveryAmount = shipping_fee;
+        deliveryAmount = Number(shipping_fee.toFixed(2));
     } else {
         // Shipping was included in item_price. Seller bears the shipping cost.
         deliveryAmount = actualShippingCost;
-        sellerEarning -= deliveryAmount;
+        sellerEarning = Number((sellerEarning - deliveryAmount).toFixed(2));
     }
 
     if (sellerEarning < 0) sellerEarning = 0;
 
     // 1. Credit Admin Wallet
-    const admin = await Admin.findOne({ is_active: true });
+    const admin = await Admin.findOne({ is_active: { $ne: false } });
     if (admin) {
         const adminWallet = await getOrCreateWallet(admin._id, 'Admin');
         adminWallet.balance += adminCommission;
@@ -209,12 +209,12 @@ const reverseOrderPayment = async (orderId) => {
         const walletRate = walletCurrency?.exchange_rate || 1;
         return { 
             wallet, 
-            convertedAmount: (amount / orderRate) * walletRate 
+            convertedAmount: Number(((amount / orderRate) * walletRate).toFixed(2))
         };
     };
 
     // 1. Debit Admin Wallet
-    const admin = await Admin.findOne({ is_active: true });
+    const admin = await Admin.findOne({ is_active: { $ne: false } });
     if (admin) {
         const { wallet: adminWallet, convertedAmount: adminCommConverted } = await convertToWallet(adminCommission, admin._id, 'Admin');
         adminWallet.balance -= adminCommConverted;
@@ -313,7 +313,7 @@ const processRefundSplit = async (orderId, refundType, partialAmount, reason) =>
         const walletRate = walletCurrency?.exchange_rate || 1;
         return { 
             wallet, 
-            convertedAmount: (amount / orderRate) * walletRate 
+            convertedAmount: Number(((amount / orderRate) * walletRate).toFixed(2))
         };
     };
 

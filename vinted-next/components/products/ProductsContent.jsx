@@ -246,11 +246,11 @@ const ProductsContent = () => {
             {/* SORT BY */}
             <FilterGroup title={t('products.sort_by', 'Sort By')} icon={<FaSortAmountDown size={13} />}>
                 {[
-                    { value: 'popular', label: 'Relevance' },
-                    { value: 'price_asc', label: 'Price: Low to High' },
-                    { value: 'price_desc', label: 'Price: High to Low' },
-                    { value: 'newest', label: 'Newest First' },
-                    { value: 'discounted', label: 'Sale Items' }
+                    { value: 'popular', label: t('products.sort_relevance', 'Relevance') },
+                    { value: 'price_asc', label: t('products.sort_price_asc', 'Price: Low to High') },
+                    { value: 'price_desc', label: t('products.sort_price_desc', 'Price: High to Low') },
+                    { value: 'newest', label: t('products.sort_newest', 'Newest First') },
+                    { value: 'discounted', label: t('products.sort_sale', 'Sale Items') }
                 ].map(opt => (
                     <div
                         key={opt.value}
@@ -265,13 +265,13 @@ const ProductsContent = () => {
 
             {/* CATEGORY */}
             <FilterGroup title={t('products.category', 'Category')} icon={<BiCategoryAlt size={15} />}>
-                {[{ slug: '', name: 'All Categories' }, ...categories].map(c => (
+                {[{ slug: '', name: t('products.all_categories', 'All Categories') }, ...categories].map(c => (
                     <div
                         key={c._id || 'all'}
                         className={`filter-option ${(c.slug === '' ? !categorySlug : categorySlug === c.slug) ? 'active' : ''}`}
                         onClick={() => handleFilterChange('category', c.slug)}
                     >
-                        <span>{c.name}</span>
+                        <span>{t(`categories.${c.slug}`, c.name)}</span>
                         {(c.slug === '' ? !categorySlug : categorySlug === c.slug) && <FaCheckCircle size={11} className="filter-check" />}
                     </div>
                 ))}
@@ -280,13 +280,13 @@ const ProductsContent = () => {
             {/* SUBCATEGORY */}
             {categorySlug && (currentCategory?.subcategories || []).length > 0 && (
                 <FilterGroup title={t('products.style_type', 'Style & Type')} icon={<FaLayerGroup size={13} />}>
-                    {[{ slug: '', name: `All ${currentCategory?.name || 'Items'}` }, ...(currentCategory?.subcategories || [])].map(s => (
+                    {[{ slug: '', name: t('products.all_items', 'All {{name}}').replace('{{name}}', t(`categories.${currentCategory?.slug}`, currentCategory?.name || 'Items')) }, ...(currentCategory?.subcategories || [])].map(s => (
                         <div
                             key={s._id || 'all'}
                             className={`filter-option ${(s.slug === '' ? !subcategorySlug : subcategorySlug === s.slug) ? 'active' : ''}`}
                             onClick={() => handleFilterChange('subcategory', s.slug)}
                         >
-                            <span>{s.name}</span>
+                            <span>{t(`categories.${s.slug}`, s.name)}</span>
                             {(s.slug === '' ? !subcategorySlug : subcategorySlug === s.slug) && <FaCheckCircle size={11} className="filter-check" />}
                         </div>
                     ))}
@@ -316,7 +316,7 @@ const ProductsContent = () => {
                     disabled={minPrice && maxPrice && parseFloat(maxPrice) < parseFloat(minPrice)}
                     onClick={() => handleFilterChange('price', { min: minPrice, max: maxPrice })}
                 >
-                    Apply Range
+                    {t('products.apply_range', 'Apply Range')}
                 </button>
             </FilterGroup>
 
@@ -444,8 +444,8 @@ const ProductsContent = () => {
                                     <FaSlidersH size={14} />
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <h6 className="mb-0 fw-bold">Visual Search Logic Setup Required</h6>
-                                    <p className="mb-0 small opacity-75">Your API keys (Gemini/Hugging Face) are not yet configured. Showing all items instead.</p>
+                                    <h6 className="mb-0 fw-bold">{t('products.visual_search_setup_required', 'Visual Search Logic Setup Required')}</h6>
+                                    <p className="mb-0 small opacity-75">{t('products.visual_search_missing_keys', 'Your API keys (Gemini/Hugging Face) are not yet configured. Showing all items instead.')}</p>
                                 </div>
                                 <button
                                     onClick={() => {
@@ -479,13 +479,13 @@ const ProductsContent = () => {
                         {/* Middle: breadcrumb & title */}
                         <div className="topbar-center">
                             <div className="products-breadcrumb">
-                                <Link href="/" className="bc-link">Home</Link>
+                                <Link href="/" className="bc-link">{t('products.home_breadcrumb', 'Home')}</Link>
                                 <span className="bc-sep">/</span>
                                 {search ? (
-                                    <span className="bc-current">Results for "{search}"</span>
+                                    <span className="bc-current">{t('products.results_for_search', 'Results for "{{search}}"').replace('{{search}}', search)}</span>
                                 ) : categorySlug ? (
                                     <>
-                                        <Link href="/products" className="bc-link">All</Link>
+                                        <Link href="/products" className="bc-link">{t('products.all_breadcrumb', 'All')}</Link>
                                         <span className="bc-sep">/</span>
                                         <span className="bc-current">{currentCategory?.name || formatSlug(categorySlug)}</span>
                                         {subcategorySlug && (
@@ -496,14 +496,14 @@ const ProductsContent = () => {
                                         )}
                                     </>
                                 ) : (
-                                    <span className="bc-current">All Products</span>
+                                    <span className="bc-current">{t('products.all_products_breadcrumb', 'All Products')}</span>
                                 )}
                             </div>
                         </div>
 
                         {/* Right: result count */}
                         <div className="topbar-right">
-                            <span className="result-count">{totalCount} items</span>
+                            <span className="result-count">{t('products.items_count', '{{count}} items').replace('{{count}}', totalCount)}</span>
                         </div>
                     </div>
 
@@ -527,12 +527,12 @@ const ProductsContent = () => {
                     {/* ── Active filter pills ── */}
                     {activeFiltersCount > 0 && (
                         <div className="active-filters-bar">
-                            <span className="active-filters-label">ACTIVE:</span>
+                            <span className="active-filters-label">{t('products.active_filters', 'ACTIVE:')}</span>
                             <div className="active-pills-list">
                                 {search && <ActivePill label={`"${search}"`} onClear={() => handleFilterChange('search', '')} />}
-                                {size && <ActivePill label={`Size: ${size}`} onClear={() => handleFilterChange('size', '')} />}
-                                {brand && <ActivePill label={`Brand: ${brand}`} onClear={() => handleFilterChange('brand', '')} />}
-                                {color && <ActivePill label={`Color: ${color}`} onClear={() => handleFilterChange('color', '')} />}
+                                {size && <ActivePill label={`${t('products.size', 'Size')}: ${size}`} onClear={() => handleFilterChange('size', '')} />}
+                                {brand && <ActivePill label={`${t('products.brand', 'Brand')}: ${brand}`} onClear={() => handleFilterChange('brand', '')} />}
+                                {color && <ActivePill label={`${t('products.color', 'Color')}: ${color}`} onClear={() => handleFilterChange('color', '')} />}
                                 {condition && <ActivePill label={condition} onClear={() => handleFilterChange('condition', '')} />}
                                 {(minPrice || maxPrice) && (
                                     <ActivePill
@@ -547,9 +547,9 @@ const ProductsContent = () => {
                                     />
                                 )}
                                 {sort && sort !== 'newest' && (
-                                    <ActivePill label={`Sort: ${sort.replace('_', ' ')}`} onClear={() => handleFilterChange('sort', 'newest')} />
+                                    <ActivePill label={`${t('products.sort', 'Sort')}: ${t(`products.${sort}`, sort.replace('_', ' '))}`} onClear={() => handleFilterChange('sort', 'newest')} />
                                 )}
-                                <button className="clear-all-btn" onClick={clearAllFilters}>Clear All</button>
+                                <button className="clear-all-btn" onClick={clearAllFilters}>{t('products.clear_all', 'Clear All')}</button>
                             </div>
                         </div>
                     )}
@@ -593,9 +593,9 @@ const ProductsContent = () => {
                         ) : !loading && (
                             <div className="products-empty">
                                 <div className="products-empty-icon"><FaSearch size={28} /></div>
-                                <h3>No Items Found</h3>
-                                <p>Try adjusting your filters or search for something else.</p>
-                                <button className="reset-filters-btn-lg" onClick={clearAllFilters}>Reset All Filters</button>
+                                <h3>{t('products.no_items_found', 'No Items Found')}</h3>
+                                <p>{t('products.adjust_search', 'Try adjusting your filters or search for something else.')}</p>
+                                <button className="reset-filters-btn-lg" onClick={clearAllFilters}>{t('products.reset_all_filters', 'Reset All Filters')}</button>
                             </div>
                         )}
                     </div>
@@ -638,7 +638,7 @@ const ProductsContent = () => {
                         {t('products.reset', 'Reset')}
                     </button>
                     <button className="oc-apply-btn" onClick={() => setShowMobileFilters(false)}>
-                        Show {totalCount > 0 ? `${totalCount} ` : ''}Results
+                        {t('products.show_results', 'Show {{count}} Results').replace('{{count}}', totalCount > 0 ? `${totalCount} ` : '')}
                     </button>
                 </div>
             </Offcanvas>

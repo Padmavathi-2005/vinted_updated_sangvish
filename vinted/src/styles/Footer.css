@@ -109,7 +109,7 @@
     content: '';
     position: absolute;
     bottom: -8px;
-    left: 0;
+    inset-inline-start: 0;
     width: 30px;
     height: 2px;
     background-color: var(--primary-color);
@@ -222,6 +222,7 @@
     justify-content: space-between;
     align-items: center;
     padding-top: 40px;
+    padding-bottom: 90px; /* Space for the floating chat box */
     border-top: 1px solid #f1f3f5;
     flex-wrap: wrap;
     gap: 24px;
@@ -236,6 +237,7 @@
 .bottom-links {
     display: flex;
     gap: 32px;
+    padding-right: 20px; /* Reduced since padding-bottom handles overlap now */
 }
 
 .bottom-links a {
