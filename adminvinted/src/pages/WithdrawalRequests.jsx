@@ -40,7 +40,7 @@ const PayoutIconClass = (method) => {
 
 /* ── Component ───────────────────────────────────────────── */
 const WithdrawalRequests = () => {
-    const { formatPrice } = useLocalization();
+    const { t, formatPrice } = useLocalization();
     const { globalSettings } = useSettings();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(false);

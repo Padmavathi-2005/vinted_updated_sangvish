@@ -436,7 +436,8 @@
     "ssl_secured": "SSL مؤمن",
     "track_delivery": "تتبع التسليم",
     "items": "أغراض",
-    "shipping_included": "الشحن متضمن"
+    "shipping_included": "الشحن متضمن",
+    "bundle_discount": "خصم الحزمة"
   },
   "seller_profile": {
     "loading": "جارٍ تحميل ملف تعريف البائع...",

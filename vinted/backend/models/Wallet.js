@@ -16,6 +16,10 @@ const walletSchema = mongoose.Schema(
             type: Number,
             default: 0,
         },
+        pending_balance: {
+            type: Number,
+            default: 0,
+        },
         currency: {
             type: String,
             required: true,

@@ -540,6 +540,7 @@
     "items": "items",
     "shipping_included": "Shipping included",
     "approx_total": "Total price in your currency",
-    "approx_balance": "Wallet balance in your currency"
+    "approx_balance": "Wallet balance in your currency",
+    "bundle_discount": "Bundle Discount"
   }
 }

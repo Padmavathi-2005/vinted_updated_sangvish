@@ -75,9 +75,34 @@ const deleteNotification = asyncHandler(async (req, res) => {
     res.status(200).json({ id: req.params.id });
 });
 
+// @desc    Internal endpoint to emit socket notifications from admin backend
+// @route   POST /api/notifications/emit-internal
+// @access  Internal
+const emitInternalNotification = asyncHandler(async (req, res) => {
+    const { userId, notification } = req.body;
+    const secret = req.headers['x-internal-secret'];
+
+    const expectedSecret = process.env.INTERNAL_API_SECRET || 'vinted_secret_key_123';
+
+    if (secret !== expectedSecret) {
+        res.status(401);
+        throw new Error('Unauthorized internal request');
+    }
+
+    if (global.io && userId) {
+        global.io.to(userId).emit('new_notification', notification);
+        console.log(`📡 Emitted forwarded notification via Socket to user ${userId}:`, notification.title);
+    } else {
+        console.warn(`⚠️ Socket emit skipped. global.io: ${!!global.io}, userId: ${userId}`);
+    }
+
+    res.json({ success: true });
+});
+
 export {
     getNotifications,
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    emitInternalNotification
 };

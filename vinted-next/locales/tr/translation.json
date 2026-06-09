@@ -421,7 +421,8 @@
     "ssl_secured": "SSL Güvenli",
     "track_delivery": "Teslimatı Takip Et",
     "items": "öğeler",
-    "shipping_included": "Nakliye dahil"
+    "shipping_included": "Nakliye dahil",
+    "bundle_discount": "Paket İndirimi"
   },
   "seller_profile": {
     "loading": "Satıcı profili yükleniyor...",

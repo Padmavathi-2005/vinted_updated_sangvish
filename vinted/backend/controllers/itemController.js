@@ -545,6 +545,7 @@ const updateItem = asyncHandler(async (req, res) => {
         subcategory_id,
         item_type_id,
         existingImages, // JSON array from frontend
+        imageOrder, // JSON array of ordered items from frontend
         attributes, // JSON array from frontend
         status,
         is_sold,
@@ -555,30 +556,57 @@ const updateItem = asyncHandler(async (req, res) => {
 
     // Process images
     let updatedImages = [];
+    const parsedOrder = imageOrder ? (typeof imageOrder === 'string' ? JSON.parse(imageOrder) : imageOrder) : null;
 
-    // 1. Keep images that were already in the DB and not removed in the frontend
-    if (existingImages) {
-        try {
-            const parsedExisting = typeof existingImages === 'string' ? JSON.parse(existingImages) : existingImages;
-            if (Array.isArray(parsedExisting)) {
-                updatedImages = parsedExisting.map(img => {
-                    if (typeof img !== 'string') return img;
-                    // Strip any full URL or repeated prefixes
-                    // We only want images/items/filename
-                    const parts = img.split('/');
-                    const filename = parts[parts.length - 1];
-                    return `images/items/${filename}`;
-                });
-            }
-        } catch (e) {
-            console.error("Error parsing existingImages:", e);
+    if (parsedOrder && Array.isArray(parsedOrder)) {
+        // Map uploaded files by original name and size
+        const uploadedMap = {};
+        if (req.files && req.files.length > 0) {
+            req.files.forEach(file => {
+                const key = `${file.originalname}-${file.size}`;
+                uploadedMap[key] = `images/items/${file.filename}`;
+            });
         }
-    }
 
-    // 2. Add new uploads
-    if (req.files && req.files.length > 0) {
-        const newImages = req.files.map(file => `images/items/${file.filename}`);
-        updatedImages = [...updatedImages, ...newImages];
+        parsedOrder.forEach(item => {
+            if (item.type === 'existing') {
+                if (typeof item.value === 'string') {
+                    const parts = item.value.split('/');
+                    const filename = parts[parts.length - 1];
+                    updatedImages.push(`images/items/${filename}`);
+                }
+            } else if (item.type === 'new') {
+                const key = `${item.name}-${item.size}`;
+                if (uploadedMap[key]) {
+                    updatedImages.push(uploadedMap[key]);
+                }
+            }
+        });
+    } else {
+        // Fallback: 1. Keep images that were already in the DB and not removed in the frontend
+        if (existingImages) {
+            try {
+                const parsedExisting = typeof existingImages === 'string' ? JSON.parse(existingImages) : existingImages;
+                if (Array.isArray(parsedExisting)) {
+                    updatedImages = parsedExisting.map(img => {
+                        if (typeof img !== 'string') return img;
+                        // Strip any full URL or repeated prefixes
+                        // We only want images/items/filename
+                        const parts = img.split('/');
+                        const filename = parts[parts.length - 1];
+                        return `images/items/${filename}`;
+                    });
+                }
+            } catch (e) {
+                console.error("Error parsing existingImages:", e);
+            }
+        }
+
+        // Fallback: 2. Add new uploads
+        if (req.files && req.files.length > 0) {
+            const newImages = req.files.map(file => `images/items/${file.filename}`);
+            updatedImages = [...updatedImages, ...newImages];
+        }
     }
 
     // Build update object dynamically to only update provided fields

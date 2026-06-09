@@ -28,7 +28,7 @@ const transactionSchema = mongoose.Schema(
         },
         purpose: {
             type: String,
-            enum: ['sale_earning', 'commission', 'withdrawal', 'refund', 'payment', 'delivery_fee', 'order_refund', 'return_refund_deduction', 'return_refund'],
+            enum: ['sale_earning', 'commission', 'withdrawal', 'refund', 'payment', 'delivery_fee', 'order_refund', 'return_refund_deduction', 'return_refund', 'withdrawal_refund', 'deposit'],
             required: true,
         },
         reference_id: {
@@ -40,7 +40,7 @@ const transactionSchema = mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['pending', 'completed', 'failed'],
+            enum: ['pending', 'completed', 'failed', 'cancelled'],
             default: 'completed',
         },
         description: {

@@ -79,11 +79,31 @@ const MessagesContent = () => {
             // Update conversations list (sidebar)
             setConversations(prev => {
                 const exists = prev.find(c => c._id === conversation._id);
+                
+                // Calculate new unread count
+                let newUnreadCount = exists ? (exists.unread_count || 0) : 0;
+                
+                const isToMe = message && (message.receiver_id?._id || message.receiver_id)?.toString() === (user?.id || user?._id)?.toString();
+                const isActive = activeConv && activeConv._id === conversation._id;
+                
+                if (isActive) {
+                    newUnreadCount = 0;
+                } else if (isToMe) {
+                    if (!exists || (message && exists.last_message_at !== message.created_at)) {
+                        newUnreadCount = (exists?.unread_count || 0) + 1;
+                    }
+                }
+
+                const updatedConv = {
+                    ...conversation,
+                    unread_count: newUnreadCount
+                };
+
                 let newList = [];
                 if (exists) {
-                    newList = prev.map(c => c._id === conversation._id ? conversation : c);
+                    newList = prev.map(c => c._id === conversation._id ? updatedConv : c);
                 } else {
-                    newList = [conversation, ...prev];
+                    newList = [updatedConv, ...prev];
                 }
                 // Sort by last message time
                 return newList.sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at));
@@ -93,10 +113,10 @@ const MessagesContent = () => {
             if (activeConv && (activeConv._id === conversation._id || activeConv._id === 'new')) {
                 // If it was 'new', now we have the real conversation
                 if (activeConv._id === 'new') {
-                    setActiveConv(conversation);
+                    setActiveConv({ ...conversation, unread_count: 0 });
                     setConversations(prev => {
                         if (prev.find(c => c._id === conversation._id)) return prev;
-                        return [conversation, ...prev];
+                        return [{ ...conversation, unread_count: 0 }, ...prev];
                     });
                 }
             }
@@ -128,6 +148,11 @@ const MessagesContent = () => {
         const handleMessagesRead = (data) => {
             if (activeConv && activeConv._id === data.conversation_id) {
                 setMessages(prev => prev.map(m => ({ ...m, is_read: true })));
+                // Clear the unread count in the sidebar
+                setConversations(prev =>
+                    prev.map(c => c._id === data.conversation_id ? { ...c, unread_count: 0 } : c)
+                );
+                setActiveConv(prev => prev && prev._id === data.conversation_id ? { ...prev, unread_count: 0 } : prev);
             }
         };
 
@@ -278,13 +303,12 @@ const MessagesContent = () => {
             if (res.data && Array.isArray(res.data.messages)) {
                 setMessages(res.data.messages);
             }
-            // Update active conversation status locally if it changed
-            if (res.data.conversation.status !== activeConv?.status) {
-                setActiveConv(res.data.conversation);
-                setConversations(prev =>
-                    prev.map(c => c._id === id ? res.data.conversation : c)
-                );
-            }
+            // Update active conversation locally and clear unread count in sidebar
+            const updatedConv = { ...res.data.conversation, unread_count: 0 };
+            setActiveConv(updatedConv);
+            setConversations(prev =>
+                prev.map(c => c._id === id ? updatedConv : c)
+            );
             // Auto-mark any unread notifications linked to this conversation
             const related = notifications.filter(
                 n => !n.is_read && n.link && n.link.includes(id)

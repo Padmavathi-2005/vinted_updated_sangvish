@@ -421,7 +421,8 @@
     "ssl_secured": "SSL محفوظ",
     "track_delivery": "ڈلیوری کو ٹریک کریں۔",
     "items": "اشیاء",
-    "shipping_included": "شپنگ شامل ہے۔"
+    "shipping_included": "شپنگ شامل ہے۔",
+    "bundle_discount": "بنڈل ڈسکاؤنٹ"
   },
   "seller_profile": {
     "loading": "بیچنے والے کا پروفائل لوڈ ہو رہا ہے...",

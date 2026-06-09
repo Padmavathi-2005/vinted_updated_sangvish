@@ -156,14 +156,17 @@ const sendMessage = asyncHandler(async (req, res) => {
     const sender_id = req.user._id;
     const sender_model = req.user.role === 'admin' ? 'Admin' : 'User';
 
+    const receiverObjectId = mongoose.Types.ObjectId.isValid(receiver_id)
+        ? new mongoose.Types.ObjectId(receiver_id)
+        : receiver_id;
+
     let query = {
         participants: {
             $all: [
                 { $elemMatch: { user: sender_id, on_model: sender_model } },
-                { $elemMatch: { user: receiver_id, on_model: receiver_model } }
+                { $elemMatch: { user: receiverObjectId, on_model: receiver_model } }
             ]
-        },
-        item_id: item_id || null // Strictly match the item context
+        }
     };
 
     let conversation = await Conversation.findOne(query);
@@ -174,7 +177,7 @@ const sendMessage = asyncHandler(async (req, res) => {
         conversation = await Conversation.create({
             participants: [
                 { user: sender_id, on_model: sender_model },
-                { user: receiver_id, on_model: receiver_model }
+                { user: receiverObjectId, on_model: receiver_model }
             ],
             item_id: item_id,
             status: sender_model === 'Admin' ? 'accepted' : 'pending', // Admin starts as accepted
@@ -195,6 +198,9 @@ const sendMessage = asyncHandler(async (req, res) => {
             throw new Error('This message request was declined.');
         }
 
+        if (item_id) {
+            conversation.item_id = item_id;
+        }
         conversation.last_message = message;
         conversation.last_message_at = Date.now();
         await conversation.save();

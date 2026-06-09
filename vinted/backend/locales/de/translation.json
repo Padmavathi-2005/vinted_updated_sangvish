@@ -464,7 +464,8 @@
     "ssl_secured": "SSL-gesichert",
     "track_delivery": "Lieferung verfolgen",
     "items": "Artikel",
-    "shipping_included": "Versand inklusive"
+    "shipping_included": "Versand inklusive",
+    "bundle_discount": "Paket-Rabatt"
   },
   "seller_profile": {
     "loading": "Verkäuferprofil wird geladen...",

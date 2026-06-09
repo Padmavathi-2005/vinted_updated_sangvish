@@ -101,9 +101,11 @@ const ProductsContent = () => {
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
+    const currentItemType = currentSubcategory?.items?.find(i => i.slug === itemTypeSlug);
+
     const observer = useRef();
 
-    const activeFiltersCount = [search, size, brand, condition, color,
+    const activeFiltersCount = [search, size, brand, condition, color, itemTypeSlug,
         (minPrice || maxPrice) ? 'price' : '',
         (sort && sort !== 'newest') ? sort : ''
     ].filter(Boolean).length;
@@ -235,9 +237,10 @@ const ProductsContent = () => {
     const formatSlug = s => s ? s.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
     const pageTitle = search
         ? `Results for "${search}"`
-        : subcategorySlug ? (currentSubcategory?.name || formatSlug(subcategorySlug))
-            : categorySlug ? (currentCategory?.name || formatSlug(categorySlug))
-                : t('products.shop_collection', 'Shop Collection');
+        : currentItemType ? (currentItemType.name || formatSlug(itemTypeSlug))
+            : subcategorySlug ? (currentSubcategory?.name || formatSlug(subcategorySlug))
+                : categorySlug ? (currentCategory?.name || formatSlug(categorySlug))
+                    : t('products.shop_collection', 'Shop Collection');
 
     /* ── Filter Panel (shared desktop + offcanvas) ─────────── */
     const renderFilterPanel = (inOffcanvas = false) => (
@@ -288,6 +291,22 @@ const ProductsContent = () => {
                         >
                             <span>{t(`categories.${s.slug}`, s.name)}</span>
                             {(s.slug === '' ? !subcategorySlug : subcategorySlug === s.slug) && <FaCheckCircle size={11} className="filter-check" />}
+                        </div>
+                    ))}
+                </FilterGroup>
+            )}
+
+            {/* ITEM TYPE */}
+            {subcategorySlug && currentSubcategory && (currentSubcategory.items || []).length > 0 && (
+                <FilterGroup title={t('products.item_type', 'Item Type')} icon={<FaLayerGroup size={13} />}>
+                    {[{ slug: '', name: t('products.all_items', 'All {{name}}').replace('{{name}}', t(`categories.${currentSubcategory.slug}`, currentSubcategory.name || 'Items')) }, ...(currentSubcategory.items || [])].map(i => (
+                        <div
+                            key={i._id || 'all'}
+                            className={`filter-option ${(i.slug === '' ? !itemTypeSlug : itemTypeSlug === i.slug) ? 'active' : ''}`}
+                            onClick={() => handleFilterChange('itemType', i.slug)}
+                        >
+                            <span>{t(`categories.${i.slug}`, i.name)}</span>
+                            {(i.slug === '' ? !itemTypeSlug : itemTypeSlug === i.slug) && <FaCheckCircle size={11} className="filter-check" />}
                         </div>
                     ))}
                 </FilterGroup>
@@ -487,12 +506,32 @@ const ProductsContent = () => {
                                     <>
                                         <Link href="/products" className="bc-link">{t('products.all_breadcrumb', 'All')}</Link>
                                         <span className="bc-sep">/</span>
-                                        <span className="bc-current">{currentCategory?.name || formatSlug(categorySlug)}</span>
-                                        {subcategorySlug && (
+                                        {subcategorySlug ? (
                                             <>
+                                                <Link href={`/categories/${categorySlug}`} className="bc-link">
+                                                    {currentCategory?.name || formatSlug(categorySlug)}
+                                                </Link>
                                                 <span className="bc-sep">/</span>
-                                                <span className="bc-current">{currentSubcategory?.name || formatSlug(subcategorySlug)}</span>
+                                                {currentItemType ? (
+                                                    <>
+                                                        <Link href={`/products?category=${categorySlug}&subcategory=${subcategorySlug}`} className="bc-link">
+                                                            {currentSubcategory?.name || formatSlug(subcategorySlug)}
+                                                        </Link>
+                                                        <span className="bc-sep">/</span>
+                                                        <span className="bc-current">
+                                                            {currentItemType?.name || formatSlug(itemTypeSlug)}
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <span className="bc-current">
+                                                        {currentSubcategory?.name || formatSlug(subcategorySlug)}
+                                                    </span>
+                                                )}
                                             </>
+                                        ) : (
+                                            <span className="bc-current">
+                                                {currentCategory?.name || formatSlug(categorySlug)}
+                                            </span>
                                         )}
                                     </>
                                 ) : (
@@ -530,6 +569,7 @@ const ProductsContent = () => {
                             <span className="active-filters-label">{t('products.active_filters', 'ACTIVE:')}</span>
                             <div className="active-pills-list">
                                 {search && <ActivePill label={`"${search}"`} onClear={() => handleFilterChange('search', '')} />}
+                                {itemTypeSlug && <ActivePill label={`${t('products.item_type', 'Type')}: ${currentItemType?.name || formatSlug(itemTypeSlug)}`} onClear={() => handleFilterChange('itemType', '')} />}
                                 {size && <ActivePill label={`${t('products.size', 'Size')}: ${size}`} onClear={() => handleFilterChange('size', '')} />}
                                 {brand && <ActivePill label={`${t('products.brand', 'Brand')}: ${brand}`} onClear={() => handleFilterChange('brand', '')} />}
                                 {color && <ActivePill label={`${t('products.color', 'Color')}: ${color}`} onClear={() => handleFilterChange('color', '')} />}

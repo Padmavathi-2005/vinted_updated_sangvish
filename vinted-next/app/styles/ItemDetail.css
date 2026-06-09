@@ -556,8 +556,8 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    /* position: sticky !important;
-    top: 85px !important; */
+    position: sticky !important;
+    top: 85px !important;
     align-self: flex-start;
     z-index: 10;
     min-width: 0;

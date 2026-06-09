@@ -111,14 +111,25 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                             ≈ {formatPrice(walletData?.wallet?.balance || 0)} <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.8 }}>({t('common.in', 'in')} {currentCurrency?.code})</span>
                         </div>
                     )}
+                    {(walletData?.wallet?.pending_balance > 0 || walletData?.wallet?.pending_balance < 0) && (
+                        <div className="mt-2" style={{ fontSize: '0.9rem', color: '#ffc107', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <FaClock size={12} /> {t('wallet.pending_earnings', 'Pending Earnings')}: {formatPrice(walletData?.wallet?.pending_balance || 0, null, defaultCurrency)}
+                        </div>
+                    )}
                 </div>
                 {withdrawHistory?.some(r => r.status === 'pending') ? (
                     <button className="wc-withdraw-btn pending" disabled style={{ opacity: 0.7, cursor: 'not-allowed' }}>
                         <FaClock size={13} />
-                        {t('wallet.pending_short', 'Pending Request')}
+                        {t('wallet.withdrawal_pending', 'Withdrawal Pending')}
                     </button>
                 ) : (
-                    <button className="wc-withdraw-btn" onClick={() => setShowWithdrawModal(true)}>
+                    <button 
+                        className="wc-withdraw-btn" 
+                        onClick={() => setShowWithdrawModal(true)}
+                        disabled={walletData?.wallet?.balance <= 0}
+                        style={walletData?.wallet?.balance <= 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        title={walletData?.wallet?.balance <= 0 ? t('wallet.insufficient_funds', 'Insufficient funds') : ''}
+                    >
                         <FaArrowUp size={13} />
                         {t('wallet.withdraw_funds', 'Withdraw')}
                     </button>
@@ -374,7 +385,13 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                         <button
                             type="submit"
                             className="wc-submit-btn"
-                            disabled={submitting || !withdrawForm.payout_method_id || !withdrawForm.amount}
+                            disabled={
+                                submitting || 
+                                !withdrawForm.payout_method_id || 
+                                !withdrawForm.amount || 
+                                Number(withdrawForm.amount) <= 0 || 
+                                Number(withdrawForm.amount) > Number(maxAmountInCurrentCurrency)
+                            }
                         >
                             {submitting
                                 ? t('common.processing', 'Processing…')

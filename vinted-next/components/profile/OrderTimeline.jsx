@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaCheckCircle, FaTruck, FaBox, FaHome, FaClock, FaTimesCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaTruck, FaBox, FaHome, FaClock, FaTimesCircle, FaUndo } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 const OrderTimeline = ({ status, history = {} }) => {
@@ -11,6 +11,15 @@ const OrderTimeline = ({ status, history = {} }) => {
         { key: 'shipped', label: t('order.shipped', 'Shipped'), icon: <FaTruck />, date: history.shipped_at },
         { key: 'delivered', label: t('order.delivered', 'Delivered'), icon: <FaHome />, date: history.delivered_at },
     ];
+
+    if (status === 'return_requested' || status === 'returned') {
+        stages.push({
+            key: 'returned',
+            label: t('order.returned', 'Returned'),
+            icon: <FaUndo />,
+            date: history.return_requested_at || history.updated_at
+        });
+    }
 
     if (status === 'cancelled') {
         stages = [
@@ -28,6 +37,8 @@ const OrderTimeline = ({ status, history = {} }) => {
         'shipped': 3,
         'out_for_delivery': 3,
         'delivered': 4,
+        'return_requested': 5,
+        'returned': 5,
         'cancelled': 1,
     };
 
@@ -38,7 +49,7 @@ const OrderTimeline = ({ status, history = {} }) => {
             <div className="order-timeline">
                 {stages.map((stage, index) => {
                     const isCompleted = index <= currentStageIndex;
-                    const isCurrent = index === currentStageIndex;
+                    const isCurrent = index === currentStageIndex && !['delivered', 'returned'].includes(status);
                     const isCancelled = stage.key === 'cancelled';
                     
                     return (
@@ -78,6 +89,7 @@ const OrderTimeline = ({ status, history = {} }) => {
                     align-items: center;
                     position: relative;
                     z-index: 1;
+                    padding: 0 2px;
                 }
                 .step-icon-wrapper {
                     position: relative;
@@ -115,18 +127,21 @@ const OrderTimeline = ({ status, history = {} }) => {
                 }
                 .step-content {
                     text-align: center;
+                    width: 100%;
                 }
                 .step-label {
                     display: block;
-                    font-size: 11px;
+                    font-size: 9px;
                     font-weight: 700;
                     color: #64748b;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
+                    word-wrap: break-word;
+                    line-height: 1.2;
                 }
                 .step-date {
                     display: block;
-                    font-size: 10px;
+                    font-size: 9px;
                     color: #94a3b8;
                     margin-top: 2px;
                 }

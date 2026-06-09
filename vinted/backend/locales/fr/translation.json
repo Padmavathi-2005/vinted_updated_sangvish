@@ -464,7 +464,8 @@
     "ssl_secured": "SSL sécurisé",
     "track_delivery": "Suivre la livraison",
     "items": "articles",
-    "shipping_included": "Frais de port inclus"
+    "shipping_included": "Frais de port inclus",
+    "bundle_discount": "Remise sur lot"
   },
   "seller_profile": {
     "loading": "Chargement du profil du vendeur...",

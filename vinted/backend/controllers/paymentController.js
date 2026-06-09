@@ -162,7 +162,11 @@ const createStripeIntent = asyncHandler(async (req, res) => {
         const paymentIntent = await stripe.paymentIntents.create({
             amount: Math.round(amount * 100), // convert to cents
             currency: currency || 'inr',
-            description: `Order for User: ${req.user?._id || 'Guest'} - ${req.user?.email || ''}`,
+            description: req.body.purpose === 'deposit' ? 'Add Funds to Wallet' : `Order for User: ${req.user?._id || 'Guest'} - ${req.user?.email || ''}`,
+            metadata: {
+                purpose: req.body.purpose || 'order',
+                user_id: req.user?._id?.toString() || ''
+            },
             automatic_payment_methods: {
                 enabled: true,
             },
@@ -228,12 +232,65 @@ const stripeWebhook = asyncHandler(async (req, res) => {
             const paymentIntent = event.data.object;
             console.log(`PaymentIntent for ${paymentIntent.amount} was successful!`);
 
-            // Update order status in database
-            const order = await Order.findOne({ stripe_payment_id: paymentIntent.id });
-            if (order) {
-                order.payment_status = 'paid';
-                await order.save();
-                console.log(`Order ${order.order_number} marked as PAID via Webhook.`);
+            if (paymentIntent.metadata && paymentIntent.metadata.purpose === 'deposit') {
+                try {
+                    const userId = paymentIntent.metadata.user_id;
+                    const amountAdded = paymentIntent.amount / 100;
+
+                    // Import dynamically to avoid circular dependencies
+                    const { getOrCreateWallet } = await import('./walletController.js');
+                    const User = (await import('../models/User.js')).default;
+                    const Transaction = (await import('../models/Transaction.js')).default;
+                    const Currency = (await import('../models/Currency.js')).default;
+
+                    const wallet = await getOrCreateWallet(userId, 'User');
+                    
+                    const existingTx = await Transaction.findOne({ external_reference: paymentIntent.id, purpose: 'deposit' });
+                    if (existingTx) {
+                        console.log(`Deposit already processed for Intent ${paymentIntent.id}`);
+                        return res.json({ received: true });
+                    }
+                    
+                    // Currency Conversion
+                    const paymentCurrencyCode = paymentIntent.currency ? paymentIntent.currency.toUpperCase() : 'INR';
+                    const walletCurrencyCode = wallet.currency ? wallet.currency.toUpperCase() : 'INR';
+                    
+                    const paymentCurrency = await Currency.findOne({ code: paymentCurrencyCode });
+                    const walletCurrency = await Currency.findOne({ code: walletCurrencyCode });
+                    const paymentRate = paymentCurrency?.exchange_rate || 1;
+                    const walletRate = walletCurrency?.exchange_rate || 1;
+                    const amountInWalletCurrency = Number(((amountAdded / paymentRate) * walletRate).toFixed(2));
+
+                    wallet.balance += amountInWalletCurrency;
+                    await wallet.save();
+
+                    await User.findByIdAndUpdate(userId, { $inc: { balance: amountInWalletCurrency } });
+
+                    await Transaction.create({
+                        user_id: userId,
+                        user_type: 'User',
+                        wallet_id: wallet._id,
+                        amount: amountInWalletCurrency,
+                        type: 'credit',
+                        purpose: 'deposit',
+                        status: 'completed',
+                        external_reference: paymentIntent.id,
+                        reference_model: 'StripePaymentIntent',
+                        description: `Wallet top-up via Stripe - ${paymentIntent.id}`
+                    });
+
+                    console.log(`Wallet of user ${userId} successfully credited with ${amountAdded}`);
+                } catch (err) {
+                    console.error('Error processing deposit webhook:', err);
+                }
+            } else {
+                // Update order status in database
+                const order = await Order.findOne({ stripe_payment_id: paymentIntent.id });
+                if (order) {
+                    order.payment_status = 'paid';
+                    await order.save();
+                    console.log(`Order ${order.order_number} marked as PAID via Webhook.`);
+                }
             }
             break;
 
@@ -254,8 +311,95 @@ const stripeWebhook = asyncHandler(async (req, res) => {
     res.json({ received: true });
 });
 
+// @desc    Verify Stripe Deposit Payment
+// @route   POST /api/payments/stripe/verify-deposit
+// @access  Private
+const verifyDeposit = asyncHandler(async (req, res) => {
+    const { paymentIntentId } = req.body;
+    if (!paymentIntentId) {
+        res.status(400);
+        throw new Error('paymentIntentId is required');
+    }
+
+    const setting = await Setting.findOne({ type: 'payment_settings' });
+    const isTest = (setting && setting.stripe_test_mode === false) ? false : true; 
+    let candidateKey = null;
+    if (setting) {
+        candidateKey = isTest ? setting.stripe_test_secret_key : setting.stripe_live_secret_key;
+    }
+    if (!candidateKey || candidateKey.trim() === '') {
+        candidateKey = process.env.STRIPE_SECRET_KEY;
+    }
+    const finalKey = (candidateKey && (candidateKey.startsWith('sk_') || candidateKey.startsWith('rk_'))) ? candidateKey : null;
+    if (!finalKey) {
+        res.status(500);
+        throw new Error('Stripe is not configured correctly.');
+    }
+    const stripe = getStripe(finalKey);
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    if (paymentIntent.status !== 'succeeded') {
+        res.status(400);
+        throw new Error('Payment has not succeeded yet');
+    }
+
+    if (!paymentIntent.metadata || paymentIntent.metadata.purpose !== 'deposit') {
+        res.status(400);
+        throw new Error('Invalid payment intent purpose');
+    }
+
+    const userId = paymentIntent.metadata.user_id;
+    const amountAdded = paymentIntent.amount / 100;
+
+    const Transaction = (await import('../models/Transaction.js')).default;
+    const existingTx = await Transaction.findOne({ external_reference: paymentIntent.id, purpose: 'deposit' });
+
+    if (existingTx) {
+        return res.json({ success: true, message: 'Already processed' });
+    }
+
+    const { getOrCreateWallet } = await import('./walletController.js');
+    const User = (await import('../models/User.js')).default;
+    const Currency = (await import('../models/Currency.js')).default;
+
+    const wallet = await getOrCreateWallet(userId, 'User');
+    
+    // Currency Conversion
+    const paymentCurrencyCode = paymentIntent.currency ? paymentIntent.currency.toUpperCase() : 'INR';
+    const walletCurrencyCode = wallet.currency ? wallet.currency.toUpperCase() : 'INR';
+    
+    const paymentCurrency = await Currency.findOne({ code: paymentCurrencyCode });
+    const walletCurrency = await Currency.findOne({ code: walletCurrencyCode });
+    const paymentRate = paymentCurrency?.exchange_rate || 1;
+    const walletRate = walletCurrency?.exchange_rate || 1;
+    
+    const amountInWalletCurrency = Number(((amountAdded / paymentRate) * walletRate).toFixed(2));
+
+    wallet.balance += amountInWalletCurrency;
+    await wallet.save();
+
+    await User.findByIdAndUpdate(userId, { $inc: { balance: amountInWalletCurrency } });
+
+    await Transaction.create({
+        user_id: userId,
+        user_type: 'User',
+        wallet_id: wallet._id,
+        amount: amountInWalletCurrency,
+        type: 'credit',
+        purpose: 'deposit',
+        status: 'completed',
+        external_reference: paymentIntent.id,
+        reference_model: 'StripePaymentIntent',
+        description: `Wallet top-up via Stripe - ${paymentIntent.id}`
+    });
+
+    res.json({ success: true, message: 'Deposit verified and credited' });
+});
+
 export {
     getPaymentMethods,
     createStripeIntent,
-    stripeWebhook
+    stripeWebhook,
+    verifyDeposit
 };

@@ -124,8 +124,8 @@ const Checkout = () => {
             // Fallback
             Object.values(selectedBySeller).forEach(group => {
                 const { items } = group;
-                const anyFreeShipping = items.some(i => i.shipping_included);
-                if (!anyFreeShipping) {
+                const allFreeShipping = items.every(i => i.shipping_included);
+                if (!allFreeShipping) {
                     shippingTotal += getInDefault(200, 'inr');
                 }
             });
@@ -420,6 +420,31 @@ const Checkout = () => {
         lng: user?.address?.lng || null
     });
 
+    React.useEffect(() => {
+        const savedForm = sessionStorage.getItem('checkout_form');
+        if (savedForm) {
+            try {
+                setForm(JSON.parse(savedForm));
+            } catch (e) {}
+        }
+        const savedMethod = sessionStorage.getItem('checkout_payment_method');
+        if (savedMethod) {
+            setPaymentMethod(savedMethod);
+        }
+    }, []);
+
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('checkout_form', JSON.stringify(form));
+        }
+    }, [form]);
+
+    React.useEffect(() => {
+        if (typeof window !== 'undefined' && paymentMethod) {
+            sessionStorage.setItem('checkout_payment_method', paymentMethod);
+        }
+    }, [paymentMethod]);
+
     // Update country if commonCountry changes (and not multiple)
     React.useEffect(() => {
         if (commonCountry && commonCountry !== 'Multiple') {
@@ -566,9 +591,12 @@ const Checkout = () => {
                 items: selectedItems,
                 payment_method: paymentMethod,
                 shipping_address: form,
-                stripe_payment_id: stripePaymentId,
-                shipping_company_id: selectedShippingMethod?.company_id
+                stripe_payment_id: stripePaymentId
             });
+            if (typeof window !== 'undefined') {
+                sessionStorage.removeItem('checkout_form');
+                sessionStorage.removeItem('checkout_payment_method');
+            }
             setPlacing(false);
             setShowSuccess(true);
             setStep('done');
@@ -668,7 +696,6 @@ const Checkout = () => {
                             <div className="checkout-field">
                                 <label>{t('checkout.street_address', 'Search Address')}</label>
                                 <LocationPickerMap 
-                                    showMap={false} 
                                     initialLabel={form.address_line}
                                     onLocationSelect={(loc) => {
                                         setForm(prev => ({
@@ -717,44 +744,7 @@ const Checkout = () => {
                             </div>
                         </div>
 
-                        {/* Shipping Method Section */}
-                        <div className="checkout-section">
-                            <h2 className="checkout-section-title"><FaTruck /> Shipping Method</h2>
-                            {loadingShipping ? (
-                                <div className="p-3 text-center text-muted" style={{ fontSize: '0.9rem' }}>
-                                    <div className="spinner-border spinner-border-sm me-2" role="status"></div>
-                                    Calculating shipping rates...
-                                </div>
-                            ) : shippingEstimates.length > 0 ? (
-                                <div className="checkout-pay-methods" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
-                                    {shippingEstimates.map(m => (
-                                        <button
-                                            key={m.company_id}
-                                            type="button"
-                                            className={`checkout-pay-btn ${selectedShippingMethod?.company_id === m.company_id ? 'active' : ''}`}
-                                            onClick={() => setSelectedShippingMethod(m)}
-                                            style={{ justifyContent: 'space-between', padding: '15px' }}
-                                        >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                                {m.logo ? (
-                                                    <img src={m.logo} alt={m.company_name} style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
-                                                ) : (
-                                                    <FaTruck style={{ fontSize: '24px', color: '#666' }} />
-                                                )}
-                                                <span className="fw-bold">{m.company_name}</span>
-                                            </div>
-                                            <div className="fw-bold" style={{ color: '#059669' }}>
-                                                +{formatPrice(m.estimated_cost, 'inr')}
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="alert alert-warning" style={{ fontSize: '0.85rem', marginBottom: 0 }}>
-                                    Please enter a valid shipping address to see available shipping methods.
-                                </div>
-                            )}
-                        </div>
+                        {/* Shipping Method Section removed as per new requirements - buyer shouldn't select company */}
 
                         <div className="checkout-section">
                             <h2 className="checkout-section-title"><FaCreditCard /> {t('checkout.payment_method')}</h2>
@@ -990,7 +980,7 @@ const Checkout = () => {
                             <FaCheckCircle />
                             <div className="success-circle-outline"></div>
                         </div>
-                        <h2>{t('checkout.payment_complete') || 'Payment Complete!'}</h2>
+                        <h2>{t('checkout.payment_completed_successfully', 'Payment completed successfully')}</h2>
                         <p>{t('checkout.order_placed_sub') || 'Your order has been placed successfully. Thank you for shopping with us!'}</p>
                         
                         <div className="redirect-countdown">

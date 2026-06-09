@@ -605,7 +605,8 @@
     "approx_balance": "Wallet balance in your currency",
     "payment_complete": "Payment Complete!",
     "order_placed_sub": "Your order has been placed successfully.",
-    "redirecting_orders": "Redirecting to your orders"
+    "redirecting_orders": "Redirecting to your orders",
+    "bundle_discount": "Bundle Discount"
   },
   "time_ago": {
     "today": "Today",

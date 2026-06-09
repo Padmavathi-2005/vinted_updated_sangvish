@@ -4,11 +4,12 @@ import React, { useState, useEffect } from 'react';
 import {
     PaymentElement,
     useStripe,
-    useElements
+    useElements,
+    AddressElement
 } from '@stripe/react-stripe-js';
 import { FaLock } from 'react-icons/fa';
 
-const StripePaymentForm = ({ onPaymentSuccess, amount, formattedAmount, billingDetails, validateForm }) => {
+const StripePaymentForm = ({ onPaymentSuccess, amount, formattedAmount, billingDetails, validateForm, buttonText, successMessage, isDeposit }) => {
     const stripe = useStripe();
     const elements = useElements();
 
@@ -29,18 +30,30 @@ const StripePaymentForm = ({ onPaymentSuccess, amount, formattedAmount, billingD
 
         setIsLoading(true);
 
+        // Required by latest Stripe SDK before confirmPayment
+        const { error: submitError } = await elements.submit();
+        if (submitError) {
+            setMessage(submitError.message);
+            setIsLoading(false);
+            return;
+        }
+
         const { error, paymentIntent } = await stripe.confirmPayment({
             elements,
             confirmParams: {
                 // Return URL can be a success page
                 return_url: window.location.origin + '/profile?tab=orders&success=true',
-                payment_method_data: {
-                    billing_details: billingDetails
-                },
-                shipping: {
-                    name: billingDetails.name,
-                    address: billingDetails.address
-                }
+                ...(billingDetails && Object.keys(billingDetails).length > 0 ? {
+                    payment_method_data: {
+                        billing_details: billingDetails
+                    }
+                } : {}),
+                ...(!isDeposit && billingDetails ? {
+                    shipping: {
+                        name: billingDetails.name,
+                        address: billingDetails.address
+                    }
+                } : {})
             },
             redirect: 'if_required',
         });
@@ -54,7 +67,7 @@ const StripePaymentForm = ({ onPaymentSuccess, amount, formattedAmount, billingD
             }
             setIsLoading(false);
         } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-            setMessage("Payment completed, placing your order...");
+            setMessage(successMessage || "Payment completed, placing your order...");
             await onPaymentSuccess(paymentIntent);
             // Do NOT setIsLoading(false) here. Keep button disabled while order places.
         }
@@ -62,6 +75,12 @@ const StripePaymentForm = ({ onPaymentSuccess, amount, formattedAmount, billingD
 
     return (
         <form id="payment-form" onSubmit={handleSubmit} className="stripe-form">
+            {isDeposit && (
+                <div style={{ marginBottom: '16px' }}>
+                    <h4 style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 'bold' }}>Billing Address</h4>
+                    <AddressElement options={{ mode: 'billing', defaultValues: { address: { country: 'IN' } } }} />
+                </div>
+            )}
             <PaymentElement 
                 id="payment-element" 
                 onChange={(e) => {
@@ -82,7 +101,7 @@ const StripePaymentForm = ({ onPaymentSuccess, amount, formattedAmount, billingD
                 {isLoading ? (
                     <><span className="checkout-spinner" /> Processing...</>
                 ) : (
-                    <><FaLock /> Pay and Place Order {formattedAmount && `(${formattedAmount})`}</>
+                    <><FaLock /> {buttonText || 'Pay and Place Order'} {formattedAmount && `(${formattedAmount})`}</>
                 )}
             </button>
         </form>

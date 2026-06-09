@@ -421,7 +421,8 @@
     "ssl_secured": "SSL được bảo mật",
     "track_delivery": "Theo dõi giao hàng",
     "items": "mặt hàng",
-    "shipping_included": "Đã bao gồm phí vận chuyển"
+    "shipping_included": "Đã bao gồm phí vận chuyển",
+    "bundle_discount": "Giảm giá combo"
   },
   "seller_profile": {
     "loading": "Đang tải hồ sơ người bán...",

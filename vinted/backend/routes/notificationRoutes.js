@@ -6,7 +6,10 @@ import {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    emitInternalNotification
 } from '../controllers/notificationController.js';
+
+router.post('/emit-internal', emitInternalNotification);
 
 router.use(protect);
 

@@ -153,7 +153,15 @@ const NotificationsContent = () => {
                                         color: notif.type === 'info' ? settings.primary_color : cfg.color,
                                         overflow: 'hidden'
                                     }}>
-                                        {(settings.site_favicon || settings.site_logo) ? (
+                                        {notif.image ? (
+                                            <img 
+                                                src={getImageUrl(notif.image)} 
+                                                alt="" 
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            />
+                                        ) : (notif.type === 'message' || notif.type === 'request' || (notif.link && notif.link.includes('messages'))) ? (
+                                            <span style={{ fontWeight: 'bold', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>{safeString(notif.title).charAt(0).toUpperCase() || 'U'}</span>
+                                        ) : (settings.site_favicon || settings.site_logo) ? (
                                             <img 
                                                 src={getImageUrl(settings.site_favicon || settings.site_logo)} 
                                                 alt="" 
@@ -193,7 +201,15 @@ const NotificationsContent = () => {
                                     color: activeNotif.type === 'info' ? settings.primary_color : cfg.color,
                                     overflow: 'hidden'
                                 }}>
-                                    {(settings.site_favicon || settings.site_logo) ? (
+                                    {activeNotif.image ? (
+                                        <img 
+                                            src={getImageUrl(activeNotif.image)} 
+                                            alt="" 
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    ) : (activeNotif.type === 'message' || activeNotif.type === 'request' || (activeNotif.link && activeNotif.link.includes('messages'))) ? (
+                                        <span style={{ fontWeight: 'bold', fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>{safeString(activeNotif.title).charAt(0).toUpperCase() || 'U'}</span>
+                                    ) : (settings.site_favicon || settings.site_logo) ? (
                                         <img 
                                             src={getImageUrl(settings.site_favicon || settings.site_logo)} 
                                             alt="" 

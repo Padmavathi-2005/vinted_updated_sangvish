@@ -218,13 +218,12 @@ const MessagesContent = () => {
             if (res.data && Array.isArray(res.data.messages)) {
                 setMessages(res.data.messages);
             }
-            // Update active conversation status locally if it changed
-            if (res.data.conversation.status !== activeConv?.status) {
-                setActiveConv(res.data.conversation);
-                setConversations(prev =>
-                    prev.map(c => c._id === id ? res.data.conversation : c)
-                );
-            }
+            // Update active conversation locally and clear unread count in sidebar
+            const updatedConv = { ...res.data.conversation, unread_count: 0 };
+            setActiveConv(updatedConv);
+            setConversations(prev =>
+                prev.map(c => c._id === id ? updatedConv : c)
+            );
             // Auto-mark any unread notifications linked to this conversation
             const related = notifications.filter(
                 n => !n.is_read && n.link && n.link.includes(id)

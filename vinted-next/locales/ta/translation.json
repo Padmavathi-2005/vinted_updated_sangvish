@@ -421,7 +421,8 @@
     "ssl_secured": "SSL பாதுகாப்பானது",
     "track_delivery": "ட்ராக் டெலிவரி",
     "items": "பொருட்கள்",
-    "shipping_included": "ஷிப்பிங் சேர்க்கப்பட்டுள்ளது"
+    "shipping_included": "ஷிப்பிங் சேர்க்கப்பட்டுள்ளது",
+    "bundle_discount": "கூட்டுத் தள்ளுபடி"
   },
   "seller_profile": {
     "loading": "விற்பனையாளர் சுயவிவரத்தை ஏற்றுகிறது...",

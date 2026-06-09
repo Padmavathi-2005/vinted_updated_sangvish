@@ -421,7 +421,8 @@
     "ssl_secured": "SSL-beveiligd",
     "track_delivery": "Volg de levering",
     "items": "artikelen",
-    "shipping_included": "Verzending inbegrepen"
+    "shipping_included": "Verzending inbegrepen",
+    "bundle_discount": "Bundelkorting"
   },
   "seller_profile": {
     "loading": "Verkopersprofiel laden...",

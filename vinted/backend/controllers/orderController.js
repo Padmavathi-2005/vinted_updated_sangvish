@@ -11,7 +11,7 @@ import sendEmail from '../utils/sendEmail.js';
 import Currency from '../models/Currency.js';
 import Negotiation from '../models/Negotiation.js';
 import ShippingCompany from '../models/ShippingCompany.js';
-import { processOrderPaymentSplit, reverseOrderPayment, processRefundSplit, deductBuyerWallet } from './walletController.js';
+import { processOrderPaymentSplit, reverseOrderPayment, processRefundSplit, deductBuyerWallet, releaseOrderPayment } from './walletController.js';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -160,10 +160,33 @@ const createOrder = asyncHandler(async (req, res) => {
                 shippingFee += shippingInItemCurrency;
             }
         } else {
-            // Fallback to legacy logic
-            const shippingInItemCurrency = (200 * itemCurrencyRate) / inrRate;
-            const anyFreeShipping = groupItems.some(i => i.shipping_included);
-            shippingFee = anyFreeShipping ? 0 : shippingInItemCurrency;
+            // Fallback to standard distance logic if no company selected by buyer
+            // Fetch the default (first active) company's base rate to match frontend estimates
+            const activeCompany = await ShippingCompany.findOne({ status: 'active' }).sort({ company_name: 1 });
+            const baseRate = activeCompany?.base_rate || 50;
+            const localMult = 1.0;
+            const regionalMult = 1.5;
+            const nationalMult = 2.5;
+
+            for (const item of groupItems) {
+                if (item.shipping_included) continue;
+
+                let distanceMult = nationalMult;
+                const sellerCity = item.city?.toLowerCase().trim();
+                const sellerState = item.state?.toLowerCase().trim();
+                const buyerCity = shipping_address?.city?.toLowerCase().trim();
+                const buyerState = shipping_address?.state?.toLowerCase().trim();
+
+                if (sellerCity && buyerCity && sellerCity === buyerCity) {
+                    distanceMult = localMult;
+                } else if (sellerState && buyerState && sellerState === buyerState) {
+                    distanceMult = regionalMult;
+                }
+
+                const itemShippingInINR = Math.round(baseRate * distanceMult);
+                const shippingInItemCurrency = (itemShippingInINR * itemCurrencyRate) / inrRate;
+                shippingFee += shippingInItemCurrency;
+            }
         }
 
         const discountedItemPrice = itemPriceSum - discountAmount;
@@ -297,26 +320,33 @@ const createOrder = asyncHandler(async (req, res) => {
 
         // System Message in Conversation
         try {
+            const sellerObjectId = mongoose.Types.ObjectId.isValid(sellerId)
+                ? new mongoose.Types.ObjectId(sellerId)
+                : sellerId;
+
             let conversation = await Conversation.findOne({
                 participants: { 
                     $all: [
                         { $elemMatch: { user: req.user._id, on_model: 'User' } },
-                        { $elemMatch: { user: sellerId, on_model: 'User' } }
+                        { $elemMatch: { user: sellerObjectId, on_model: 'User' } }
                     ]
-                },
-                item_id: groupItems[0]._id
+                }
             });
 
             if (!conversation) {
                 conversation = await Conversation.create({
                     participants: [
                         { user: req.user._id, on_model: 'User' },
-                        { user: sellerId, on_model: 'User' }
+                        { user: sellerObjectId, on_model: 'User' }
                     ],
                     item_id: groupItems[0]._id,
                     initiator_id: req.user._id,
                     status: 'accepted'
                 });
+            } else {
+                conversation.item_id = groupItems[0]._id;
+                conversation.status = 'accepted';
+                await conversation.save();
             }
 
             const systemMetadata = JSON.stringify({
@@ -512,7 +542,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             title: 'Order Status Updated',
             message: `Order #${order.order_number} status is now successfully ${status}.`,
             type: 'success',
-            link: `/profile?tab=orders&orderId=${order._id}`
+            link: `/profile?tab=orders&mode=seller&orderId=${order._id}`
         });
     }
 
@@ -909,7 +939,7 @@ const requestReturn = asyncHandler(async (req, res) => {
 // @route   POST /api/orders/:id/process-return
 // @access  Private
 const processReturn = asyncHandler(async (req, res) => {
-    const { refundType, amount, reason } = req.body;
+    const { refundType, amount, reason, relist } = req.body;
     // refundType can be 'full' or 'partial'
     const order = await Order.findById(req.params.id);
 
@@ -928,6 +958,14 @@ const processReturn = asyncHandler(async (req, res) => {
         throw new Error('Order is not in a return_requested state');
     }
 
+    if (refundType === 'partial') {
+        const minAmount = order.total_amount * 0.40;
+        if (!amount || amount < minAmount || amount > order.total_amount) {
+            res.status(400);
+            throw new Error(`Refund amount must be at least 40% of the total amount.`);
+        }
+    }
+
     await processRefundSplit(order._id, refundType, amount, reason);
 
     // Update order status
@@ -937,8 +975,8 @@ const processReturn = asyncHandler(async (req, res) => {
     order.refund_amount = refundType === 'full' ? order.total_amount : amount;
     await order.save();
 
-    // Mark items as available again if full refund
-    if (refundType === 'full') {
+    // Mark items as available again if requested
+    if (relist === true || relist === 'true') {
         const itemsToRelist = order.is_bundle ? order.items : [{ item_id: order.item_id }];
         for (const itm of itemsToRelist) {
             await Item.findByIdAndUpdate(itm.item_id, { status: 'available', is_sold: false, is_ordered: false });
@@ -955,9 +993,40 @@ const processReturn = asyncHandler(async (req, res) => {
         link: `/profile?tab=orders&orderId=${order._id}`
     });
 
+    // Release any remaining pending funds (admin commission, delivery fee, or remaining seller funds) since the return is concluded
+    await releaseOrderPayment(order._id);
+
     res.json({ message: 'Return processed successfully', order });
 });
 
+// @desc    Get order by ID
+// @route   GET /api/orders/:id
+// @access  Private
+const getOrderById = asyncHandler(async (req, res) => {
+    const order = await Order.findById(req.params.id)
+        .populate('item_id', 'title images currency_id')
+        .populate('items.item_id', 'title size images currency_id')
+        .populate('seller_id', 'username')
+        .populate('buyer_id', 'username')
+        .populate('currency_id')
+        .populate('shipping_company_id');
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Order not found');
+    }
+
+    // Only allow buyer, seller, or admin to view
+    if (
+        order.buyer_id._id.toString() !== req.user._id.toString() &&
+        order.seller_id._id.toString() !== req.user._id.toString()
+    ) {
+        res.status(401);
+        throw new Error('Not authorized to view this order');
+    }
+
+    res.json(order);
+});
 
 export {
     createOrder,
@@ -966,5 +1035,7 @@ export {
     updateOrderStatus,
     cancelOrder,
     requestReturn,
-    processReturn
+    processReturn,
+    getOrderById
 };
+

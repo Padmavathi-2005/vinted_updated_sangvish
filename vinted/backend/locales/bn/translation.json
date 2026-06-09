@@ -451,7 +451,8 @@
     "ssl_secured": "SSL সুরক্ষিত",
     "track_delivery": "ট্র্যাক ডেলিভারি",
     "items": "আইটেম",
-    "shipping_included": "শিপিং অন্তর্ভুক্ত"
+    "shipping_included": "শিপিং অন্তর্ভুক্ত",
+    "bundle_discount": "বান্ডেল ছাড়"
   },
   "seller_profile": {
     "loading": "বিক্রেতার প্রোফাইল লোড হচ্ছে...",

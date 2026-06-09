@@ -421,7 +421,8 @@
     "ssl_secured": "SSL 보안",
     "track_delivery": "배송 추적",
     "items": "아이템",
-    "shipping_included": "배송비 포함"
+    "shipping_included": "배송비 포함",
+    "bundle_discount": "묶음 할인"
   },
   "seller_profile": {
     "loading": "판매자 프로필 로드 중...",

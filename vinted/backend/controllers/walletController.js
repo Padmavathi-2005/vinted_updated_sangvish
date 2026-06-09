@@ -106,11 +106,11 @@ const processOrderPaymentSplit = async (orderData) => {
 
     if (sellerEarning < 0) sellerEarning = 0;
 
-    // 1. Credit Admin Wallet
+    // 1. Credit Admin Wallet (Pending)
     const admin = await Admin.findOne({ is_active: { $ne: false } });
     if (admin) {
         const adminWallet = await getOrCreateWallet(admin._id, 'Admin');
-        adminWallet.balance += adminCommission;
+        adminWallet.pending_balance += adminCommission;
         await adminWallet.save();
 
         await Transaction.create({
@@ -122,13 +122,13 @@ const processOrderPaymentSplit = async (orderData) => {
             purpose: 'commission',
             reference_id: order_id,
             reference_model: 'Order',
+            status: 'pending',
             description: `Commission from order #${order_id}`
         });
 
-        // 2. Credit Delivery Wallet (Assigned to Admin but specifically for Delivery)
-        // Creating a "Delivery" wallet owned by Admin for separation
+        // 2. Credit Delivery Wallet (Pending)
         const deliveryWallet = await getOrCreateWallet(admin._id, 'Delivery');
-        deliveryWallet.balance += deliveryAmount;
+        deliveryWallet.pending_balance += deliveryAmount;
         await deliveryWallet.save();
 
         await Transaction.create({
@@ -140,16 +140,17 @@ const processOrderPaymentSplit = async (orderData) => {
             purpose: 'delivery_fee',
             reference_id: order_id,
             reference_model: 'Order',
+            status: 'pending',
             description: `Delivery Cost for order #${order_id}`
         });
     }
 
-    // 3. Credit Seller Wallet
+    // 3. Credit Seller Wallet (Pending)
     const sellerWallet = await getOrCreateWallet(seller_id, 'User');
-    sellerWallet.balance += sellerEarning;
+    sellerWallet.pending_balance += sellerEarning;
     await sellerWallet.save();
 
-    await User.findByIdAndUpdate(seller_id, { $inc: { balance: sellerEarning } });
+    await User.findByIdAndUpdate(seller_id, { $inc: { pending_balance: sellerEarning } });
 
     await Transaction.create({
         user_id: seller_id,
@@ -160,6 +161,7 @@ const processOrderPaymentSplit = async (orderData) => {
         purpose: 'sale_earning',
         reference_id: order_id,
         reference_model: 'Order',
+        status: 'pending',
         description: `Earning from order #${order_id} (Net: ${item_price - adminCommission} less Delivery: ${deliveryAmount})`
     });
 
@@ -217,7 +219,7 @@ const reverseOrderPayment = async (orderId) => {
     const admin = await Admin.findOne({ is_active: { $ne: false } });
     if (admin) {
         const { wallet: adminWallet, convertedAmount: adminCommConverted } = await convertToWallet(adminCommission, admin._id, 'Admin');
-        adminWallet.balance -= adminCommConverted;
+        adminWallet.pending_balance -= adminCommConverted;
         await adminWallet.save();
 
         await Transaction.create({
@@ -234,7 +236,7 @@ const reverseOrderPayment = async (orderId) => {
 
         // Debit Delivery Wallet
         const { wallet: deliveryWallet, convertedAmount: deliveryAmtConverted } = await convertToWallet(deliveryAmount, admin._id, 'Delivery');
-        deliveryWallet.balance -= deliveryAmtConverted;
+        deliveryWallet.pending_balance -= deliveryAmtConverted;
         await deliveryWallet.save();
 
         await Transaction.create({
@@ -252,9 +254,9 @@ const reverseOrderPayment = async (orderId) => {
 
     // 2. Debit Seller Wallet
     const { wallet: sellerWallet, convertedAmount: sellerEarnConverted } = await convertToWallet(sellerEarning, seller_id, 'User');
-    sellerWallet.balance -= sellerEarnConverted;
+    sellerWallet.pending_balance -= sellerEarnConverted;
     await sellerWallet.save();
-    await User.findByIdAndUpdate(seller_id, { $inc: { balance: -sellerEarnConverted } });
+    await User.findByIdAndUpdate(seller_id, { $inc: { pending_balance: -sellerEarnConverted } });
 
     await Transaction.create({
         user_id: seller_id,
@@ -267,6 +269,9 @@ const reverseOrderPayment = async (orderId) => {
         reference_model: 'Order',
         description: `Earning reversal for cancelled order #${order.order_number}`
     });
+
+    // Mark previous pending transactions as cancelled
+    await Transaction.updateMany({ reference_id: orderId, status: 'pending' }, { status: 'cancelled' });
 
     // 3. Credit Buyer Wallet (full refund)
     const { wallet: buyerWallet, convertedAmount: buyerRefundConverted } = await convertToWallet(fullRefundAmount, buyer_id, 'User');
@@ -321,11 +326,11 @@ const processRefundSplit = async (orderId, refundType, partialAmount, reason) =>
     // The seller bears the cost of the return refund.
     let debitFromSeller = refundAmountToBuyer;
 
-    // Debit Seller
+    // Debit Seller (from pending balance since funds are not yet released)
     const { wallet: sellerWallet, convertedAmount: sellerDebitConverted } = await convertToWallet(debitFromSeller, seller_id, 'User');
-    sellerWallet.balance -= sellerDebitConverted;
+    sellerWallet.pending_balance -= sellerDebitConverted;
     await sellerWallet.save();
-    await User.findByIdAndUpdate(seller_id, { $inc: { balance: -sellerDebitConverted } });
+    await User.findByIdAndUpdate(seller_id, { $inc: { pending_balance: -sellerDebitConverted } });
 
     await Transaction.create({
         user_id: seller_id,
@@ -358,11 +363,50 @@ const processRefundSplit = async (orderId, refundType, partialAmount, reason) =>
     });
 };
 
+// @desc    Release funds from pending_balance to active balance when order completes
+const releaseOrderPayment = async (orderId) => {
+    // Find all pending credit transactions for this order
+    const pendingTransactions = await Transaction.find({ reference_id: orderId, status: 'pending', type: 'credit' });
+
+    for (const transaction of pendingTransactions) {
+        // Find wallet
+        const wallet = await Wallet.findById(transaction.wallet_id);
+        if (wallet) {
+            // Ensure we don't go below 0 on pending_balance just in case
+            if (wallet.pending_balance >= transaction.amount) {
+                wallet.pending_balance -= transaction.amount;
+                wallet.balance += transaction.amount;
+                await wallet.save();
+
+                if (wallet.owner_type === 'User') {
+                    await User.findByIdAndUpdate(wallet.owner_id, {
+                        $inc: { pending_balance: -transaction.amount, balance: transaction.amount }
+                    });
+                }
+            } else {
+                // If pending_balance is less than transaction.amount (due to a partial refund deduction)
+                const releaseAmount = wallet.pending_balance; // Release whatever is left
+                wallet.pending_balance = 0;
+                wallet.balance += releaseAmount;
+                await wallet.save();
+                if (wallet.owner_type === 'User') {
+                    await User.findByIdAndUpdate(wallet.owner_id, {
+                        $inc: { pending_balance: -releaseAmount, balance: releaseAmount }
+                    });
+                }
+            }
+        }
+        transaction.status = 'completed';
+        await transaction.save();
+    }
+};
+
 export {
     getMyWallet,
     processOrderPaymentSplit,
     reverseOrderPayment,
     processRefundSplit,
     getOrCreateWallet,
-    deductBuyerWallet
+    deductBuyerWallet,
+    releaseOrderPayment
 };

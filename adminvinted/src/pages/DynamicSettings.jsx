@@ -1449,7 +1449,7 @@ const DynamicSettings = () => {
                         <div className="ds-breadcrumb">
                             <Link to="/dashboard">{t('sidebar.dashboard', 'Dashboard')}</Link>
                             <span className="separator"><FaChevronRight size={10} /></span>
-                            <span>{t('sidebar.settings', 'Setting')}</span>
+                            <span>{t('sidebar.settings.title', 'Settings')}</span>
                             <span className="separator"><FaChevronRight size={10} /></span>
                             <span>{t(`sidebar.settings.${type}`) !== `sidebar.settings.${type}` ? t(`sidebar.settings.${type}`) : type.replace(/_/g, ' ')}</span>
                         </div>

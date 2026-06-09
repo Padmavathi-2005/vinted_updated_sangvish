@@ -87,6 +87,10 @@ const userSchema = mongoose.Schema(
             type: Number,
             default: 0.00,
         },
+        pending_balance: {
+            type: Number,
+            default: 0.00,
+        },
         wallet_currency: {
             type: String,
             default: 'EUR',

@@ -109,6 +109,10 @@ const Header = () => {
     const [isMobileCurrOpen, setIsMobileCurrOpen] = useState(false);
 
     const [searchTerm, setSearchTerm] = useState('');
+
+    useEffect(() => {
+        setSearchTerm(searchParams.get('search') || '');
+    }, [searchParams]);
     const [searchHistory, setSearchHistory] = useState([]);
     const [showSearchHistory, setShowSearchHistory] = useState(false);
     const [isSearchFocused, setIsSearchFocused] = useState(false);

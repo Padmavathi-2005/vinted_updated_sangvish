@@ -421,7 +421,8 @@
     "ssl_secured": "SSL säker",
     "track_delivery": "Spåra leverans",
     "items": "föremål",
-    "shipping_included": "Frakt ingår"
+    "shipping_included": "Frakt ingår",
+    "bundle_discount": "Paketrabatt"
   },
   "seller_profile": {
     "loading": "Laddar säljarprofil...",

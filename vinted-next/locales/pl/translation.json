@@ -421,7 +421,8 @@
     "ssl_secured": "Zabezpieczone protokołem SSL",
     "track_delivery": "Śledź dostawę",
     "items": "rzeczy",
-    "shipping_included": "Wysyłka wliczona w cenę"
+    "shipping_included": "Wysyłka wliczona w cenę",
+    "bundle_discount": "Rabat na zestaw"
   },
   "seller_profile": {
     "loading": "Ładowanie profilu sprzedawcy...",

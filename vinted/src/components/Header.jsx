@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from '../utils/axios';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaSearch, FaBell, FaShoppingCart, FaBars, FaTimes, FaChevronRight, FaChevronLeft, FaPlus, FaHeart, FaCoins, FaCheck, FaGlobe, FaUser, FaExchangeAlt, FaSignOutAlt, FaThLarge, FaCamera, FaRegHeart, FaRegBell, FaListAlt, FaTachometerAlt } from 'react-icons/fa';
 import { FiShoppingCart, FiGlobe, FiChevronDown } from 'react-icons/fi';
 import { HiSparkles } from 'react-icons/hi';
@@ -29,6 +29,7 @@ const Header = () => {
     const { t } = useTranslation();
     const { popup, showPopup, closePopup } = usePopup();
     const navigate = useNavigate();
+    const location = useLocation();
     const menuRef = useRef(null);
     const searchRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -165,6 +166,11 @@ const Header = () => {
     const [mobileSelectedSubcategory, setMobileSelectedSubcategory] = useState(null);
 
     const [searchTerm, setSearchTerm] = useState('');
+
+    useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        setSearchTerm(queryParams.get('search') || '');
+    }, [location.search]);
     const [searchHistory, setSearchHistory] = useState([]);
     const [showSearchHistory, setShowSearchHistory] = useState(false);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -1015,9 +1021,15 @@ const Header = () => {
                                                                     width: '34px', height: '34px', borderRadius: '50%',
                                                                     background: `${color}18`, color,
                                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                    fontSize: '0.85rem', flexShrink: 0
+                                                                    fontSize: '0.85rem', flexShrink: 0, overflow: 'hidden'
                                                                 }}>
-                                                                    <FaBell />
+                                                                    {n.image ? (
+                                                                        <img src={getImageUrl(n.image)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                    ) : (n.type === 'message' || n.type === 'request' || (n.link && n.link.includes('messages'))) ? (
+                                                                        <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>{safeString(n.title).charAt(0).toUpperCase() || 'U'}</span>
+                                                                    ) : (
+                                                                        <FaBell />
+                                                                    )}
                                                                 </div>
                                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                                     <div style={{

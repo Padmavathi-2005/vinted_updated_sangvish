@@ -421,7 +421,8 @@
     "ssl_secured": "SSL Aman",
     "track_delivery": "Lacak Pengiriman",
     "items": "item",
-    "shipping_included": "Termasuk pengiriman"
+    "shipping_included": "Termasuk pengiriman",
+    "bundle_discount": "Diskon Bundel"
   },
   "seller_profile": {
     "loading": "Memuat profil penjual...",

@@ -424,9 +424,22 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 
     if (req.body.bundle_discounts) {
         try {
-            updateData.bundle_discounts = typeof req.body.bundle_discounts === 'string' 
+            const discounts = typeof req.body.bundle_discounts === 'string' 
                 ? JSON.parse(req.body.bundle_discounts) 
                 : req.body.bundle_discounts;
+            
+            if (discounts) {
+                if (discounts.two_items !== undefined) {
+                    discounts.two_items = Math.max(0, Math.min(100, Number(discounts.two_items) || 0));
+                }
+                if (discounts.three_items !== undefined) {
+                    discounts.three_items = Math.max(0, Math.min(100, Number(discounts.three_items) || 0));
+                }
+                if (discounts.five_items !== undefined) {
+                    discounts.five_items = Math.max(0, Math.min(100, Number(discounts.five_items) || 0));
+                }
+            }
+            updateData.bundle_discounts = discounts;
         } catch (e) {
             console.error("Error parsing bundle_discounts:", e);
         }

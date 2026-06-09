@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import Order from '../models/Order.js';
+import { releaseOrderPayment } from '../controllers/walletController.js';
 
 const startAutoCompleteOrderJob = () => {
     // Run every day at midnight (0 0 * * *)
@@ -22,7 +23,11 @@ const startAutoCompleteOrderJob = () => {
                 for (const order of ordersToComplete) {
                     order.order_status = 'completed';
                     await order.save();
-                    console.log(`Order ${order.order_number} auto-marked as completed.`);
+                    
+                    // Release the pending funds from Escrow to actual balance
+                    await releaseOrderPayment(order._id);
+                    
+                    console.log(`Order ${order.order_number} auto-marked as completed and funds released.`);
                 }
             }
         } catch (error) {

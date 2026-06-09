@@ -75,8 +75,8 @@ const Cart = () => {
             });
 
             // 2. Calculate Combined Shipping (200 INR per seller if not free)
-            const anyFreeShipping = items.some(i => i.shipping_included);
-            if (!anyFreeShipping) {
+            const allFreeShipping = items.every(i => i.shipping_included);
+            if (!allFreeShipping) {
                 // SHIPPING_FEE in backend is 200 INR
                 shippingTotal += getInDefault(SHIPPING_FEE, 'inr');
             }
@@ -296,9 +296,9 @@ const Cart = () => {
                                             <div className="cart-group-footer">
                                                 <div className="cart-group-shipping-info">
                                                     <FaTruck />
-                                                    {selectedInGroup.some(i => i.shipping_included)
+                                                    {selectedInGroup.every(i => i.shipping_included)
                                                         ? ' Combined shipping: Free'
-                                                        : ` Combined shipping: ${formatPrice(SHIPPING_FEE)}`
+                                                        : ` Combined shipping: ${formatPrice(SHIPPING_FEE, 'inr')}`
                                                     }
                                                 </div>
                                                 {hasDiscount && (

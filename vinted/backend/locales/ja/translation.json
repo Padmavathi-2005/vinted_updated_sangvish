@@ -421,7 +421,8 @@
     "ssl_secured": "SSLで保護",
     "track_delivery": "配達を追跡する",
     "items": "アイテム",
-    "shipping_included": "送料込み"
+    "shipping_included": "送料込み",
+    "bundle_discount": "セット割引"
   },
   "seller_profile": {
     "loading": "販売者プロフィールを読み込んでいます...",

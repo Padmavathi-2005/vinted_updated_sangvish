@@ -501,7 +501,7 @@
     background: white;
     border-bottom: 1px solid #e8edf2;
     position: sticky;
-    top: 0;
+    top: 73px;
     z-index: 40;
     flex-wrap: wrap;
 }

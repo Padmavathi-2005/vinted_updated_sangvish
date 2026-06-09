@@ -1,9 +1,12 @@
 export const BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || 'https://vinted.sangvish.com';
 export const IMAGE_BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_IMAGE_BASE_URL) || 'https://vinted.sangvish.com';
 
+export const DEFAULT_IMAGE_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMWY1ZjkiIHJ4PSIxMiIvPjxwYXRoIGQ9Ik0zNSAzMGgzMGMyLjc2IDAgNSAyLjI0IDUgNXYzMGMwIDIuNzYtMi4yNCA1LTUgNUgzNWMtMi43NiAwLTUtMi4yNC01LTVWMzVjMC0yLjc2IDIuMjQtNSA1LTV6bTAgM2MtMS4xIDAtMiAuOS0yIDJ2MzBjMCAxLjEuOSAyIDIgMmgzMGMxLjEgMCAyLS45IDItMlYzNWMwLTEuMS0uOS0yLTItMkgzNXptMTcuNSA3LjVsLTguNSAxMC41aDIybC04LjUtMTAuNS01IDQuNS01LTQuNXptLTggNC41YzEuMzggMCAyLjUtMS4xMiAyLjUtMi41cy0xLjEyLTIuNS0yLjUtMi41LTIuNSAxLjEyLTIuNSAyLjUgMS4xMiAyLjUgMi41IDIuNXoiIGZpbGw9IiM5NGEzYjgiLz48L3N2Zz4=';
+
 export const getImageUrl = (path) => {
-    if (!path) return null;
+    if (!path || String(path).includes('not_found.png')) return DEFAULT_IMAGE_PLACEHOLDER;
     const pathStr = String(path).trim();
+    if (pathStr.startsWith('data:')) return pathStr;
     if (pathStr.startsWith('http')) return pathStr;
 
     // Robust normalization for frontend
@@ -31,7 +34,7 @@ export const getItemImageUrl = (path) => {
     if (!path) {
         const fallback = typeof window !== 'undefined' ? sessionStorage.getItem('imageNotFound') : null;
         if (fallback) return getImageUrl(fallback);
-        return getImageUrl('images/site/not_found.png');
+        return DEFAULT_IMAGE_PLACEHOLDER;
     }
     return getImageUrl(path);
 };

@@ -421,7 +421,8 @@
     "ssl_secured": "SSL Secured",
     "track_delivery": "Track Delivery",
     "items": "items",
-    "shipping_included": "Shipping included"
+    "shipping_included": "Shipping included",
+    "bundle_discount": "组合折扣"
   },
   "seller_profile": {
     "loading": "Loading seller profile...",

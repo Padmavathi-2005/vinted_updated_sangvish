@@ -9,9 +9,18 @@ import {
 import CurrencyContext from '@/context/CurrencyContext';
 import { useTranslation } from 'react-i18next';
 import { safeString } from '@/utils/constants';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+import StripePaymentForm from '@/components/checkout/StripePaymentForm';
 import PayoutMethodsContent from './PayoutMethodsContent';
 import { useRouter } from 'next/navigation';
 import '@/app/styles/WalletContent.css';
+
+// Load stripe promise outside component to avoid recreating
+
+if (typeof window !== 'undefined') {
+    // We'll init this inside the component once settings are fetched, but keep ref here
+}
 
 /* ── Component ───────────────────────────────────────────── */
 const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
@@ -43,6 +52,13 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState(null);
     const [isPayoutDropdownOpen, setIsPayoutDropdownOpen] = useState(false);
+    
+    // Deposit State
+    const [showDepositModal, setShowDepositModal] = useState(false);
+    const [depositAmount, setDepositAmount] = useState('');
+    const [depositClientSecret, setDepositClientSecret] = useState('');
+    const [depositLoading, setDepositLoading] = useState(false);
+    const [stripePromise, setStripePromise] = useState(null);
 
     const fetchData = async () => {
         setLoading(true);
@@ -68,7 +84,26 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
         }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    const fetchStripeSettings = async () => {
+        try {
+            const settingsRes = await axios.get('/api/settings');
+            const settings = settingsRes.data;
+            if (settings && !stripePromise) {
+                const isStripeTest = settings.stripe_test_mode !== false;
+                const stripePubKey = isStripeTest ? settings.stripe_test_public_key : settings.stripe_live_public_key;
+                if (stripePubKey) {
+                    setStripePromise(loadStripe(stripePubKey));
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching stripe settings:', err);
+        }
+    };
+
+    useEffect(() => { 
+        fetchData(); 
+        fetchStripeSettings();
+    }, []);
 
     const handleWithdraw = async (e) => {
         e.preventDefault();
@@ -92,6 +127,50 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
         }
     };
 
+    const handleDepositSubmit = async (e) => {
+        e.preventDefault();
+        if (!depositAmount || depositAmount <= 0) return;
+        setDepositLoading(true);
+        try {
+            const res = await axios.post('/api/payments/stripe/create-intent', {
+                amount: parseFloat(depositAmount),
+                currency: (currentCurrency?.code || 'INR').toLowerCase(),
+                purpose: 'deposit'
+            });
+            setDepositClientSecret(res.data.clientSecret);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to initialize deposit.');
+        } finally {
+            setDepositLoading(false);
+        }
+    };
+
+    const onDepositSuccess = async (paymentIntent) => {
+        if (!paymentIntent || !paymentIntent.id) {
+            alert('Payment completed, but could not verify immediately. Your wallet will update shortly once confirmed.');
+            setShowDepositModal(false);
+            setDepositAmount('');
+            setDepositClientSecret(null);
+            fetchData();
+            return;
+        }
+
+        try {
+            await axios.post('/api/payments/stripe/verify-deposit', {
+                paymentIntentId: paymentIntent.id
+            });
+            alert('Funds successfully added!');
+        } catch (err) {
+            console.error('Verify deposit error:', err);
+            alert('Payment successful, but immediate wallet sync failed. It will reflect shortly.');
+        }
+
+        setShowDepositModal(false);
+        setDepositAmount('');
+        setDepositClientSecret(null);
+        fetchData();
+    };
+
     if (loading) return (
         <div className="text-center py-5">
             <div className="spinner-border text-primary" role="status" />
@@ -106,20 +185,26 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                 <div className="wc-hero-text">
                     <div className="wc-hero-label">{t('wallet.total_balance', 'Total Balance')}</div>
                     <div className="wc-hero-amount">
-                        {formatPrice(walletData?.wallet?.balance || 0, walletData?.wallet?.currency, currentCurrency)}
+                        {formatPrice((walletData?.wallet?.balance || 0) + (walletData?.wallet?.pending_balance || 0), walletData?.wallet?.currency, currentCurrency)}
                     </div>
                 </div>
-                {withdrawHistory?.some(r => r.status === 'pending') ? (
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className="wc-withdraw-btn" onClick={() => setShowDepositModal(true)} style={{ background: '#ecfdf5', color: '#059669', borderColor: '#a7f3d0' }}>
+                        <FaArrowDown size={13} />
+                        {t('wallet.add_funds', 'Add Funds')}
+                    </button>
+                    {withdrawHistory?.some(r => r.status === 'pending') ? (
                     <button className="wc-withdraw-btn pending" disabled style={{ opacity: 0.7, cursor: 'not-allowed' }}>
                         <FaClock size={13} />
-                        {t('wallet.pending_short', 'Pending Request')}
+                        {t('wallet.withdrawal_pending', 'Withdrawal Pending')}
                     </button>
                 ) : (
-                    <button className="wc-withdraw-btn" onClick={() => setShowWithdrawModal(true)}>
+                    <button className="wc-withdraw-btn" onClick={() => setShowWithdrawModal(true)} disabled={walletData?.wallet?.balance <= 0}>
                         <FaArrowUp size={13} />
                         {t('wallet.withdraw_funds', 'Withdraw')}
                     </button>
                 )}
+                </div>
             </div>
         </div>
     );
@@ -375,6 +460,66 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
         </div>
     );
 
+    /* ── Deposit Modal ───────────────────────────── */
+    const renderDepositModal = () => (
+        <div className="wc-modal-overlay" onClick={() => setShowDepositModal(false)}>
+            <div className="wc-modal-card" onClick={e => e.stopPropagation()}>
+                <div className="wc-modal-header">
+                    <div>
+                        <h3 className="wc-modal-title">{t('wallet.add_funds', 'Add Funds')}</h3>
+                        <p className="wc-modal-sub">Top up your wallet balance.</p>
+                    </div>
+                    <button className="btn-close" onClick={() => setShowDepositModal(false)} />
+                </div>
+
+                <div className="wc-modal-body">
+                    {!depositClientSecret ? (
+                        <form onSubmit={handleDepositSubmit}>
+                            <div className="wc-form-group">
+                                <label className="wc-label">{t('wallet.amount_to_deposit', 'Amount to deposit')}</label>
+                                <div className="wc-input-row">
+                                    <span className="wc-currency-sym">{currentCurrency?.symbol || '₹'}</span>
+                                    <input
+                                        type="number"
+                                        className="wc-input"
+                                        value={depositAmount}
+                                        onChange={e => setDepositAmount(e.target.value)}
+                                        placeholder="0.00"
+                                        min="1"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <button
+                                type="submit"
+                                className="wc-submit-btn"
+                                disabled={depositLoading || !depositAmount}
+                            >
+                                {depositLoading ? t('common.processing', 'Processing…') : t('common.continue', 'Continue')}
+                            </button>
+                        </form>
+                    ) : (
+                        <div>
+                            {stripePromise && (
+                                <Elements stripe={stripePromise} options={{ clientSecret: depositClientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#6366f1' } } }}>
+                                    <StripePaymentForm 
+                                        onPaymentSuccess={onDepositSuccess} 
+                                        amount={depositAmount} 
+                                        formattedAmount={formatPrice(depositAmount, defaultCurrency?.code, defaultCurrency)} 
+                                        validateForm={() => true}
+                                        isDeposit={true}
+                                        buttonText={t('wallet.add_funds', 'Add Funds')}
+                                        successMessage={t('wallet.funds_added_success', 'Funds successfully added!')}
+                                    />
+                                </Elements>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
     /* ── Render ──────────────────────────────────────────── */
     return (
         <div className="wallet-content">
@@ -407,6 +552,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
 
             {/* Withdrawal modal */}
             {showWithdrawModal && renderWithdrawModal()}
+            {showDepositModal && renderDepositModal()}
         </div>
     );
 };

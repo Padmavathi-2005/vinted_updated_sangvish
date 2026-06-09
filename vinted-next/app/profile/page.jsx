@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useContext, useEffect, useState, useCallback } from 'react';
+import React, { useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from '@/utils/axios';
+import getSocket from '@/utils/socket';
 import AuthContext from '@/context/AuthContext';
 import CurrencyContext from '@/context/CurrencyContext';
 import { FaListAlt, FaBoxOpen, FaHeart, FaWallet, FaCheckCircle, FaExclamationTriangle, FaUserEdit, FaAngleLeft, FaAngleRight, FaEnvelope, FaBell, FaTruck, FaClock, FaCreditCard, FaMoneyBillWave, FaBars, FaTimes, FaStar, FaTag, FaLightbulb, FaPlusCircle, FaMapMarkerAlt, FaSpinner } from 'react-icons/fa';
@@ -20,7 +21,7 @@ import WalletContent from '@/components/profile/WalletContent';
 import { useTranslation } from 'react-i18next';
 import Meta from '@/components/common/Meta';
 import CustomSelect from '@/components/common/CustomSelect';
-import { getImageUrl, getItemImageUrl, safeString } from '@/utils/constants';
+import { getImageUrl, getItemImageUrl, safeString, DEFAULT_IMAGE_PLACEHOLDER } from '@/utils/constants';
 import { validateTextField, getTextFieldError, validateAlphaField, getAlphaError } from '@/utils/validation';
 import OrderTimeline from '@/components/profile/OrderTimeline';
 import { printShippingLabel } from '@/utils/shippingLabel';
@@ -48,8 +49,17 @@ const ProfileContent = () => {
     const lastUrlModeRef = React.useRef(urlMode);
     const lastModeRef = React.useRef(mode);
 
+    const processedOrderIdRef = useRef(null);
+    const deepLinkInProgressRef = useRef(false);
+
     // Synchronize URL, Context Mode, and Tab Protection
     useEffect(() => {
+        // PREVENT RACE CONDITION: If we are actively fetching a deep link, do not allow URL sync 
+        // to override the React state. Let the deep link handler finish first.
+        if (deepLinkInProgressRef.current || (searchParams.get('orderId') && processedOrderIdRef.current !== searchParams.get('orderId'))) {
+            return;
+        }
+
         // Detect the source of the mode change
         const isUrlModeChange = lastUrlModeRef.current !== urlMode;
         const isContextModeChange = lastModeRef.current !== mode;
@@ -88,6 +98,10 @@ const ProfileContent = () => {
             const params = new URLSearchParams(searchParams.toString());
             params.set('tab', targetTab);
             params.set('mode', targetMode);
+            // Prevent keeping orderId in the URL if it has already been processed by the deep link handler
+            if (processedOrderIdRef.current === searchParams.get('orderId')) {
+                params.delete('orderId');
+            }
             router.replace(`/profile?${params.toString()}`);
         }
 
@@ -158,17 +172,79 @@ const ProfileContent = () => {
     }, [urlSub]);
 
     useEffect(() => {
-        if (urlOrderId && (boughtOrders.length > 0 || soldOrders.length > 0)) {
-            const allOrders = [...boughtOrders, ...soldOrders];
-            const order = allOrders.find(o => o._id === urlOrderId);
-            if (order) {
-                setSelectedOrder(order);
-                setShowOrderModal(true);
-                // Clean up URL so it doesn't reopen on refresh
-                router.replace(`/profile?tab=${paramTab || 'orders'}&mode=${mode}`);
-            }
+        // Validate urlOrderId is a valid 24-character hex string (MongoDB ObjectId)
+        const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(urlOrderId);
+        
+        if (urlOrderId && isValidObjectId && user && processedOrderIdRef.current !== urlOrderId) {
+            processedOrderIdRef.current = urlOrderId; // Mark as started
+            deepLinkInProgressRef.current = true;     // Block URL sync
+            
+            const fetchAndOpenOrder = async () => {
+                try {
+                    const res = await axios.get(`/api/orders/${urlOrderId}`);
+                    const order = res.data;
+                    if (order) {
+                        // Check user role: seller vs buyer
+                        const sellerIdStr = order.seller_id && typeof order.seller_id === 'object' && order.seller_id._id 
+                            ? String(order.seller_id._id) 
+                            : String(order.seller_id);
+                        const userIdStr = user._id ? String(user._id) : String(user.id);
+                        
+                        const isSellerById = sellerIdStr === userIdStr;
+                        const isSellerByUsername = order.seller_id?.username && (
+                            order.seller_id.username === user.username || 
+                            order.seller_id.username === user.name
+                        );
+                        
+                        const targetMode = (isSellerById || isSellerByUsername) ? 'seller' : 'buyer';
+                        console.log("Deep Link Role Resolution:", { 
+                            sellerIdStr, 
+                            userIdStr, 
+                            sellerUsername: order.seller_id?.username, 
+                            userUsername: user.username,
+                            userName: user.name,
+                            targetMode 
+                        });
+                        
+                        // Set the React state immediately so the UI reflects the correct mode
+                        if (mode !== targetMode) {
+                            setMode(targetMode);
+                        }
+                        
+                        setSelectedOrder(order);
+                        setShowOrderModal(true);
+                        setIsEditingAddress(false);
+                        setAddressForm({
+                            full_name: order.shipping_address?.full_name || '',
+                            address_line: order.shipping_address?.address_line || '',
+                            city: order.shipping_address?.city || '',
+                            state: order.shipping_address?.state || '',
+                            pincode: order.shipping_address?.pincode || '',
+                            phone: order.shipping_address?.phone || '',
+                            country: order.shipping_address?.country || '',
+                            lat: order.shipping_address?.lat || null,
+                            lng: order.shipping_address?.lng || null
+                        });
+                        
+                        // Explicitly clean up URL after successful deep link
+                        router.replace(`/profile?tab=${paramTab || 'orders'}&mode=${targetMode}`);
+                    }
+                } catch (err) {
+                    // If 404, the order might have been deleted but the notification remained.
+                    if (err.response?.status === 404) {
+                        console.warn("Deep linked order not found. It may have been deleted.");
+                    } else {
+                        console.error("Error deep linking order in profile page:", err);
+                    }
+                } finally {
+                    deepLinkInProgressRef.current = false; // Unblock URL sync
+                    // Force a dummy state update just in case the URL sync effect needs to re-evaluate
+                    setPaymentSubTab(prev => prev);
+                }
+            };
+            fetchAndOpenOrder();
         }
-    }, [urlOrderId, boughtOrders, soldOrders, paramTab, mode, router]);
+    }, [urlOrderId, user, mode, setMode]);
 
     // Review state
     const [reviewRating, setReviewRating] = useState(0);
@@ -368,6 +444,42 @@ const ProfileContent = () => {
         }
     }, [user, mode, boughtPage, soldPage]); // Restored dependencies for correct page tracking
 
+    // Keep ref of selectedOrder to avoid re-binding socket listener on selectedOrder change
+    const selectedOrderRef = React.useRef(selectedOrder);
+    useEffect(() => {
+        selectedOrderRef.current = selectedOrder;
+    }, [selectedOrder]);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const socket = getSocket();
+        if (socket) {
+            const handleOrderUpdate = (notif) => {
+                console.log('🔔 Real-time notification received on Profile page:', notif);
+
+                // Refetch orders list
+                fetchMyOrders();
+
+                // If the details modal is open, refetch its detailed tracking information
+                const openOrder = selectedOrderRef.current;
+                if (openOrder) {
+                    axios.get(`/api/orders/${openOrder._id}`)
+                        .then(res => {
+                            // Update selectedOrder if it is still the open one
+                            safeUpdateOrder(res.data);
+                        })
+                        .catch(err => console.error("Error refreshing active order details:", err));
+                }
+            };
+
+            socket.on('new_notification', handleOrderUpdate);
+            return () => {
+                socket.off('new_notification', handleOrderUpdate);
+            };
+        }
+    }, [user, fetchMyOrders]);
+
     const handleLocationSelect = (location) => {
         setAddressForm(prev => ({
             ...prev,
@@ -547,16 +659,18 @@ const ProfileContent = () => {
                 confirmLabel: 'Process Refund',
                 inputValue: '', // reason
                 inputValue2: '', // amount
-                onConfirm: async (reason, amountStr) => {
+                relist: false,
+                onConfirm: async (reason, amountStr, relist) => {
                     const amount = Number(amountStr);
-                    if (!amountStr || isNaN(amount) || amount <= 0 || amount > selectedOrder.total_amount) {
-                        return alert("Please enter a valid refund amount");
+                    const minAmount = selectedOrder.total_amount * 0.40;
+                    if (!amountStr || isNaN(amount) || amount < minAmount || amount > selectedOrder.total_amount) {
+                        return alert(`Please enter a valid refund amount (Minimum 40%: ${formatPrice(minAmount, selectedOrder.currency_id)})`);
                     }
                     if (!reason.trim()) return alert("Please provide a reason for the partial refund");
                     if (!validateTextField(reason)) return alert(getTextFieldError('Reason'));
 
                     try {
-                        const res = await axios.post(`/api/orders/${selectedOrder._id}/process-return`, { refundType, amount, reason });
+                        const res = await axios.post(`/api/orders/${selectedOrder._id}/process-return`, { refundType, amount, reason, relist });
                         safeUpdateOrder(res.data.order || res.data);
                         fetchMyOrders();
                         setActionModal(prev => ({ ...prev, show: false }));
@@ -566,7 +680,7 @@ const ProfileContent = () => {
                                 show: true,
                                 type: 'success',
                                 title: 'Refund Processed',
-                                message: `A partial refund of ${formatPrice(amount)} has been issued to the buyer.`,
+                                message: `A partial refund of ${formatPrice(amount, selectedOrder.currency_id)} has been issued to the buyer.${relist ? ' The item has been re-listed.' : ''}`,
                                 confirmLabel: 'Close'
                             });
                         }, 300);
@@ -578,13 +692,14 @@ const ProfileContent = () => {
         } else {
             setActionModal({
                 show: true,
-                type: 'confirm',
+                type: 'refund_full',
                 title: 'Process Full Refund',
                 message: `Are you sure you want to issue a full refund of ${formatPrice(selectedOrder.total_amount)} to the buyer? This action cannot be undone.`,
                 confirmLabel: 'Confirm Full Refund',
-                onConfirm: async () => {
+                relist: true,
+                onConfirm: async (_, __, relist) => {
                     try {
-                        const res = await axios.post(`/api/orders/${selectedOrder._id}/process-return`, { refundType: 'full', amount: selectedOrder.total_amount, reason: 'Full Refund processed' });
+                        const res = await axios.post(`/api/orders/${selectedOrder._id}/process-return`, { refundType: 'full', amount: selectedOrder.total_amount, reason: 'Full Refund processed', relist });
                         safeUpdateOrder(res.data.order || res.data);
                         fetchMyOrders();
                         setActionModal(prev => ({ ...prev, show: false }));
@@ -594,7 +709,7 @@ const ProfileContent = () => {
                                 show: true,
                                 type: 'success',
                                 title: 'Full Refund Issued',
-                                message: 'The buyer has been fully refunded and the item has been re-listed.',
+                                message: `The buyer has been fully refunded.${relist ? ' The item has been re-listed.' : ''}`,
                                 confirmLabel: 'Got it'
                             });
                         }, 300);
@@ -1179,9 +1294,14 @@ const ProfileContent = () => {
                                                 <div className="pd-di-input-wrap">
                                                     <input
                                                         type="number"
+                                                        min="0"
+                                                        max="100"
                                                         value={user.bundle_discounts?.two_items || 0}
                                                         onChange={(e) => {
-                                                            const updated = { ...user.bundle_discounts, two_items: Number(e.target.value) };
+                                                            let val = Number(e.target.value);
+                                                            if (val < 0) val = 0;
+                                                            if (val > 100) val = 100;
+                                                            const updated = { ...user.bundle_discounts, two_items: val };
                                                             updateUser({ bundle_discounts: updated });
                                                         }}
                                                     />
@@ -1193,9 +1313,14 @@ const ProfileContent = () => {
                                                 <div className="pd-di-input-wrap">
                                                     <input
                                                         type="number"
+                                                        min="0"
+                                                        max="100"
                                                         value={user.bundle_discounts?.three_items || 0}
                                                         onChange={(e) => {
-                                                            const updated = { ...user.bundle_discounts, three_items: Number(e.target.value) };
+                                                            let val = Number(e.target.value);
+                                                            if (val < 0) val = 0;
+                                                            if (val > 100) val = 100;
+                                                            const updated = { ...user.bundle_discounts, three_items: val };
                                                             updateUser({ bundle_discounts: updated });
                                                         }}
                                                     />
@@ -1207,9 +1332,14 @@ const ProfileContent = () => {
                                                 <div className="pd-di-input-wrap">
                                                     <input
                                                         type="number"
+                                                        min="0"
+                                                        max="100"
                                                         value={user.bundle_discounts?.five_items || 0}
                                                         onChange={(e) => {
-                                                            const updated = { ...user.bundle_discounts, five_items: Number(e.target.value) };
+                                                            let val = Number(e.target.value);
+                                                            if (val < 0) val = 0;
+                                                            if (val > 100) val = 100;
+                                                            const updated = { ...user.bundle_discounts, five_items: val };
                                                             updateUser({ bundle_discounts: updated });
                                                         }}
                                                     />
@@ -1423,7 +1553,25 @@ const ProfileContent = () => {
                                             <div className="pd-oic-header">
                                                 <div className="pd-oic-order-ref">
                                                     <span className="pd-oic-ref-label">{t('profile.order', 'Order')}</span>
-                                                    <span className="pd-oic-ref-value">#{order.order_number?.split('-')[1]}</span>
+                                                    <span className="pd-oic-ref-value d-flex align-items-center gap-2">
+                                                        #{order.order_number?.split('-')[1]}
+                                                        {order.is_bundle && order.items && order.items.length > 1 && (
+                                                            <span style={{ 
+                                                                fontSize: '0.7rem', 
+                                                                fontWeight: '700',
+                                                                padding: '2px 6px', 
+                                                                borderRadius: '6px', 
+                                                                backgroundColor: '#0ea5e9', 
+                                                                color: 'white', 
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                lineHeight: '1'
+                                                            }}>
+                                                                {order.items.length}+
+                                                            </span>
+                                                        )}
+                                                    </span>
                                                 </div>
                                                 <div className="pd-oic-order-date">
                                                     {new Date(order.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -1432,10 +1580,54 @@ const ProfileContent = () => {
 
                                             <div className="pd-oic-main">
                                                 <div className="pd-oic-image-wrapper">
-                                                    <img
-                                                        src={getItemImageUrl(order.item_id?.images?.[0])}
-                                                        alt={safeString(order.item_id?.title)}
-                                                    />
+                                                    {order.is_bundle && order.items && order.items.length > 1 ? (
+                                                        order.items.length === 2 ? (
+                                                            <div className="pd-oic-image-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', width: '100%', height: '100%', gap: '2px' }}>
+                                                                {order.items.slice(0, 2).map((subItem, idx) => (
+                                                                    <img
+                                                                        key={subItem._id || idx}
+                                                                        src={getItemImageUrl(subItem.item_id?.images?.[0])}
+                                                                        alt=""
+                                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        ) : order.items.length === 3 ? (
+                                                            <div className="pd-oic-image-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gridTemplateRows: 'repeat(2, minmax(0, 1fr))', width: '100%', height: '100%', gap: '2px' }}>
+                                                                <img
+                                                                    src={getItemImageUrl(order.items[0].item_id?.images?.[0])}
+                                                                    alt=""
+                                                                    style={{ width: '100%', height: '100%', objectFit: 'cover', gridRow: '1 / span 2' }}
+                                                                />
+                                                                <img
+                                                                    src={getItemImageUrl(order.items[1].item_id?.images?.[0])}
+                                                                    alt=""
+                                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                />
+                                                                <img
+                                                                    src={getItemImageUrl(order.items[2].item_id?.images?.[0])}
+                                                                    alt=""
+                                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="pd-oic-image-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gridTemplateRows: 'repeat(2, minmax(0, 1fr))', width: '100%', height: '100%', gap: '2px' }}>
+                                                                {order.items.slice(0, 4).map((subItem, idx) => (
+                                                                    <img
+                                                                        key={subItem._id || idx}
+                                                                        src={getItemImageUrl(subItem.item_id?.images?.[0])}
+                                                                        alt=""
+                                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        )
+                                                    ) : (
+                                                        <img
+                                                            src={getItemImageUrl(order.item_id?.images?.[0])}
+                                                            alt={safeString(order.item_id?.title)}
+                                                        />
+                                                    )}
                                                     <div className={`pd-oic-status-badge ${order.order_status || 'placed'}`}>
                                                         {getStatusLabel(order.order_status)}
                                                     </div>
@@ -1443,18 +1635,27 @@ const ProfileContent = () => {
 
                                                 <div className="pd-oic-body">
                                                     <div className="pd-oic-info">
-                                                        <div className="d-flex justify-content-between align-items-start mb-1">
-                                                            <h3 className="pd-oic-title">
-                                                                {safeString(order.item_id?.title) || 'Unknown Item'}
-                                                                {order.is_bundle && order.items && order.items.length > 1 && (
-                                                                    <span className="ms-2 badge bg-secondary" style={{ fontSize: '0.75rem' }}>
-                                                                        +{order.items.length - 1} more
-                                                                    </span>
-                                                                )}
+                                                        <div className="d-flex align-items-center gap-2 mb-2">
+                                                            <h3 className="pd-oic-title mb-0" style={{ flex: 1, textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                                                                {order.is_bundle && order.items && order.items.length > 1
+                                                                    ? order.items.map(subItem => safeString(subItem.item_id?.title)).join(', ')
+                                                                    : (safeString(order.item_id?.title) || 'Unknown Item')}
                                                             </h3>
-                                                            <div className={`pd-oic-mobile-status ${order.order_status || 'placed'}`}>
-                                                                {getStatusLabel(order.order_status)}
-                                                            </div>
+                                                            {order.is_bundle && order.items && order.items.length > 1 && (
+                                                                <span className="flex-shrink-0" style={{ 
+                                                                    fontSize: '0.72rem', 
+                                                                    fontWeight: '600',
+                                                                    padding: '3px 8px', 
+                                                                    borderRadius: '6px', 
+                                                                    backgroundColor: '#f1f5f9', 
+                                                                    color: '#475569', 
+                                                                    border: '1px solid #e2e8f0',
+                                                                    display: 'inline-block',
+                                                                    lineHeight: '1.2'
+                                                                }}>
+                                                                    {order.items.length} items
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         <div className="pd-oic-participant-mini">
                                                             {mode === 'buyer' ? (
@@ -1533,7 +1734,7 @@ const ProfileContent = () => {
 
                             {/* Order Detail Modal */}
                             {showOrderModal && selectedOrder && (
-                                <div className="pd-modal-overlay" onClick={() => setShowOrderModal(false)}>
+                                <div className="pd-modal-overlay" onClick={handleCloseModal}>
                                     <div className="pd-modal-content order-detail-modal" onClick={e => e.stopPropagation()}>
                                         <div className="d-flex justify-content-between align-items-start py-3 px-4 border-bottom">
                                             <div className="d-flex align-items-center gap-3">
@@ -1543,7 +1744,7 @@ const ProfileContent = () => {
                                                     <p className="mb-0 text-muted small">#{selectedOrder.order_number}</p>
                                                 </div>
                                             </div>
-                                            <button className="btn-close mt-1" onClick={() => setShowOrderModal(false)}></button>
+                                            <button className="btn-close mt-1" onClick={handleCloseModal}></button>
                                         </div>
                                         <div className="pd-modal-body p-4">
                                             <div className="order-detail-grid">
@@ -1557,7 +1758,9 @@ const ProfileContent = () => {
                                                                 confirmed_at: selectedOrder.confirmed_at,
                                                                 packed_at: selectedOrder.packed_at,
                                                                 shipped_at: selectedOrder.shipped_at,
-                                                                delivered_at: selectedOrder.delivered_at
+                                                                delivered_at: selectedOrder.delivered_at,
+                                                                return_requested_at: selectedOrder.return_requested_at,
+                                                                updated_at: selectedOrder.updated_at
                                                             }} 
                                                         />
                                                     </div>
@@ -1683,26 +1886,77 @@ const ProfileContent = () => {
                                                     </div>
 
                                                     <div className="detail-section mt-5">
-                                                        <h4 className="detail-section-title mb-3">{t('profile.purchased_item', 'Purchased Item')}</h4>
-                                                        <Link 
-                                                            href={`/items/${selectedOrder.item_id?.slug || selectedOrder.item_id?._id || selectedOrder.item_id}`}                                                            className="detail-item-card p-3 bg-white border rounded-3 shadow-sm d-block text-decoration-none transition-all hover-shadow-md"
-                                                            style={{ cursor: 'pointer' }}
-                                                        >
-                                                            <div className="d-flex align-items-center gap-4">
-                                                                <img className="rounded-3 shadow-sm" style={{ width: '80px', height: '80px', objectFit: 'cover' }} src={getItemImageUrl(selectedOrder.item_id?.images?.[0])} alt="" />
-                                                                <div className="flex-grow-1">
-                                                                    <h5 className="h6 fw-bold mb-1 text-dark">{safeString(selectedOrder.item_id?.title)}</h5>
-                                                                    <p className="text-muted extra-small mb-2 fw-bold text-uppercase">
-                                                                        {mode === 'buyer' ? `${t('profile.sold_by', 'Sold by:')} ${safeString(selectedOrder.seller_id?.username)}` : `${t('profile.bought_by', 'Bought by:')} ${safeString(selectedOrder.buyer_id?.username)}`}
-                                                                    </p>
-                                                                    <div className="d-flex align-items-center gap-2">
-                                                                        <span className="badge bg-primary-soft text-primary px-2 py-1 rounded-pill extra-small">{t('profile.item_price', 'Item Price')}</span>
-                                                                        <span className="fw-bold text-dark small">{formatPrice(selectedOrder.item_price, selectedOrder.currency_id)}</span>
+                                                        <h4 className="detail-section-title mb-3">
+                                                            {selectedOrder.is_bundle && selectedOrder.items?.length > 1
+                                                                ? t('profile.purchased_items', 'Purchased Items')
+                                                                : t('profile.purchased_item', 'Purchased Item')}
+                                                        </h4>
+                                                        {selectedOrder.is_bundle && selectedOrder.items?.length > 0 ? (
+                                                            <div className="d-flex flex-column gap-3">
+                                                                {selectedOrder.items.map(subItem => (
+                                                                    <Link 
+                                                                        key={subItem._id || subItem.item_id?._id}
+                                                                        href={`/items/${subItem.item_id?.slug || subItem.item_id?._id || subItem.item_id}`}
+                                                                        className="detail-item-card p-3 bg-white border rounded-3 shadow-sm d-block text-decoration-none transition-all hover-shadow-md"
+                                                                        style={{ cursor: 'pointer' }}
+                                                                    >
+                                                                        <div className="d-flex align-items-center gap-4">
+                                                                            <img 
+                                                                                className="rounded-3 shadow-sm" 
+                                                                                style={{ width: '80px', height: '80px', objectFit: 'cover' }} 
+                                                                                src={getItemImageUrl(subItem.item_id?.images?.[0])} 
+                                                                                alt="" 
+                                                                                onError={(e) => {
+                                                                                    e.target.onerror = null;
+                                                                                    e.target.src = DEFAULT_IMAGE_PLACEHOLDER;
+                                                                                }}
+                                                                            />
+                                                                            <div className="flex-grow-1">
+                                                                                <h5 className="h6 fw-bold mb-1 text-dark">{safeString(subItem.item_id?.title)}</h5>
+                                                                                <p className="text-muted extra-small mb-2 fw-bold text-uppercase">
+                                                                                    {mode === 'buyer' ? `${t('profile.sold_by', 'Sold by:')} ${safeString(selectedOrder.seller_id?.username)}` : `${t('profile.bought_by', 'Bought by:')} ${safeString(selectedOrder.buyer_id?.username)}`}
+                                                                                </p>
+                                                                                <div className="d-flex align-items-center gap-2">
+                                                                                    <span className="badge bg-primary-soft text-primary px-2 py-1 rounded-pill extra-small">{t('profile.item_price', 'Item Price')}</span>
+                                                                                    <span className="fw-bold text-dark small">{formatPrice(subItem.price, selectedOrder.currency_id)}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </Link>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <Link 
+                                                                href={`/items/${selectedOrder.item_id?.slug || selectedOrder.item_id?._id || selectedOrder.item_id}`}
+                                                                className="detail-item-card p-3 bg-white border rounded-3 shadow-sm d-block text-decoration-none transition-all hover-shadow-md"
+                                                                style={{ cursor: 'pointer' }}
+                                                            >
+                                                                <div className="d-flex align-items-center gap-4">
+                                                                    <img 
+                                                                        className="rounded-3 shadow-sm" 
+                                                                        style={{ width: '80px', height: '80px', objectFit: 'cover' }} 
+                                                                        src={getItemImageUrl(selectedOrder.item_id?.images?.[0])} 
+                                                                        alt="" 
+                                                                        onError={(e) => {
+                                                                            e.target.onerror = null;
+                                                                            e.target.src = DEFAULT_IMAGE_PLACEHOLDER;
+                                                                        }}
+                                                                    />
+                                                                    <div className="flex-grow-1">
+                                                                        <h5 className="h6 fw-bold mb-1 text-dark">{safeString(selectedOrder.item_id?.title)}</h5>
+                                                                        <p className="text-muted extra-small mb-2 fw-bold text-uppercase">
+                                                                            {mode === 'buyer' ? `${t('profile.sold_by', 'Sold by:')} ${safeString(selectedOrder.seller_id?.username)}` : `${t('profile.bought_by', 'Bought by:')} ${safeString(selectedOrder.buyer_id?.username)}`}
+                                                                        </p>
+                                                                        <div className="d-flex align-items-center gap-2">
+                                                                            <span className="badge bg-primary-soft text-primary px-2 py-1 rounded-pill extra-small">{t('profile.item_price', 'Item Price')}</span>
+                                                                            <span className="fw-bold text-dark small">{formatPrice(selectedOrder.item_price, selectedOrder.currency_id)}</span>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        </Link>
+                                                            </Link>
+                                                        )}
                                                     </div>
+
                                                       {(selectedOrder.tracking_id || selectedOrder.shipping_company_id || selectedOrder.delivered_at) && (
                                                         <div className="detail-section mt-5">
                                                             <h4 className="detail-section-title mb-3">{t('profile.tracking_info', 'Courier Details')}</h4>
@@ -1833,7 +2087,7 @@ const ProfileContent = () => {
                                                     {selectedOrder.order_status === 'returned' && (
                                                         <div className="pd-section-card mt-3 p-3 bg-success-soft border-success" style={{ borderLeft: '4px solid #10b981' }}>
                                                             <h4 className="detail-section-title text-success mb-2">{t('profile.return_completed', 'Return Completed')}</h4>
-                                                            <p className="small mb-1"><strong>{t('profile.refunded', 'Refunded')}:</strong> {formatPrice(selectedOrder.refund_amount)}</p>
+                                                            <p className="small mb-1"><strong>{t('profile.refunded', 'Refunded')}:</strong> {formatPrice(selectedOrder.refund_amount, selectedOrder.currency_id)}</p>
                                                             <p className="small mb-1"><strong>Processing Note:</strong> {selectedOrder.partial_refund_reason || 'N/A'}</p>
                                                             <p className="extra-small text-muted mb-0">The item has been successfully returned and payment settled.</p>
                                                         </div>

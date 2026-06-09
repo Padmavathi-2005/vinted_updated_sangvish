@@ -70,7 +70,8 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
     
     // Crop State
     const [showCropModal, setShowCropModal] = useState(false);
-    const [tempFile, setTempFile] = useState(null);
+    const [tempImage, setTempImage] = useState(null);
+    const [pendingPhotos, setPendingPhotos] = useState([]);
     
     // Location State
     const [itemLocation, setItemLocation] = useState({
@@ -121,7 +122,7 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
                 }
             }
         }
-    }, [item, categories]);
+    }, [item]);
 
     const handleDiscountPriceChange = (val) => {
         setDiscountPrice(val);
@@ -449,9 +450,18 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
             formData.append('pincode', itemLocation.pincode);
         }
 
-        // Handle existing vs new images
+        // Handle existing vs new images order
         const existingPaths = images.filter(img => typeof img === 'string');
         formData.append('existingImages', JSON.stringify(existingPaths));
+
+        const imageOrder = images.map(img => {
+            if (typeof img === 'string') {
+                return { type: 'existing', value: img };
+            } else {
+                return { type: 'new', name: img.file.name, size: img.file.size };
+            }
+        });
+        formData.append('imageOrder', JSON.stringify(imageOrder));
 
         images.filter(img => typeof img !== 'string').forEach(photo => {
             formData.append('images', photo.file);
@@ -563,7 +573,7 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
                                         </label>
                                     )}
                                     {images.map((img, index) => (
-                                        <div key={index} className={`si-photo-item ${index === 0 ? 'is-cover' : ''}`}>
+                                        <div key={typeof img === 'string' ? img : img.url || index} className={`si-photo-item ${index === 0 ? 'is-cover' : ''}`}>
                                             <img 
                                                 src={typeof img === 'string' ? getItemImageUrl(img) : img.url} 
                                                 alt="" 

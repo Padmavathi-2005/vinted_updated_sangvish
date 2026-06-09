@@ -97,7 +97,7 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
                 }
             }
         }
-    }, [item, categories]);
+    }, [item]);
 
     const handleDiscountPriceChange = (val) => {
         setDiscountPrice(val);

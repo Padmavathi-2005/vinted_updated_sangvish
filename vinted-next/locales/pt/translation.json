@@ -421,7 +421,8 @@
     "ssl_secured": "SSL protegido",
     "track_delivery": "Rastrear entrega",
     "items": "Unid",
-    "shipping_included": "Frete incluído"
+    "shipping_included": "Frete incluído",
+    "bundle_discount": "Desconto de Pacote"
   },
   "seller_profile": {
     "loading": "Carregando perfil do vendedor...",

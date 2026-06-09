@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import asyncHandler from 'express-async-handler';
 import Report from '../models/Report.js';
 import Notification from '../models/Notification.js';
@@ -46,10 +47,14 @@ const createReport = asyncHandler(async (req, res) => {
 
         // Send a Message (Conversation) to Admin
         try {
+            const userObjectId = mongoose.Types.ObjectId.isValid(req.user.id)
+                ? new mongoose.Types.ObjectId(req.user.id)
+                : req.user.id;
+
             let conversation = await Conversation.findOne({
                 participants: {
                     $all: [
-                        { $elemMatch: { user: req.user.id, on_model: 'User' } },
+                        { $elemMatch: { user: userObjectId, on_model: 'User' } },
                         { $elemMatch: { user: admin._id, on_model: 'Admin' } }
                     ]
                 }
@@ -58,10 +63,10 @@ const createReport = asyncHandler(async (req, res) => {
             if (!conversation) {
                 conversation = await Conversation.create({
                     participants: [
-                        { user: req.user.id, on_model: 'User' },
+                        { user: userObjectId, on_model: 'User' },
                         { user: admin._id, on_model: 'Admin' }
                     ],
-                    initiator_id: req.user.id,
+                    initiator_id: userObjectId,
                     initiator_model: 'User',
                     last_message: `Product Report: ${item.title}`,
                     last_message_at: new Date()
@@ -70,7 +75,7 @@ const createReport = asyncHandler(async (req, res) => {
 
             await Message.create({
                 conversation_id: conversation._id,
-                sender_id: req.user.id,
+                sender_id: userObjectId,
                 sender_model: 'User',
                 receiver_id: admin._id,
                 receiver_model: 'Admin',

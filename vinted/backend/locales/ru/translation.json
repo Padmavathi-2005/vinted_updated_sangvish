@@ -421,7 +421,8 @@
     "ssl_secured": "SSL-защищенный",
     "track_delivery": "Отследить доставку",
     "items": "предметы",
-    "shipping_included": "Доставка включена"
+    "shipping_included": "Доставка включена",
+    "bundle_discount": "Скидка на комплект"
   },
   "seller_profile": {
     "loading": "Загрузка профиля продавца...",

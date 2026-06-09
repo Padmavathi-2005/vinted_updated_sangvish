@@ -462,7 +462,8 @@
     "ssl_secured": "एसएसएल सुरक्षित",
     "track_delivery": "ट्रैक डिलिवरी",
     "items": "सामान",
-    "shipping_included": "शिपिंग शामिल है"
+    "shipping_included": "शिपिंग शामिल है",
+    "bundle_discount": "बंडल डिस्काउंट"
   },
   "seller_profile": {
     "loading": "विक्रेता प्रोफ़ाइल लोड हो रहा है...",

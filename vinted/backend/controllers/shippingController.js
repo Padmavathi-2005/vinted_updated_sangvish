@@ -119,19 +119,49 @@ export const dispatchOrder = asyncHandler(async (req, res) => {
     const newCompanyId = updatedOrder.shipping_company_id?._id?.toString() || updatedOrder.shipping_company_id?.toString() || '';
 
     if (newTrackingId !== previousTrackingId || newCompanyId !== previousCompanyId) {
-        // Notify Buyer that tracking is available
+        // Notify parties that tracking is available/updated
         try {
             const Notification = (await import('../models/Notification.js')).default;
+            
+            // 1. Notify Buyer
+            const itemTitle = updatedOrder.is_bundle 
+                ? 'Bundle Order' 
+                : (updatedOrder.item_id?.title || 'Item');
+
             await Notification.create({
                 user_id: updatedOrder.buyer_id,
                 on_model: 'User',
                 title: 'Tracking Info Added',
-                message: `The seller has provided tracking information for your order "${updatedOrder.item_id?.title}" (#${updatedOrder.order_number}). You can now track your package.`,
+                message: `The seller has provided tracking information for your order "${itemTitle}" (#${updatedOrder.order_number}). You can now track your package.`,
                 type: 'info',
                 link: `/profile?tab=orders&orderId=${updatedOrder._id}`
             });
+
+            // 2. Notify Seller (Host)
+            await Notification.create({
+                user_id: updatedOrder.seller_id,
+                on_model: 'User',
+                title: 'Tracking Info Updated',
+                message: `You have successfully updated the tracking information for order #${updatedOrder.order_number}.`,
+                type: 'success',
+                link: `/profile?tab=orders&orderId=${updatedOrder._id}`
+            });
+
+            // 3. Notify Admins
+            const Admin = (await import('../models/Admin.js')).default;
+            const adminsList = await Admin.find({ is_active: { $ne: false } });
+            for (const admin of adminsList) {
+                await Notification.create({
+                    user_id: admin._id,
+                    on_model: 'Admin',
+                    title: 'Order Tracking Updated',
+                    message: `Seller has updated tracking info for Order #${updatedOrder.order_number}.`,
+                    type: 'info',
+                    link: `/orders`
+                });
+            }
         } catch (notifyErr) {
-            console.error("Error sending dispatch notification:", notifyErr);
+            console.error("Error sending dispatch notifications:", notifyErr);
         }
     }
 

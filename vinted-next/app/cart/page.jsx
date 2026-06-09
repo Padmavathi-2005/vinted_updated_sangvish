@@ -80,8 +80,8 @@ const Cart = () => {
             });
 
             // 2. Calculate Combined Shipping (200 INR per seller if not free)
-            const anyFreeShipping = items.some(i => i.shipping_included);
-            if (!anyFreeShipping) {
+            const allFreeShipping = items.every(i => i.shipping_included);
+            if (!allFreeShipping) {
                 // SHIPPING_FEE in backend is 200 INR
                 shippingTotal += getInDefault(SHIPPING_FEE, 'inr');
             }
@@ -178,27 +178,30 @@ const Cart = () => {
                     <span>{t('cart.shopping_cart', 'Shopping Cart')}</span>
                 </div>
 
-                <div className="cart-grid">
-                    <div className="cart-items-panel">
-                        <h1 className="cart-main-title">
-                            <FaShoppingCart /> {t('cart.shopping_cart', 'Shopping Cart')}
-                        </h1>
+                <div className="cart-header-row">
+                    <h1 className="cart-heading">
+                        <FaShoppingCart /> {t('cart.shopping_cart', 'Shopping Cart')}
                         <span className="cart-count-badge">{cartCount}</span>
-                        {selectedItems.length > 1 && (
-                            <div className="cart-bundle-badge">
-                                <FaTag /> {t('cart.bundle_discovery', 'Bundle Discovery: Multiple items from same seller group automatically!')}
-                            </div>
-                        )}
+                    </h1>
+                    {selectedItems.length > 1 && (
+                        <div className="cart-bundle-badge">
+                            <FaTag /> {t('cart.bundle_discovery', 'Bundle Discovery: Multiple items from same seller group automatically!')}
+                        </div>
+                    )}
+                </div>
+
+                <div className="cart-layout">
+                    <div className="cart-items-panel">
                         {/* Toolbar */}
                         <div className="cart-toolbar">
-                            <button className="cart-global-select" onClick={allSelected ? deselectAll : selectAll}>
+                            <button className="cart-select-all-btn" onClick={allSelected ? deselectAll : selectAll}>
                                 {allSelected
                                     ? <><FaCheckSquare className="cart-check-icon checked" /> {t('cart.deselect_all', 'Deselect All')}</>
                                     : <><FaSquare className="cart-check-icon" /> {t('cart.select_all', 'Select All')}</>
                                 }
                             </button>
                             {selectedItems.length > 0 && (
-                                <button className="cart-global-remove" onClick={handleRemoveSelected}>
+                                <button className="cart-remove-sel-btn" onClick={handleRemoveSelected}>
                                     <FaTrash /> {t('cart.remove_selected_count', 'Remove Selected ({{count}})').replace('{{count}}', selectedItems.length)}
                                 </button>
                             )}
@@ -212,9 +215,21 @@ const Cart = () => {
 
                                 return (
                                     <div key={sellerId} className="cart-seller-group">
-                                        <div className="cart-group-header-right">
-                                            <span className="cart-seller-name">{group.sellerName}</span>
-                                            <span className="cart-seller-badge">{t('cart.seller', 'SELLER')}</span>
+                                        <div className="cart-group-header">
+                                            <div className="d-flex align-items-center gap-2">
+                                                <span className="cart-group-seller-label">{t('cart.seller_label', 'Seller:')}</span>
+                                                <Link href={`/seller/${sellerId}`} className="cart-group-seller-name">{group.sellerName}</Link>
+                                                {selectedInGroup.length > 1 && (
+                                                    <span className="cart-group-bundle-tag">
+                                                        <FaBoxOpen /> {t('cart.bundle_count', 'Bundle ({{count}} items)').replace('{{count}}', selectedInGroup.length)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {group.seller?.bundle_discounts?.enabled && (
+                                                <div className="cart-group-promo-tag">
+                                                    <FaTag /> {t('cart.bundle_discounts_available', 'Bundle discounts available')}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="cart-items-list">
                                             {group.items.map(item => {
@@ -289,9 +304,9 @@ const Cart = () => {
                                             <div className="cart-group-footer">
                                                 <div className="cart-group-shipping-info">
                                                     <FaTruck />
-                                                    {selectedInGroup.some(i => i.shipping_included)
+                                                    {selectedInGroup.every(i => i.shipping_included)
                                                         ? ` ${t('cart.combined_shipping_free', 'Combined shipping: Free')}`
-                                                        : ` ${t('cart.combined_shipping_cost', 'Combined shipping:')} ${formatPrice(SHIPPING_FEE)}`
+                                                        : ` ${t('cart.combined_shipping_cost', 'Combined shipping:')} ${formatPrice(SHIPPING_FEE, 'inr')}`
                                                     }
                                                 </div>
                                                 {hasDiscount && (

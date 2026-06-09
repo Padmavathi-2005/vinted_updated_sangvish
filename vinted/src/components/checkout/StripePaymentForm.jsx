@@ -32,13 +32,17 @@ const StripePaymentForm = ({ onPaymentSuccess, amount, formattedAmount, billingD
             confirmParams: {
                 // Return URL can be a success page
                 return_url: window.location.origin + '/profile?tab=orders&success=true',
-                payment_method_data: {
-                    billing_details: billingDetails
-                },
-                shipping: {
-                    name: billingDetails.name,
-                    address: billingDetails.address
-                }
+                ...(billingDetails && Object.keys(billingDetails).length > 0 ? {
+                    payment_method_data: {
+                        billing_details: billingDetails
+                    }
+                } : {}),
+                ...(billingDetails ? {
+                    shipping: {
+                        name: billingDetails.name,
+                        address: billingDetails.address
+                    }
+                } : {})
             },
             redirect: 'if_required',
         });

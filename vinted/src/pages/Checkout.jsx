@@ -71,8 +71,8 @@ const Checkout = () => {
             });
 
             // 2. Calculate Combined Shipping (200 INR per seller if not free)
-            const anyFreeShipping = items.some(i => i.shipping_included);
-            if (!anyFreeShipping) {
+            const allFreeShipping = items.every(i => i.shipping_included);
+            if (!allFreeShipping) {
                 // SHIPPING_FEE in backend is 200 INR
                 shippingTotal += getInDefault(SHIPPING_FEE, 'inr');
             }
@@ -108,7 +108,9 @@ const Checkout = () => {
 
     const [availableMethods, setAvailableMethods] = useState([]);
     const [walletBalance, setWalletBalance] = useState(0);
-    const [paymentMethod, setPaymentMethod] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState(() => {
+        return (typeof window !== 'undefined' && sessionStorage.getItem('checkout_payment_method')) || '';
+    });
     const [clientSecret, setClientSecret] = useState('');
     const [stripeError, setStripeError] = useState(null);
     const [placing, setPlacing] = useState(false);
@@ -369,15 +371,31 @@ const Checkout = () => {
         }
     }, [paymentMethod, paypalLoaded, total, step, defaultCurrency?.code]); // handlePlaceOrder removed to prevent flicker
 
-    const [form, setForm] = useState({
-        full_name: user?.username || '',
-        phone: '',
-        address_line: '',
-        city: '',
-        state: '',
-        country: 'India',
-        pincode: ''
+    const [form, setForm] = useState(() => {
+        const saved = typeof window !== 'undefined' && sessionStorage.getItem('checkout_form');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {}
+        }
+        return {
+            full_name: user?.username || '',
+            phone: '',
+            address_line: '',
+            city: '',
+            state: '',
+            country: 'India',
+            pincode: ''
+        };
     });
+
+    React.useEffect(() => {
+        sessionStorage.setItem('checkout_form', JSON.stringify(form));
+    }, [form]);
+
+    React.useEffect(() => {
+        sessionStorage.setItem('checkout_payment_method', paymentMethod);
+    }, [paymentMethod]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -489,6 +507,8 @@ const Checkout = () => {
                 shipping_address: form,
                 stripe_payment_id: stripePaymentId
             });
+            sessionStorage.removeItem('checkout_form');
+            sessionStorage.removeItem('checkout_payment_method');
             setPlacing(false);
             setShowSuccess(true);
             setStep('done');
@@ -833,7 +853,7 @@ const Checkout = () => {
                             <FaCheckCircle />
                             <div className="success-circle-outline"></div>
                         </div>
-                        <h2>{t('checkout.payment_completed') || 'Payment Completed!'}</h2>
+                        <h2>{t('checkout.payment_completed_successfully', 'Payment completed successfully')}</h2>
                         <p>{t('checkout.order_placed_sub') || 'Your order has been placed successfully. Thank you for shopping with us!'}</p>
                         
                         <div className="redirect-countdown">
