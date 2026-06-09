@@ -378,7 +378,8 @@ const Profile = () => {
         const legacyLabels = {
             'placed': 'PENDING',
             'dispatched': 'SHIPPED',
-            'on_the_way': 'OUT FOR DELIVERY'
+            'on_the_way': 'OUT FOR DELIVERY',
+            'returns': 'RETURNED'
         };
         return labels[status] || legacyLabels[status] || (status || 'PENDING').toUpperCase().replace(/_/g, ' ');
     };
@@ -939,7 +940,7 @@ const Profile = () => {
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'packed' ? 'active' : ''}`} onClick={() => setOrderSubTab('packed')}>{t('order_status.packed', 'Packed')}</div>
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'shipped' ? 'active' : ''}`} onClick={() => setOrderSubTab('shipped')}>{t('order_status.shipped', 'Shipped')}</div>
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'delivered' ? 'active' : ''}`} onClick={() => setOrderSubTab('delivered')}>{t('order_status.delivered', 'Delivered')}</div>
-                                    <div className={`pd-sidemenu-item ${orderSubTab === 'returns' ? 'active' : ''}`} onClick={() => setOrderSubTab('returns')}>{t('order_status.returns', 'Returns')}</div>
+                                    <div className={`pd-sidemenu-item ${orderSubTab === 'returns' ? 'active' : ''}`} onClick={() => setOrderSubTab('returns')}>{t('order_status.returned', 'Returned')}</div>
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'cancelled' ? 'active' : ''}`} onClick={() => setOrderSubTab('cancelled')}>{t('order_status.cancelled', 'Cancelled')}</div>
                                 </div>
                             </div>
