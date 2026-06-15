@@ -189,7 +189,7 @@ const Footer = () => {
                                 )}
                             </Link>
                             <p className="footer-tagline">
-                                {safeString(settings.footer_tagline, t('footer.tagline', 'Your trusted destination for pre-loved fashion.'))}
+                                {safeString(settings.footer_tagline, t('footer.tagline', 'Your trusted destination for pre-loved fashion.'), langCode)}
                             </p>
                             <div className="footer-contact-info mt-3 small text-muted">
                                 {settings.support_email && <div className="mb-1"><FaIcons.FaEnvelope className="me-2" />{settings.support_email}</div>}
@@ -300,7 +300,7 @@ const Footer = () => {
 
                 <div className="footer-bottom">
                     <div className="copyright">
-                        {safeString(settings.footer_copyright, t('footer.copyright', `© ${new Date().getFullYear()} Resale Inc. Crafted with passion for a better planet.`))}
+                        {safeString(settings.footer_copyright, t('footer.copyright', `© ${new Date().getFullYear()} Resale Inc. Crafted with passion for a better planet.`), langCode)}
                     </div>
 
                     <div className="bottom-links">

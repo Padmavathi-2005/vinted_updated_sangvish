@@ -211,7 +211,7 @@ const startServer = async () => {
                 
                 res.setHeader('Access-Control-Allow-Origin', '*');
                 res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-                res.setHeader('Cache-Control', 'public, max-age=86400');
+                res.setHeader('Cache-Control', 'no-cache');
                 
                 return res.json(json);
             } catch (error) {

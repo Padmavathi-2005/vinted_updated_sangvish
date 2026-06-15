@@ -38,7 +38,7 @@ const optimizeImages = async (req, res, next) => {
             if (file.fieldname === 'profile_image') {
                 minDim = 300;
                 maxDim = 500;
-            } else if (['site_logo', 'site_favicon', 'stripe_logo', 'paypal_logo', 'category_image'].includes(file.fieldname)) {
+            } else if (['site_logo', 'site_favicon', 'site_og_image', 'stripe_logo', 'paypal_logo', 'category_image'].includes(file.fieldname) || file.fieldname.startsWith('social_icon_')) {
                 minDim = 0; // Allow small icons/logos as-is
                 maxDim = 800;
             }

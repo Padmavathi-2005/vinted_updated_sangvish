@@ -23,8 +23,27 @@ const VISIBLE_PHOTOS = 4;
 const EditItemModal = ({ item, onClose, onUpdate }) => {
     const { t } = useTranslation();
     const { user } = useContext(AuthContext);
-    const { currentCurrency, formatPrice } = useContext(CurrencyContext);
+    const { currentCurrency, formatPrice, convertPrice } = useContext(CurrencyContext);
     const fileInputRef = useRef(null);
+
+    // Helper to get initial converted price
+    const getInitialPrice = (p) => {
+        if (!p) return '';
+        return convertPrice(p, item.currency_id, currentCurrency).toFixed(2);
+    };
+
+    const formatCondition = (c) => {
+        if (!c) return 'Good';
+        const mapping = {
+            'new': 'New',
+            'very good': 'Very Good',
+            'good': 'Good',
+            'normal': 'Normal',
+            'bad': 'Bad',
+            'very bad': 'Very Bad'
+        };
+        return mapping[c.toLowerCase()] || 'Good';
+    };
 
     // Form State
     const [title, setTitle] = useState(item.title || '');
@@ -32,9 +51,9 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
     const [brand, setBrand] = useState(item.brand || '');
     const [size, setSize] = useState(item.size || '');
     const [color, setColor] = useState(item.color || '');
-    const [condition, setCondition] = useState(item.condition || 'Good');
-    const [price, setPrice] = useState(item.price || '');
-    const [originalPrice, setOriginalPrice] = useState(item.original_price || 0);
+    const [condition, setCondition] = useState(formatCondition(item.condition));
+    const [price, setPrice] = useState(getInitialPrice(item.price));
+    const [originalPrice, setOriginalPrice] = useState(getInitialPrice(item.original_price));
     const [isSwappable, setIsSwappable] = useState(item.negotiable || false);
     const [shippingIncluded, setShippingIncluded] = useState(item.shipping_included || false);
     const [specifications, setSpecifications] = useState(item.attributes || []);
@@ -97,9 +116,9 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
             setBrand(item.brand || '');
             setSize(item.size || '');
             setColor(item.color || '');
-            setCondition(item.condition || 'Good');
-            setPrice(item.price || '');
-            setOriginalPrice(item.original_price || 0);
+            setCondition(formatCondition(item.condition));
+            setPrice(getInitialPrice(item.price));
+            setOriginalPrice(getInitialPrice(item.original_price));
             setIsSwappable(item.negotiable || false);
             setShippingIncluded(item.shipping_included || false);
             setSpecifications(item.attributes || []);
@@ -429,6 +448,7 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
         formData.append('color', color);
         formData.append('condition', condition);
         formData.append('price', price);
+        if (currentCurrency?._id) formData.append('currency_id', currentCurrency._id);
         formData.append('negotiable', isSwappable);
         formData.append('shipping_included', shippingIncluded);
         formData.append('status', status);
@@ -530,8 +550,10 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
     };
 
     const formatOptions = (list) => list.map(it => ({ value: it._id, label: safeString(it.name) }));
-    const hasDiscount = originalPrice > 0 && originalPrice > price;
-    const percentOff = hasDiscount ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+    const numOriginalPrice = Number(originalPrice);
+    const numPrice = Number(price);
+    const hasDiscount = numOriginalPrice > 0 && numOriginalPrice > numPrice;
+    const percentOff = hasDiscount ? Math.round(((numOriginalPrice - numPrice) / numOriginalPrice) * 100) : 0;
 
     return (
         <div className="eim-overlay">
@@ -880,19 +902,19 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
                                 <div className="eim-active-discount p-3 d-flex justify-content-between align-items-center">
                                     <div>
                                         <span className="text-danger fw-bold h5 m-0">-{percentOff}% OFF</span>
-                                        <span className="text-muted small ms-2 text-decoration-line-through">{formatPrice(originalPrice)}</span>
+                                        <span className="text-muted small ms-2 text-decoration-line-through">{formatPrice(originalPrice, currentCurrency, currentCurrency)}</span>
                                         <FaChevronRight className="mx-2 text-muted" size={10} />
-                                        <span className="fw-bold text-dark">{formatPrice(price)}</span>
+                                        <span className="fw-bold text-dark">{formatPrice(price, currentCurrency, currentCurrency)}</span>
                                     </div>
                                     <button type="button" className="btn btn-sm btn-outline-danger fw-bold rounded-pill px-3" onClick={handleRemoveDiscount}>Remove Promo</button>
                                 </div>
                             ) : (
                                 <div className="mt-3">
-                                    <div className="d-flex align-items-end gap-3 mb-3">
+                                    <div className="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-end gap-3 mb-3">
                                         <div className="flex-grow-1">
                                             <div className="d-flex justify-content-between align-items-center mb-2 px-1">
                                                 <label className="extra-small fw-bold text-muted text-uppercase m-0">Discount %</label>
-                                                <span className="extra-small text-primary fw-bold">Price: {formatPrice(price)}</span>
+                                                <span className="extra-small text-primary fw-bold">Price: {formatPrice(price, currentCurrency, currentCurrency)}</span>
                                             </div>
                                             <div className="input-group input-group-lg shadow-sm eim-input-group-premium">
                                                 <input 
@@ -934,9 +956,9 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
                                             <span className="text-primary fw-bold small">Preview:</span>
                                             <span className="badge-off" style={{ background: '#0ea5e9' }}>-{discountPercent}% OFF</span>
                                             
-                                            <span className="text-muted text-decoration-line-through small ms-2">{formatPrice(price)}</span>
+                                            <span className="text-muted text-decoration-line-through small ms-2">{formatPrice(price, currentCurrency, currentCurrency)}</span>
                                             <FaChevronRight size={10} className="text-muted" />
-                                            <span className="h5 m-0 fw-bold text-dark">{formatPrice(discountPrice)}</span>
+                                            <span className="h5 m-0 fw-bold text-dark">{formatPrice(discountPrice, currentCurrency, currentCurrency)}</span>
                                         </div>
                                     )}
                                 </div>
@@ -948,18 +970,21 @@ const EditItemModal = ({ item, onClose, onUpdate }) => {
                             </div>
                         </div>
 
-                        <div className="eim-footer-actions mt-5 pt-4 border-top d-flex gap-3 justify-content-between align-items-center">
+                        <div className="eim-footer-actions mt-5 pt-4 border-top d-flex gap-2 justify-content-between align-items-center">
                             <button 
                                 type="button" 
                                 onClick={handleDelete} 
-                                className="btn btn-outline-danger btn-sm d-flex align-items-center gap-2 border-0 fw-bold"
+                                className="btn btn-outline-danger btn-sm d-flex align-items-center justify-content-center gap-2 border-0 fw-bold eim-btn-delete"
+                                title="Delete Listing"
                             >
-                                <FaTrash /> Delete Listing
+                                <FaTrash /> <span className="eim-btn-text">Delete Listing</span>
                             </button>
-                            <div className="d-flex gap-3">
-                                <button type="button" onClick={onClose} className="btn-cancel-premium">Cancel</button>
-                                <button type="submit" className="btn-save-premium" disabled={loading}>
-                                    {loading ? 'Saving Changes...' : 'Save & Publish'}
+                            <div className="d-flex gap-2 eim-btn-group-right flex-grow-1 justify-content-end">
+                                <button type="button" onClick={onClose} className="btn-cancel-premium d-flex align-items-center justify-content-center gap-2" title="Cancel">
+                                    <FaTimes className="eim-btn-icon-mobile" style={{ display: 'none' }} /> <span className="eim-btn-text">Cancel</span>
+                                </button>
+                                <button type="submit" className="btn-save-premium eim-btn-save" disabled={loading}>
+                                    {loading ? 'Saving...' : 'Save & Publish'}
                                 </button>
                             </div>
                         </div>

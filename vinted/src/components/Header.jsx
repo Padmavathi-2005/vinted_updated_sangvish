@@ -34,6 +34,7 @@ const Header = () => {
     const searchRef = useRef(null);
     const fileInputRef = useRef(null);
 
+    const isRtl = currentLanguage?.direction === 'rtl';
 
     // User Dropdown State
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -787,7 +788,7 @@ const Header = () => {
 
                             {isSettingsDropdownOpen && (
                                 <div className="user-dropdown-wrapper" style={{
-                                    position: 'absolute', top: '100%', right: '0',
+                                    position: 'absolute', top: '100%', ...(isRtl ? { left: '0' } : { right: '0' }),
                                     paddingTop: '15px', zIndex: 1100, width: '280px',
                                     animation: 'fadeIn 0.2s ease',
                                 }}>
@@ -797,7 +798,7 @@ const Header = () => {
                                         padding: '0', textAlign: 'left', position: 'relative',
                                         display: 'flex', flexDirection: 'column', overflow: 'hidden'
                                     }}>
-                                        <div style={{ position: "absolute", top: "-6px", right: "20px", width: "12px", height: "12px", background: 'white', transform: "rotate(45deg)", borderLeft: "1px solid #e9ecef", borderTop: "1px solid #e9ecef" }} />
+                                        <div style={{ position: "absolute", top: "-6px", ...(isRtl ? { left: "20px" } : { right: "20px" }), width: "12px", height: "12px", background: 'white', transform: "rotate(45deg)", borderLeft: "1px solid #e9ecef", borderTop: "1px solid #e9ecef" }} />
 
                                         {/* Tab Headers */}
                                         <div style={{ display: 'flex', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', padding: '4px' }}>
@@ -947,7 +948,7 @@ const Header = () => {
 
                                     {isNotifDropdownOpen && (
                                         <div style={{
-                                            position: 'absolute', top: '100%', right: '-60px',
+                                            position: 'absolute', top: '100%', ...(isRtl ? { left: '-60px' } : { right: '-60px' }),
                                             paddingTop: '16px', zIndex: 1100, width: '340px',
                                             animation: 'fadeIn 0.2s ease',
                                         }}>
@@ -958,7 +959,7 @@ const Header = () => {
                                                 position: 'relative'
                                             }}>
                                                 {/* Caret */}
-                                                <div style={{ position: "absolute", top: "-6px", right: "72px", width: "12px", height: "12px", background: "white", transform: "rotate(45deg)", borderLeft: "1px solid #e9ecef", borderTop: "1px solid #e9ecef" }} />
+                                                <div style={{ position: "absolute", top: "-6px", ...(isRtl ? { left: "72px" } : { right: "72px" }), width: "12px", height: "12px", background: "white", transform: "rotate(45deg)", borderLeft: "1px solid #e9ecef", borderTop: "1px solid #e9ecef" }} />
                                                 <div style={{
                                                     display: 'flex', justifyContent: 'space-between',
                                                     alignItems: 'center', padding: '14px 16px 10px',
@@ -1002,7 +1003,14 @@ const Header = () => {
                                                                 key={n._id}
                                                                 onClick={() => {
                                                                     if (!n.is_read) markAsRead(n._id);
-                                                                    if (n.link) navigate(n.link);
+                                                                    if (n.link) {
+                                                                        const urlParams = new URLSearchParams(n.link.split('?')[1]);
+                                                                        const linkMode = urlParams.get('mode');
+                                                                        if (linkMode && linkMode !== mode) {
+                                                                            setMode(linkMode);
+                                                                        }
+                                                                        navigate(n.link);
+                                                                    }
                                                                     else navigate('/profile?tab=notifications');
                                                                     setIsNotifDropdownOpen(false);
                                                                 }}
@@ -1140,7 +1148,7 @@ const Header = () => {
                                         <div className="user-dropdown-wrapper" style={{
                                             position: 'absolute',
                                             top: '100%',
-                                            right: 0,
+                                            ...(isRtl ? { left: '0' } : { right: '0' }),
                                             paddingTop: '20px', // Bridge the gap between avatar and dropdown
                                             zIndex: 1100,
                                             width: '240px',
@@ -1158,7 +1166,7 @@ const Header = () => {
                                                 <div style={{
                                                     position: 'absolute',
                                                     top: '-6px',
-                                                    right: '16px',
+                                                    ...(isRtl ? { left: '16px' } : { right: '16px' }),
                                                     width: '12px',
                                                     height: '12px',
                                                     background: 'white',

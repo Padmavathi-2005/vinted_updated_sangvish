@@ -144,7 +144,7 @@ const AdminDefaultSettings = () => {
                             <Col lg={6} className="mb-4">
                                 <Card className="h-100 border-0 bg-light p-4 rounded-4">
                                     <h5 className="mb-4 d-flex align-items-center">
-                                        <FaImage className="me-2 text-primary" /> Branding & Identity
+                                        <FaImage className="me-2" /> Branding & Identity
                                     </h5>
 
                                     <Form.Group className="mb-4">
@@ -174,7 +174,7 @@ const AdminDefaultSettings = () => {
                                                 </div>
                                             ) : (
                                                 <div className="upload-placeholder">
-                                                    <FaCloudUploadAlt size={40} className="mb-2 text-primary opacity-50" />
+                                                    <FaCloudUploadAlt size={40} className="mb-2 opacity-50" />
                                                     <p className="mb-0 fw-medium">Click to upload logo</p>
                                                     <span className="text-muted smaller">Dashed border style</span>
                                                 </div>
@@ -195,7 +195,7 @@ const AdminDefaultSettings = () => {
                             <Col lg={6} className="mb-4">
                                 <Card className="h-100 border-0 bg-light p-4 rounded-4">
                                     <h5 className="mb-4 d-flex align-items-center">
-                                        <FaListOl className="me-2 text-primary" /> Display & Pagination
+                                        <FaListOl className="me-2" /> Display & Pagination
                                     </h5>
 
                                     <Form.Group className="mb-4">
@@ -243,7 +243,7 @@ const AdminDefaultSettings = () => {
                             <Col xs={12}>
                                 <Card className="border-0 bg-light p-4 rounded-4 mb-4">
                                     <h5 className="mb-4 d-flex align-items-center">
-                                        <FaCogs className="me-2 text-primary" /> Advanced Admin Settings
+                                        <FaCogs className="me-2" /> Advanced Admin Settings
                                     </h5>
                                     <Row>
                                         <Col md={6}>

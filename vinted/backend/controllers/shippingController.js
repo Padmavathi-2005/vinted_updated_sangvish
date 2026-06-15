@@ -1,6 +1,9 @@
 import asyncHandler from 'express-async-handler';
 import ShippingCompany from '../models/ShippingCompany.js';
 import Order from '../models/Order.js';
+import Notification from '../models/Notification.js';
+import Admin from '../models/Admin.js';
+
 
 // @desc    Get active shipping companies
 // @route   GET /api/shipping/companies
@@ -118,11 +121,9 @@ export const dispatchOrder = asyncHandler(async (req, res) => {
     const newTrackingId = updatedOrder.tracking_id || '';
     const newCompanyId = updatedOrder.shipping_company_id?._id?.toString() || updatedOrder.shipping_company_id?.toString() || '';
 
-    if (newTrackingId !== previousTrackingId || newCompanyId !== previousCompanyId) {
+        if (newTrackingId !== previousTrackingId || newCompanyId !== previousCompanyId) {
         // Notify parties that tracking is available/updated
         try {
-            const Notification = (await import('../models/Notification.js')).default;
-            
             // 1. Notify Buyer
             const itemTitle = updatedOrder.is_bundle 
                 ? 'Bundle Order' 
@@ -134,7 +135,7 @@ export const dispatchOrder = asyncHandler(async (req, res) => {
                 title: 'Tracking Info Added',
                 message: `The seller has provided tracking information for your order "${itemTitle}" (#${updatedOrder.order_number}). You can now track your package.`,
                 type: 'info',
-                link: `/profile?tab=orders&orderId=${updatedOrder._id}`
+                link: `/profile?tab=orders&mode=buyer&orderId=${updatedOrder._id}`
             });
 
             // 2. Notify Seller (Host)
@@ -144,11 +145,10 @@ export const dispatchOrder = asyncHandler(async (req, res) => {
                 title: 'Tracking Info Updated',
                 message: `You have successfully updated the tracking information for order #${updatedOrder.order_number}.`,
                 type: 'success',
-                link: `/profile?tab=orders&orderId=${updatedOrder._id}`
+                link: `/profile?tab=orders&mode=seller&orderId=${updatedOrder._id}`
             });
 
             // 3. Notify Admins
-            const Admin = (await import('../models/Admin.js')).default;
             const adminsList = await Admin.find({ is_active: { $ne: false } });
             for (const admin of adminsList) {
                 await Notification.create({
@@ -190,11 +190,27 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     
     // Set Timestamps based on status
     const now = new Date();
-    if (status === 'confirmed') order.confirmed_at = now;
-    if (status === 'packed') order.packed_at = now;
-    if (status === 'shipped') order.shipped_at = now;
-    if (status === 'out_for_delivery') order.out_for_delivery_at = now;
-    if (status === 'delivered') order.delivered_at = now;
+    if (status === 'delivered') {
+        if (!order.delivered_at) order.delivered_at = now;
+        if (!order.out_for_delivery_at) order.out_for_delivery_at = now;
+        if (!order.shipped_at) order.shipped_at = now;
+        if (!order.packed_at) order.packed_at = now;
+        if (!order.confirmed_at) order.confirmed_at = now;
+    } else if (status === 'out_for_delivery') {
+        if (!order.out_for_delivery_at) order.out_for_delivery_at = now;
+        if (!order.shipped_at) order.shipped_at = now;
+        if (!order.packed_at) order.packed_at = now;
+        if (!order.confirmed_at) order.confirmed_at = now;
+    } else if (status === 'shipped') {
+        if (!order.shipped_at) order.shipped_at = now;
+        if (!order.packed_at) order.packed_at = now;
+        if (!order.confirmed_at) order.confirmed_at = now;
+    } else if (status === 'packed') {
+        if (!order.packed_at) order.packed_at = now;
+        if (!order.confirmed_at) order.confirmed_at = now;
+    } else if (status === 'confirmed') {
+        if (!order.confirmed_at) order.confirmed_at = now;
+    }
 
     await order.save();
     res.json({ message: `Order status updated to ${status}`, order });

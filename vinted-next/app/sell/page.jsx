@@ -242,7 +242,7 @@ export default function SellItem() {
                     img.src = reader.result;
                     img.onload = () => {
                         if (img.width < 500 || img.height < 500) {
-                            reject(new Error(`"${file.name}" is too small. Minimum size required is 500x500px. Your image is ${img.width}x${img.height}px.`));
+                            reject(new Error(t('sell_item.image_too_small', '"{{name}}" is too small. Minimum size required is 500x500px. Your image is {{width}}x{{height}}px.', { name: file.name, width: img.width, height: img.height })));
                         } else {
                             resolve({ readerResult: reader.result, file });
                         }
@@ -806,7 +806,7 @@ export default function SellItem() {
                                     <p className="si-commission-note">{t('sell_item.commission_note')}</p>
                                     {price > 0 && (
                                         <p className="si-commission-val">
-                                            {t('sell_item.admin_commission', { rate: commissionRate })} <span className="si-commission-amount">{formatPrice((parseFloat(price) * commissionRate) / 100)}</span>
+                                            {t('sell_item.admin_commission', { rate: commissionRate })} <span className="si-commission-amount">{formatPrice((parseFloat(price) * commissionRate) / 100, currentCurrency, currentCurrency)}</span>
                                         </p>
                                     )}
                                 </div>

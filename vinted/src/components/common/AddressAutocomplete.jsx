@@ -111,11 +111,12 @@ const AddressAutocomplete = ({ initialValue, onSelect }) => {
 
     return (
         <div ref={wrapperRef} style={{ display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', width: '100%' }}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch', flexWrap: 'wrap' }}>
                 <div style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
-                    flex: 1, 
+                    flex: '1 1 200px', 
+                    minWidth: '200px',
                     border: '1px solid #ced4da', 
                     borderRadius: '0.25rem',
                     background: '#fff',

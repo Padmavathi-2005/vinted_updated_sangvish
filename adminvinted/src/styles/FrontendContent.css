@@ -169,7 +169,7 @@
 
 .fc-v3-upload-btn button:hover {
     filter: brightness(1.1);
-    transform: translateY(-1px);
+    /* removed transform translateY */
 }
 
 .fc-v3-upload-btn input {
@@ -269,7 +269,7 @@
     border-color: var(--fc-primary);
     color: var(--fc-primary);
     background: white;
-    transform: translateY(-1px);
+    /* removed transform translateY */
 }
 
 .fc-lang-tab.active {
@@ -338,7 +338,7 @@
 }
 
 .fc-btn-save:hover {
-    transform: translateY(-3px);
+    /* removed transform translateY */
 }
 
 .fc-btn-save:disabled {

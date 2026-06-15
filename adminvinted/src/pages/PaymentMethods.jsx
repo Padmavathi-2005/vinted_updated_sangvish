@@ -138,11 +138,11 @@ export const PaymentMethodsList = ({ isIntegrated = false, activeGlobalLang }) =
 
     /* ── Filtered ──────────────────────────────────────────── */
     const filteredData = useMemo(() => {
-        const term = searchTerm.toLowerCase();
+        const term = searchTerm?.toLowerCase();
         return methods.filter(m => {
             const nameMatch = typeof m.name === 'string'
-                ? m.name.toLowerCase().includes(term)
-                : Object.values(m.name || {}).some(v => v.toLowerCase().includes(term));
+                ? m.name?.toLowerCase().includes(term)
+                : Object.values(m.name || {}).some(v => v?.toLowerCase().includes(term));
             return nameMatch || m.key?.toLowerCase().includes(term);
         });
     }, [methods, searchTerm]);
@@ -356,7 +356,7 @@ export const PaymentMethodsList = ({ isIntegrated = false, activeGlobalLang }) =
                                 className={`wallet-lang-tab ${activeLang === l.code ? 'active' : ''}`}
                                 onClick={() => setActiveLang(l.code)}
                             >
-                                {l.name} <span style={{ opacity: 0.6, fontSize: '0.7rem' }}>{l.code.toUpperCase()}</span>
+                                {l.name} <span style={{ opacity: 0.6, fontSize: '0.7rem' }}>{l.code?.toUpperCase()}</span>
                             </button>
                         ))}
                     </div>
@@ -365,7 +365,7 @@ export const PaymentMethodsList = ({ isIntegrated = false, activeGlobalLang }) =
                 {/* Form fields */}
                 <div className="wallet-form-group">
                     <label className="wallet-form-label">
-                        Method Name — {activeLang.toUpperCase()} <span style={{ color: '#ef4444' }}>*</span>
+                        Method Name — {activeLang?.toUpperCase()} <span style={{ color: '#ef4444' }}>*</span>
                     </label>
                     <input
                         className="wallet-form-control"
@@ -384,7 +384,7 @@ export const PaymentMethodsList = ({ isIntegrated = false, activeGlobalLang }) =
                         className="wallet-form-control"
                         type="text"
                         value={formData.key}
-                        onChange={e => setFormData({ ...formData, key: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
+                        onChange={e => setFormData({ ...formData, key: e.target.value?.toLowerCase().replace(/\s+/g, '_') })}
                         placeholder="e.g. cash_delivery"
                         disabled={!!selected}
                     />
@@ -394,7 +394,7 @@ export const PaymentMethodsList = ({ isIntegrated = false, activeGlobalLang }) =
                 </div>
 
                 <div className="wallet-form-group">
-                    <label className="wallet-form-label">Description — {activeLang.toUpperCase()}</label>
+                    <label className="wallet-form-label">Description — {activeLang?.toUpperCase()}</label>
                     <textarea
                         className="wallet-form-control wallet-admin-note"
                         rows={2}

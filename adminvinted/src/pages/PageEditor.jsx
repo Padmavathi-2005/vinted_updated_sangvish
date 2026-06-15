@@ -63,7 +63,7 @@ const PageEditor = () => {
 
     const handleTitleChange = (e) => {
         const title = e.target.value;
-        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+        const slug = title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
         setFormData(prev => ({ ...prev, title, slug: isEditing ? prev.slug : slug }));
     };
 
@@ -131,7 +131,7 @@ const PageEditor = () => {
                                         type="text"
                                         placeholder="e.g. privacy-policy"
                                         value={formData.slug}
-                                        onChange={e => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9\-]/g, '') })}
+                                        onChange={e => setFormData({ ...formData, slug: e.target.value?.toLowerCase().replace(/[^a-z0-9\-]/g, '') })}
                                         required
                                         className="py-2"
                                     />

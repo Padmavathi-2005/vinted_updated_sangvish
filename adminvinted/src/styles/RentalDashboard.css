@@ -44,7 +44,7 @@
 }
 
 .stat-card:hover {
-    transform: translateY(-2px);
+    /* removed transform translateY */
 }
 
 .stat-content {
@@ -134,7 +134,7 @@
 }
 
 .stat-card-link:hover .stat-card {
-    transform: translateY(-4px);
+    /* removed transform translateY */
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 

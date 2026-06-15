@@ -107,25 +107,32 @@ const UnifiedCategories = () => {
         }
         setSaving(true);
         const apiPath = modalType === 'category' ? 'categories' : (modalType === 'subcategory' ? 'subcategories' : 'item-types');
+        
+        // Auto-generate slug if empty
+        const finalFormData = { ...formData };
+        if (!finalFormData.slug && finalFormData.name) {
+            finalFormData.slug = finalFormData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+        }
+
         try {
             if (modalType === 'category' || modalType === 'subcategory' || modalType === 'itemType') {
                 const data = new FormData();
-                Object.keys(formData).forEach(key => {
-                    if (key === 'category_image' && formData[key]) {
-                        data.append('category_image', formData[key]);
-                    } else if (formData[key] !== undefined) {
+                Object.keys(finalFormData).forEach(key => {
+                    if (key === 'category_image' && finalFormData[key]) {
+                        data.append('category_image', finalFormData[key]);
+                    } else if (finalFormData[key] !== undefined) {
                         // Ensure we don't send objects (populated fields) that become "[object Object]"
-                        let val = formData[key];
+                        let val = finalFormData[key];
                         if (val && typeof val === 'object' && val._id) val = val._id;
                         data.append(key, val);
                     }
                 });
                 const opts = { headers: { 'Content-Type': 'multipart/form-data' } };
-                if (modalMode === 'edit') await axios.put(`/api/admin/${apiPath}/${formData._id}`, data, opts);
+                if (modalMode === 'edit') await axios.put(`/api/admin/${apiPath}/${finalFormData._id}`, data, opts);
                 else await axios.post(`/api/admin/${apiPath}`, data, opts);
             } else {
-                if (modalMode === 'edit') await axios.put(`/api/admin/${apiPath}/${formData._id}`, formData);
-                else await axios.post(`/api/admin/${apiPath}`, formData);
+                if (modalMode === 'edit') await axios.put(`/api/admin/${apiPath}/${finalFormData._id}`, finalFormData);
+                else await axios.post(`/api/admin/${apiPath}`, finalFormData);
             }
             showToast('success', 'Saved successfully');
             setShowModal(false);
@@ -266,7 +273,7 @@ const UnifiedCategories = () => {
     ];
 
     // ---- Filtered Data ----
-    const q = searchTerm.toLowerCase();
+    const q = searchTerm?.toLowerCase();
     const filteredCategories = categories.filter(c => c.name?.toLowerCase().includes(q) || c.slug?.toLowerCase().includes(q));
     const filteredSubcategories = subcategories.filter(s => {
         const matchSearch = s.name?.toLowerCase().includes(q) || s.slug?.toLowerCase().includes(q);
@@ -290,7 +297,7 @@ const UnifiedCategories = () => {
                     {/* Header */}
                     <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4 pb-3 border-bottom">
                         <div>
-                            <h1 className="h3 mb-1 text-primary fw-bold">{t('categories.title', 'Categories')}</h1>
+                            <h1 className="h3 mb-1 fw-bold">{t('categories.title', 'Categories')}</h1>
                             <p className="text-muted mb-0">{t('categories.subtitle', 'Manage categories, subcategories, and item types')}</p>
                         </div>
                         <div className="d-flex gap-2">
@@ -336,7 +343,7 @@ const UnifiedCategories = () => {
                                     <FaSearch className="text-muted" />
                                 </InputGroup.Text>
                                 <Form.Control
-                                    placeholder={t('categories.search_placeholder', '...Search categories')}
+                                    placeholder={t('categories.search_placeholder', 'Search categories...')}
                                     className="border-start-0 ps-0"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}

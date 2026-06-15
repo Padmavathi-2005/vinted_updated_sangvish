@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Container, Row, Col, Form } from 'react-bootstrap';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import axios from '@/utils/axios';
 import ItemCard from '@/components/common/ItemCard';
 import SkeletonCard from '@/components/common/SkeletonCard';
@@ -15,6 +16,7 @@ import Meta from '@/components/common/Meta';
 const SubcategoryItemsPage = () => {
     const { slug, subSlug } = useParams();
     const navigate = useRouter();
+    const { t } = useTranslation();
 
     const [category, setCategory] = useState(null);
     const [subcategory, setSubcategory] = useState(null);
@@ -135,7 +137,7 @@ const SubcategoryItemsPage = () => {
             {/* Breadcrumb header bar */}
             <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '10px 0' }}>
                 <Container fluid className="px-md-5 px-3">
-                    <div className="d-flex align-items-center gap-2" style={{ fontSize: '0.85rem' }}>
+                    <div className="d-flex flex-wrap align-items-center gap-2" style={{ fontSize: '0.85rem' }}>
                         <Link href="/" style={{ color: '#94a3b8', textDecoration: 'none' }}>Home</Link>
                         <span style={{ color: '#94a3b8' }}>/</span>
                         <Link href="/categories" style={{ color: '#94a3b8', textDecoration: 'none' }}>Categories</Link>
@@ -201,12 +203,12 @@ const SubcategoryItemsPage = () => {
                                     minWidth: '160px'
                                 }}
                             >
-                                <option value="newest">Newest First</option>
-                                <option value="popular">Relevance</option>
-                                <option value="price_asc">Price: Low to High</option>
-                                <option value="price_desc">Price: High to Low</option>
-                                <option value="discounted">Sale Items</option>
-                                <option value="oldest">Oldest First</option>
+                                <option value="newest">{t('products.sort_newest', 'Newest First')}</option>
+                                <option value="popular">{t('products.sort_relevance', 'Relevance')}</option>
+                                <option value="price_asc">{t('products.sort_price_asc', 'Price: Low to High')}</option>
+                                <option value="price_desc">{t('products.sort_price_desc', 'Price: High to Low')}</option>
+                                <option value="discounted">{t('products.sort_sale', 'Sale Items')}</option>
+                                <option value="oldest">{t('products.sort_oldest', 'Oldest First')}</option>
                             </Form.Select>
                         </div>
 

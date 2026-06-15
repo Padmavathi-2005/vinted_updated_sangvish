@@ -97,7 +97,7 @@ const Users = () => {
             let data = res.data;
 
             if (searchTerm && Array.isArray(data)) {
-                const term = searchTerm.toLowerCase();
+                const term = searchTerm?.toLowerCase();
                 data = data.filter(u =>
                     safeString(u.username).toLowerCase().includes(term) ||
                     (u.email || '').toLowerCase().includes(term)
@@ -385,7 +385,7 @@ const Users = () => {
                 <Card className="main-content-card border-0 shadow-sm p-4">
                     <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                         <div>
-                            <h1 className="dashboard-title h3 mb-1 text-users">{t('users.title')}</h1>
+                            <h1 className="dashboard-title h3 mb-1">{t('users.title')}</h1>
                             <p className="text-muted small mb-0">{t('users.subtitle')}</p>
                         </div>
                         <Button

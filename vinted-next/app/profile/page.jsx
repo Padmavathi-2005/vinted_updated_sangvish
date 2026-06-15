@@ -129,6 +129,7 @@ const ProfileContent = () => {
     const [listingsTotalPages, setListingsTotalPages] = useState(1);
     const [listingsTotalCount, setListingsTotalCount] = useState(0);
     const [allListingsCount, setAllListingsCount] = useState(0);
+    const [soldListingsCount, setSoldListingsCount] = useState(0);
 
     // Favorites State
     const [favorites, setFavorites] = useState([]);
@@ -156,6 +157,11 @@ const ProfileContent = () => {
     const [isEditingAddress, setIsEditingAddress] = useState(false);
     
     const [orderSubTab, setOrderSubTab] = useState('all');
+    const handleOrderSubTabChange = (val) => {
+        setOrderSubTab(val);
+        setBoughtPage(1);
+        setSoldPage(1);
+    };
     const [listingsSubTab, setListingsSubTab] = useState('all');
     const [paymentSubTab, setPaymentSubTab] = useState('wallet');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -172,8 +178,56 @@ const ProfileContent = () => {
     }, [urlSub]);
 
     useEffect(() => {
-        // Validate urlOrderId is a valid 24-character hex string (MongoDB ObjectId)
-        const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(urlOrderId);
+        const handleOpenOrderModal = async (e) => {
+            const evOrderId = e.detail;
+            if (!evOrderId || !user) return;
+            try {
+                const res = await axios.get(`/api/orders/${evOrderId}`);
+                const order = res.data;
+                if (order) {
+                    const sellerIdStr = order.seller_id && typeof order.seller_id === 'object' && order.seller_id._id 
+                        ? String(order.seller_id._id) 
+                        : String(order.seller_id);
+                    const userIdStr = user._id ? String(user._id) : String(user.id);
+                    
+                    const isSellerById = sellerIdStr === userIdStr;
+                    const isSellerByUsername = order.seller_id?.username && (
+                        order.seller_id.username === user.username || 
+                        order.seller_id.username === user.name
+                    );
+                    
+                    const targetMode = (isSellerById || isSellerByUsername) ? 'seller' : 'buyer';
+                    if (mode !== targetMode) {
+                        setMode(targetMode);
+                    }
+                    
+                    setSelectedOrder(order);
+                    setShowOrderModal(true);
+                    setIsEditingAddress(false);
+                    setAddressForm({
+                        full_name: order.shipping_address?.full_name || '',
+                        address_line: order.shipping_address?.address_line || '',
+                        city: order.shipping_address?.city || '',
+                        state: order.shipping_address?.state || '',
+                        pincode: order.shipping_address?.pincode || '',
+                        phone: order.shipping_address?.phone || '',
+                        country: order.shipping_address?.country || '',
+                        lat: order.shipping_address?.lat || null,
+                        lng: order.shipping_address?.lng || null
+                    });
+                }
+            } catch (err) {
+                console.error("Error handling openOrderModal event:", err);
+            }
+        };
+
+        window.addEventListener('openOrderModal', handleOpenOrderModal);
+        return () => window.removeEventListener('openOrderModal', handleOpenOrderModal);
+    }, [user, mode]);
+
+    useEffect(() => {
+        // Validate urlOrderId is a valid 24-character hex string (MongoDB ObjectId) or ORD- string
+        const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(urlOrderId) || (urlOrderId && urlOrderId.startsWith('ORD-'));
         
         if (urlOrderId && isValidObjectId && user && processedOrderIdRef.current !== urlOrderId) {
             processedOrderIdRef.current = urlOrderId; // Mark as started
@@ -226,8 +280,11 @@ const ProfileContent = () => {
                             lng: order.shipping_address?.lng || null
                         });
                         
-                        // Explicitly clean up URL after successful deep link
-                        router.replace(`/profile?tab=${paramTab || 'orders'}&mode=${targetMode}`);
+                        const urlConv = searchParams.get('conversation');
+                        const convParam = urlConv ? `&conversation=${urlConv}` : '';
+                        
+                        // Explicitly clean up URL after successful deep link without triggering a Next.js re-render blink
+                        window.history.replaceState(null, '', `/profile?tab=${paramTab || 'orders'}&mode=${targetMode}${convParam}`);
                     }
                 } catch (err) {
                     // If 404, the order might have been deleted but the notification remained.
@@ -270,6 +327,7 @@ const ProfileContent = () => {
         onConfirm: null,
         inputValue: '',
         inputValue2: '', // for partial refund amount
+        relist: false,
         isLoading: false
     });
     const [actionSubmitting, setActionSubmitting] = useState(false);
@@ -360,6 +418,8 @@ const ProfileContent = () => {
             const params = { page: pageNum, limit: 12, sort: 'newest' };
             if (listingsSubTab === 'sold') {
                 params.is_sold = 'true';
+            } else if (listingsSubTab === 'all') {
+                params.is_sold = 'false';
             }
             const res = await axios.get('/api/items/myitems', { params });
             const { items, totalPages, totalCount, total_count } = res.data;
@@ -371,6 +431,8 @@ const ProfileContent = () => {
             // Only update the global 'All' count if we are on the 'all' tab
             if (listingsSubTab === 'all') {
                 setAllListingsCount(currentTotal);
+            } else if (listingsSubTab === 'sold') {
+                setSoldListingsCount(currentTotal);
             }
 
             if (isAppend) {
@@ -426,7 +488,7 @@ const ProfileContent = () => {
             // Fetch both, but we use the relevant page based on current mode for the query
             // In a more complex app, we might fetch them separately, but this maintains consistency
             const currentPage = mode === 'buyer' ? boughtPage : soldPage;
-            const res = await axios.get(`/api/orders?page=${currentPage}&limit=10`);
+            const res = await axios.get(`/api/orders?page=${currentPage}&limit=10&status=${orderSubTab}`);
             
             setBoughtOrders(res.data.bought || []);
             setSoldOrders(res.data.sold || []);
@@ -434,15 +496,15 @@ const ProfileContent = () => {
             if (res.data.pagination) {
                 setBoughtTotalPages(res.data.pagination.boughtPages || 1);
                 setSoldTotalPages(res.data.pagination.soldPages || 1);
-                setBoughtTotalCount(res.data.pagination.boughtTotal || 0);
-                setSoldTotalCount(res.data.pagination.soldTotal || 0);
+                setBoughtTotalCount(res.data.pagination.allBoughtTotal || res.data.pagination.boughtTotal || 0);
+                setSoldTotalCount(res.data.pagination.allSoldTotal || res.data.pagination.soldTotal || 0);
             }
         } catch (error) {
             console.error("Error fetching orders:", error);
         } finally {
             setOrdersLoading(false);
         }
-    }, [user, mode, boughtPage, soldPage]); // Restored dependencies for correct page tracking
+    }, [user, mode, boughtPage, soldPage, orderSubTab]); // Restored dependencies for correct page tracking
 
     // Keep ref of selectedOrder to avoid re-binding socket listener on selectedOrder change
     const selectedOrderRef = React.useRef(selectedOrder);
@@ -798,25 +860,51 @@ const ProfileContent = () => {
         }
     };
 
+    const handleRelistItem = async (itemId) => {
+        try {
+            await axios.put(`/api/items/${itemId}`, { status: 'available', is_sold: false, is_ordered: false });
+            alert('Item has been successfully relisted for resale!');
+            fetchMyOrders();
+            setSelectedOrder(prev => {
+                if (!prev || !prev.item_id) return prev;
+                return {
+                    ...prev,
+                    item_id: {
+                        ...prev.item_id,
+                        status: 'available',
+                        is_sold: false,
+                        is_ordered: false
+                    }
+                };
+            });
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to relist item');
+        }
+    };
+
     // Fetch Initial Counts
     useEffect(() => {
-        if (user && activeTab === 'dashboard') {
-            axios.get('/api/items/myitems', { params: { limit: 1 } })
+        if (user) {
+            axios.get('/api/items/myitems', { params: { limit: 1, is_sold: 'false' } })
                 .then(res => setAllListingsCount(res.data.totalCount || res.data.total_count || 0))
+                .catch(() => {});
+
+            axios.get('/api/items/myitems', { params: { limit: 1, is_sold: 'true' } })
+                .then(res => setSoldListingsCount(res.data.totalCount || res.data.total_count || 0))
                 .catch(() => {});
 
             axios.get('/api/favorites', { params: { limit: 1, populate: 'true' } })
                 .then(res => setFavoritesTotalCount(res.data.totalCount || res.data.total_count || res.data.length || 0))
                 .catch(() => {});
         }
-    }, [user, activeTab, mode]);
+    }, [user]);
 
     // Trigger Listings Fetch
     useEffect(() => {
         if (activeTab === 'listings') {
             fetchMyListings(listingsPage, false);
         }
-    }, [activeTab, listingsPage, fetchMyListings]);
+    }, [activeTab, listingsPage, listingsSubTab, fetchMyListings]);
 
     // Trigger Favorites Fetch
     useEffect(() => {
@@ -830,31 +918,7 @@ const ProfileContent = () => {
         if (activeTab === 'orders' || activeTab === 'dashboard') {
             fetchMyOrders();
         }
-    }, [activeTab, mode, boughtPage, soldPage, fetchMyOrders]);
-
-    // Auto-open order details if orderId is in URL
-    useEffect(() => {
-        if (!ordersLoading && activeTab === 'orders' && !showOrderModal) {
-            const orderId = searchParams.get('orderId');
-            if (orderId) {
-                const order = [...boughtOrders, ...soldOrders].find(o => o._id === orderId);
-                if (order) {
-                    setSelectedOrder(order);
-                    setShowOrderModal(true);
-                    setIsEditingAddress(false);
-                    checkExistingReview(order._id);
-                    setAddressForm({
-                        full_name: order.shipping_address?.full_name || '',
-                        address_line: order.shipping_address?.address_line || '',
-                        city: order.shipping_address?.city || '',
-                        state: order.shipping_address?.state || '',
-                        pincode: order.shipping_address?.pincode || '',
-                        phone: order.shipping_address?.phone || ''
-                    });
-                }
-            }
-        }
-    }, [ordersLoading, activeTab, searchParams, boughtOrders, soldOrders, showOrderModal]);
+    }, [activeTab, mode, boughtPage, soldPage, orderSubTab, fetchMyOrders]);
 
     // Fetch Shipping Companies for Seller
     useEffect(() => {
@@ -946,7 +1010,7 @@ const ProfileContent = () => {
                 show: true,
                 type: 'error',
                 title: t('profile.cannot_delete_account', 'Account Deletion Blocked'),
-                message: t('profile.balance_remaining_error', 'You have a remaining balance of {{balance}} in your wallet. Please withdraw all funds before deleting your account.', { balance: formatPrice(user?.balance) }),
+                message: t('profile.balance_remaining_error', 'You have a remaining balance of {{balance}} in your wallet. Please withdraw all funds before deleting your account.', { balance: formatPrice(user?.balance, user?.wallet_currency) }),
                 confirmLabel: t('common.ok', 'OK')
             });
             return;
@@ -1061,7 +1125,7 @@ const ProfileContent = () => {
                                 <>
                                     <div className={`pd-nav-item ${activeTab === 'listings' ? 'active' : ''}`} onClick={() => handleTabChange('listings')}>{t('user_menu.manage_listings', 'Manage listings')}</div>
                                     <div className={`pd-nav-item ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => handleTabChange('orders')}>{t('profile.orders_received', 'Orders Received')}</div>
-                                    <div className={`pd-nav-item ${activeTab === 'bundle_settings' ? 'active' : ''}`} onClick={() => handleTabChange('bundle_settings')}>Bundle Discounts</div>
+                                    <div className={`pd-nav-item ${activeTab === 'bundle_settings' ? 'active' : ''}`} onClick={() => handleTabChange('bundle_settings')}>{t('profile.bundle_discounts', 'Bundle Discounts')}</div>
                                 </>
                             )}
 
@@ -1118,14 +1182,15 @@ const ProfileContent = () => {
                             <div className="mt-3 pt-3 border-top">
                                 <p className="extra-small mb-2 fw-bold text-uppercase" style={{ letterSpacing: '0.05em', color: '#64748b' }}>{t('profile.order_status', 'Order Status')}</p>
                                 <div className="d-flex flex-column gap-1">
-                                    <div className={`pd-sidemenu-item ${orderSubTab === 'all' ? 'active' : ''}`} onClick={() => setOrderSubTab('all')}>{t('profile.all_orders', 'All Orders')}</div>
+                                    <div className={`pd-sidemenu-item ${orderSubTab === 'all' ? 'active' : ''}`} onClick={() => handleOrderSubTabChange('all')}>{t('profile.all_orders', 'All Orders')}</div>
 
-                                    <div className={`pd-sidemenu-item ${orderSubTab === 'confirmed' ? 'active' : ''}`} onClick={() => setOrderSubTab('confirmed')}>{t('order_status.confirmed', 'Confirmed')}</div>
-                                    <div className={`pd-sidemenu-item ${orderSubTab === 'packed' ? 'active' : ''}`} onClick={() => setOrderSubTab('packed')}>{t('order_status.packed', 'Packed')}</div>
-                                    <div className={`pd-sidemenu-item ${orderSubTab === 'shipped' ? 'active' : ''}`} onClick={() => setOrderSubTab('shipped')}>{t('order_status.shipped', 'Shipped')}</div>
-                                    <div className={`pd-sidemenu-item ${orderSubTab === 'delivered' ? 'active' : ''}`} onClick={() => setOrderSubTab('delivered')}>{t('order_status.delivered', 'Delivered')}</div>
-                                    <div className={`pd-sidemenu-item ${orderSubTab === 'returns' ? 'active' : ''}`} onClick={() => setOrderSubTab('returns')}>{t('order_status.returned', 'Returned')}</div>
-                                    <div className={`pd-sidemenu-item ${orderSubTab === 'cancelled' ? 'active' : ''}`} onClick={() => setOrderSubTab('cancelled')}>{t('order_status.cancelled', 'Cancelled')}</div>
+                                    <div className={`pd-sidemenu-item ${orderSubTab === 'confirmed' ? 'active' : ''}`} onClick={() => handleOrderSubTabChange('confirmed')}>{t('order_status.confirmed', 'Confirmed')}</div>
+                                    <div className={`pd-sidemenu-item ${orderSubTab === 'packed' ? 'active' : ''}`} onClick={() => handleOrderSubTabChange('packed')}>{t('order_status.packed', 'Packed')}</div>
+                                    <div className={`pd-sidemenu-item ${orderSubTab === 'shipped' ? 'active' : ''}`} onClick={() => handleOrderSubTabChange('shipped')}>{t('order_status.shipped', 'Shipped')}</div>
+                                    <div className={`pd-sidemenu-item ${orderSubTab === 'out_for_delivery' ? 'active' : ''}`} onClick={() => handleOrderSubTabChange('out_for_delivery')}>{t('order_status.out_for_delivery', 'Out for Delivery')}</div>
+                                    <div className={`pd-sidemenu-item ${orderSubTab === 'delivered' ? 'active' : ''}`} onClick={() => handleOrderSubTabChange('delivered')}>{t('order_status.delivered', 'Delivered')}</div>
+                                    <div className={`pd-sidemenu-item ${orderSubTab === 'returns' ? 'active' : ''}`} onClick={() => handleOrderSubTabChange('returns')}>{t('order_status.returned', 'Returned')}</div>
+                                    <div className={`pd-sidemenu-item ${orderSubTab === 'cancelled' ? 'active' : ''}`} onClick={() => handleOrderSubTabChange('cancelled')}>{t('order_status.cancelled', 'Cancelled')}</div>
                                 </div>
                             </div>
                         )}
@@ -1144,15 +1209,15 @@ const ProfileContent = () => {
 
                         {activeTab === 'listings' && (
                             <div className="mt-3 pt-3 border-top text-start">
-                                <p className="extra-small mb-2 fw-bold text-uppercase" style={{ letterSpacing: '0.05em', color: '#64748b' }}>Listings Summary</p>
+                                <p className="extra-small mb-2 fw-bold text-uppercase" style={{ letterSpacing: '0.05em', color: '#64748b' }}>{t('profile.listings_summary', 'Listings Summary')}</p>
                                 <div className="d-flex flex-column gap-2">
                                     <div className="small d-flex justify-content-between clickable-sidebar-stat" onClick={() => setListingsSubTab('all')}>
-                                        <span>Total Items</span>
+                                        <span>{t('profile.total_items', 'Total Items')}</span>
                                         <span className="fw-bold" style={{ color: listingsSubTab === 'all' ? 'var(--primary-color)' : 'inherit' }}>{allListingsCount || 0}</span>
                                     </div>
-                                    <div className="small d-flex justify-content-between clickable-sidebar-stat" onClick={() => setListingsSubTab('sold')}>
-                                        <span>Sold Items</span>
-                                        <span className="fw-bold text-success" style={{ textDecoration: listingsSubTab === 'sold' ? 'underline' : 'none' }}>{soldOrders.length || user.sold_count || 0}</span>
+                                    <div className="small d-flex justify-content-between clickable-sidebar-stat" onClick={() => { setListingsPage(1); setListingsSubTab('sold'); }}>
+                                        <span>{t('profile.sold_items', 'Sold Items')}</span>
+                                        <span className="fw-bold text-success" style={{ textDecoration: listingsSubTab === 'sold' ? 'underline' : 'none' }}>{soldListingsCount}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1160,24 +1225,24 @@ const ProfileContent = () => {
 
                         {activeTab === 'bundle_settings' && (
                             <div className="mt-3 pt-3 border-top text-start">
-                                <p className="extra-small mb-3 fw-bold text-uppercase" style={{ letterSpacing: '0.05em', color: '#64748b' }}>Bundle Tips</p>
+                                <p className="extra-small mb-3 fw-bold text-uppercase" style={{ letterSpacing: '0.05em', color: '#64748b' }}>{t('profile.bundle_tips', 'Bundle Tips')}</p>
                                 <div className="pd-bundle-help-sidebar-card p-3 rounded-3 mb-3" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
                                     <div className="d-flex align-items-center gap-2 mb-2">
                                         <FaLightbulb className="text-warning" />
-                                        <span className="fw-bold small">Seller Tips</span>
+                                        <span className="fw-bold small">{t('profile.seller_tips', 'Seller Tips')}</span>
                                     </div>
                                     <ul className="ps-3 mb-0 small text-muted" style={{ fontSize: '0.75rem' }}>
-                                        <li>Items with discounts get a special badge in search results.</li>
-                                        <li className="mt-1">Sellers with bundles enabled sell 3x faster on average.</li>
-                                        <li className="mt-1">All bundle items are shipped in a single package.</li>
+                                        <li>{t('profile.bundle_tip_1', 'Items with discounts get a special badge in search results.')}</li>
+                                        <li className="mt-1">{t('profile.bundle_tip_2', 'Sellers with bundles enabled sell 3x faster on average.')}</li>
+                                        <li className="mt-1">{t('profile.bundle_tip_3', 'All bundle items are shipped in a single package.')}</li>
                                     </ul>
                                 </div>
                                 <div className="pd-bundle-preview-mini p-3 rounded-3" style={{ background: 'color-mix(in srgb, var(--primary-color) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--primary-color) 20%, transparent)' }}>
                                     <div className="d-flex align-items-center gap-2">
                                         <FaCheckCircle className="text-primary" />
-                                        <span className="fw-bold small text-primary">Live Now</span>
+                                        <span className="fw-bold small text-primary">{t('profile.live_now', 'Live Now')}</span>
                                     </div>
-                                    <p className="mb-0 mt-1 text-primary" style={{ fontSize: '0.7rem' }}>Discounts are applied automatically at checkout.</p>
+                                    <p className="mb-0 mt-1 text-primary" style={{ fontSize: '0.7rem' }}>{t('profile.discounts_applied_auto', 'Discounts are applied automatically at checkout.')}</p>
                                 </div>
                             </div>
                         )}
@@ -1203,17 +1268,17 @@ const ProfileContent = () => {
                                     <>
                                         <div className="pd-stat-card clickable" onClick={() => handleTabChange('listings')}>
                                             <div className="pd-stat-icon blue"><FaListAlt /></div>
-                                            <div className="pd-stat-value">{listingsTotalCount}</div>
+                                            <div className="pd-stat-value">{allListingsCount}</div>
                                             <div className="pd-stat-label">{t('profile.active_listings')}</div>
                                         </div>
                                         <div className="pd-stat-card clickable" onClick={() => handleTabChange('orders')}>
                                             <div className="pd-stat-icon orange"><FaBoxOpen /></div>
-                                            <div className="pd-stat-value">{soldOrders.length || user?.sold_count || 0}</div>
+                                            <div className="pd-stat-value">{soldTotalCount || user?.sold_count || 0}</div>
                                             <div className="pd-stat-label">{t('profile.orders_received', 'Orders Received')}</div>
                                         </div>
                                         <div className="pd-stat-card clickable" onClick={() => handleTabChange('payments')}>
                                             <div className="pd-stat-icon yellow"><FaWallet /></div>
-                                            <div className="pd-stat-value">{formatPrice(user?.balance || 0)}</div>
+                                            <div className="pd-stat-value">{formatPrice(user?.balance || 0, user?.wallet_currency)}</div>
                                             <div className="pd-stat-label">{t('profile.available_balance')}</div>
                                         </div>
                                     </>
@@ -1221,17 +1286,17 @@ const ProfileContent = () => {
                                     <>
                                         <div className="pd-stat-card clickable" onClick={() => handleTabChange('orders')}>
                                             <div className="pd-stat-icon blue"><FaBoxOpen /></div>
-                                            <div className="pd-stat-value">{boughtOrders.length || user?.orders_count || 0}</div>
+                                            <div className="pd-stat-value">{boughtTotalCount || user?.orders_count || 0}</div>
                                             <div className="pd-stat-label">{t('user_menu.my_orders')}</div>
                                         </div>
                                         <div className="pd-stat-card clickable" onClick={() => handleTabChange('favorites')}>
                                             <div className="pd-stat-icon purple"><FaHeart /></div>
-                                            <div className="pd-stat-value">{(user?.favorites_count !== undefined ? user.favorites_count : favoritesTotalCount) || 0}</div>
+                                            <div className="pd-stat-value">{favoritesTotalCount || user?.favorites_count || 0}</div>
                                             <div className="pd-stat-label">{t('profile.favorites')}</div>
                                         </div>
                                         <div className="pd-stat-card clickable" onClick={() => handleTabChange('payments')}>
                                             <div className="pd-stat-icon yellow"><FaWallet /></div>
-                                            <div className="pd-stat-value">{formatPrice(user?.balance || 0)}</div>
+                                            <div className="pd-stat-value">{formatPrice(user?.balance || 0, user?.wallet_currency)}</div>
                                             <div className="pd-stat-label">{t('profile.available_balance')}</div>
                                         </div>
                                     </>
@@ -1259,8 +1324,8 @@ const ProfileContent = () => {
                                     <FaTag />
                                 </div>
                                 <div className="pd-bundle-header-text">
-                                    <h3 className="m-0 fw-bold">Bundle Discounts</h3>
-                                    <p className="text-muted small m-0">Increase your sales by offering bulk purchase incentives.</p>
+                                    <h3 className="m-0 fw-bold">{t('profile.bundle_discounts', 'Bundle Discounts')}</h3>
+                                    <p className="text-muted small m-0">{t('profile.bundle_subtitle', 'Increase your sales by offering bulk purchase incentives.')}</p>
                                 </div>
                             </div>
 
@@ -1269,8 +1334,8 @@ const ProfileContent = () => {
                                     <div className="pd-bundle-intro-card">
                                         <div className="d-flex justify-content-between align-items-center">
                                             <div>
-                                                <h4 className="h6 fw-bold mb-1">Status</h4>
-                                                <p className="text-muted xsmall mb-0">Discounts are currently {user.bundle_discounts?.enabled ? 'active' : 'paused'} for your closet.</p>
+                                                <h4 className="h6 fw-bold mb-1">{t('profile.status', 'Status')}</h4>
+                                                <p className="text-muted xsmall mb-0">{t('profile.discounts_are', 'Discounts are currently')} {user.bundle_discounts?.enabled ? t('profile.active', 'active') : t('profile.paused', 'paused')} {t('profile.for_your_closet', 'for your closet.')}</p>
                                             </div>
                                             <div className="form-check form-switch pd-mode-toggle-custom">
                                                 <input
@@ -1288,10 +1353,10 @@ const ProfileContent = () => {
                                     </div>
 
                                     <div className={`pd-bundle-config-section ${!(user.bundle_discounts?.enabled) ? 'is-disabled' : ''}`}>
-                                        <h5 className="pd-config-title">Set Your Discounts</h5>
+                                        <h5 className="pd-config-title">{t('profile.set_your_discounts', 'Set Your Discounts')}</h5>
                                         <div className="pd-discount-grid">
                                             <div className="pd-discount-item">
-                                                <div className="pd-di-label">2 Items</div>
+                                                <div className="pd-di-label">{t('profile.items_2', '2 Items')}</div>
                                                 <div className="pd-di-input-wrap">
                                                     <input
                                                         type="number"
@@ -1310,7 +1375,7 @@ const ProfileContent = () => {
                                                 </div>
                                             </div>
                                             <div className="pd-discount-item">
-                                                <div className="pd-di-label">3 Items</div>
+                                                <div className="pd-di-label">{t('profile.items_3', '3 Items')}</div>
                                                 <div className="pd-di-input-wrap">
                                                     <input
                                                         type="number"
@@ -1329,7 +1394,7 @@ const ProfileContent = () => {
                                                 </div>
                                             </div>
                                             <div className="pd-discount-item">
-                                                <div className="pd-di-label">5+ Items</div>
+                                                <div className="pd-di-label">{t('profile.items_5_plus', '5+ Items')}</div>
                                                 <div className="pd-di-input-wrap">
                                                     <input
                                                         type="number"
@@ -1379,15 +1444,15 @@ const ProfileContent = () => {
                                     <div className="d-flex gap-2 align-items-center mt-1">
                                         <span 
                                             className={`pd-badge-count clickable ${listingsSubTab === 'all' ? 'active' : ''}`}
-                                            onClick={() => setListingsSubTab('all')}
+                                            onClick={() => { setListingsPage(1); setListingsSubTab('all'); }}
                                         >
-                                            {allListingsCount || 0} items
+                                            {allListingsCount || 0} {t('profile.items', 'items')}
                                         </span>
                                         <span 
                                             className={`pd-badge-count clickable sold ${listingsSubTab === 'sold' ? 'active' : ''}`}
-                                            onClick={() => setListingsSubTab('sold')}
+                                            onClick={() => { setListingsPage(1); setListingsSubTab('sold'); }}
                                         >
-                                            {soldOrders.length || user.sold_count || 0} sold
+                                            {t('profile.sold', 'sold')} {soldListingsCount}
                                         </span>
                                     </div>
                                 </div>
@@ -1513,12 +1578,13 @@ const ProfileContent = () => {
                                                 { value: 'confirmed', label: t('order_status.confirmed', 'Confirmed') },
                                                 { value: 'packed', label: t('order_status.packed', 'Packed') },
                                                 { value: 'shipped', label: t('order_status.shipped', 'Shipped') },
+                                                { value: 'out_for_delivery', label: t('order_status.out_for_delivery', 'Out for Delivery') },
                                                 { value: 'delivered', label: t('order_status.delivered', 'Delivered') },
                                                 { value: 'returns', label: t('order_status.returned', 'Returned') },
                                                 { value: 'cancelled', label: t('order_status.cancelled', 'Cancelled') }
                                             ]}
                                             value={orderSubTab}
-                                            onChange={(val) => setOrderSubTab(val)}
+                                            onChange={(val) => handleOrderSubTabChange(val)}
                                             placeholder="Filter Status"
                                         />
                                     </div>
@@ -1732,10 +1798,12 @@ const ProfileContent = () => {
                                     )}
                                 </div>
                             )}
+                        </div>
+                    )}
 
-                            {/* Order Detail Modal */}
-                            {showOrderModal && selectedOrder && (
-                                <div className="pd-modal-overlay" onClick={handleCloseModal}>
+                    {/* Order Detail Modal */}
+                    {showOrderModal && selectedOrder && (
+                                <div className="pd-modal-overlay" onClick={() => setShowOrderModal(false)}>
                                     <div className="pd-modal-content order-detail-modal" onClick={e => e.stopPropagation()}>
                                         <div className="d-flex justify-content-between align-items-start py-3 px-4 border-bottom">
                                             <div className="d-flex align-items-center gap-3">
@@ -1745,7 +1813,7 @@ const ProfileContent = () => {
                                                     <p className="mb-0 text-muted small">#{selectedOrder.order_number}</p>
                                                 </div>
                                             </div>
-                                            <button className="btn-close mt-1" onClick={handleCloseModal}></button>
+                                            <button className="btn-close mt-1" onClick={() => setShowOrderModal(false)}></button>
                                         </div>
                                         <div className="pd-modal-body p-4">
                                             <div className="order-detail-grid">
@@ -1759,6 +1827,7 @@ const ProfileContent = () => {
                                                                 confirmed_at: selectedOrder.confirmed_at,
                                                                 packed_at: selectedOrder.packed_at,
                                                                 shipped_at: selectedOrder.shipped_at,
+                                                                out_for_delivery_at: selectedOrder.out_for_delivery_at,
                                                                 delivered_at: selectedOrder.delivered_at,
                                                                 return_requested_at: selectedOrder.return_requested_at,
                                                                 updated_at: selectedOrder.updated_at
@@ -1912,14 +1981,26 @@ const ProfileContent = () => {
                                                                                     e.target.src = DEFAULT_IMAGE_PLACEHOLDER;
                                                                                 }}
                                                                             />
-                                                                            <div className="flex-grow-1">
-                                                                                <h5 className="h6 fw-bold mb-1 text-dark">{safeString(subItem.item_id?.title)}</h5>
-                                                                                <p className="text-muted extra-small mb-2 fw-bold text-uppercase">
+                                                                            <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                                                                                <h5 className="h6 fw-bold mb-1 text-dark text-truncate" title={safeString(subItem.item_id?.title)}>{safeString(subItem.item_id?.title)}</h5>
+                                                                                <p className="text-muted extra-small mb-2 fw-bold text-uppercase text-truncate" title={mode === 'buyer' ? `${t('profile.sold_by', 'Sold by:')} ${safeString(selectedOrder.seller_id?.username)}` : `${t('profile.bought_by', 'Bought by:')} ${safeString(selectedOrder.buyer_id?.username)}`}>
                                                                                     {mode === 'buyer' ? `${t('profile.sold_by', 'Sold by:')} ${safeString(selectedOrder.seller_id?.username)}` : `${t('profile.bought_by', 'Bought by:')} ${safeString(selectedOrder.buyer_id?.username)}`}
                                                                                 </p>
-                                                                                <div className="d-flex align-items-center gap-2">
+                                                                                <div className="d-flex align-items-center gap-2 flex-wrap">
                                                                                     <span className="badge bg-primary-soft text-primary px-2 py-1 rounded-pill extra-small">{t('profile.item_price', 'Item Price')}</span>
-                                                                                    <span className="fw-bold text-dark small">{formatPrice(subItem.price, selectedOrder.currency_id)}</span>
+                                                                                    {subItem.item_id?.price > subItem.price && (
+                                                                                        <span className="badge bg-warning-soft text-warning px-2 py-1 rounded-pill extra-small" style={{ border: '1px solid #fbbf24' }}>Negotiated Offer</span>
+                                                                                    )}
+                                                                                    {subItem.item_id?.original_price > 0 && subItem.item_id.original_price > subItem.price ? (
+                                                                                        <div className="d-flex align-items-center gap-2">
+                                                                                            <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.8rem' }}>
+                                                                                                {formatPrice(subItem.item_id.original_price, selectedOrder.currency_id)}
+                                                                                            </span>
+                                                                                            <span className="fw-bold text-danger small">{formatPrice(subItem.price, selectedOrder.currency_id)}</span>
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <span className="fw-bold text-dark small">{formatPrice(subItem.price, selectedOrder.currency_id)}</span>
+                                                                                    )}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -1943,14 +2024,26 @@ const ProfileContent = () => {
                                                                             e.target.src = DEFAULT_IMAGE_PLACEHOLDER;
                                                                         }}
                                                                     />
-                                                                    <div className="flex-grow-1">
-                                                                        <h5 className="h6 fw-bold mb-1 text-dark">{safeString(selectedOrder.item_id?.title)}</h5>
-                                                                        <p className="text-muted extra-small mb-2 fw-bold text-uppercase">
+                                                                    <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                                                                        <h5 className="h6 fw-bold mb-1 text-dark text-truncate" title={safeString(selectedOrder.item_id?.title)}>{safeString(selectedOrder.item_id?.title)}</h5>
+                                                                        <p className="text-muted extra-small mb-2 fw-bold text-uppercase text-truncate" title={mode === 'buyer' ? `${t('profile.sold_by', 'Sold by:')} ${safeString(selectedOrder.seller_id?.username)}` : `${t('profile.bought_by', 'Bought by:')} ${safeString(selectedOrder.buyer_id?.username)}`}>
                                                                             {mode === 'buyer' ? `${t('profile.sold_by', 'Sold by:')} ${safeString(selectedOrder.seller_id?.username)}` : `${t('profile.bought_by', 'Bought by:')} ${safeString(selectedOrder.buyer_id?.username)}`}
                                                                         </p>
-                                                                        <div className="d-flex align-items-center gap-2">
+                                                                        <div className="d-flex align-items-center gap-2 flex-wrap">
                                                                             <span className="badge bg-primary-soft text-primary px-2 py-1 rounded-pill extra-small">{t('profile.item_price', 'Item Price')}</span>
-                                                                            <span className="fw-bold text-dark small">{formatPrice(selectedOrder.item_price, selectedOrder.currency_id)}</span>
+                                                                            {selectedOrder.item_id?.price > selectedOrder.item_price && (
+                                                                                <span className="badge bg-warning-soft text-warning px-2 py-1 rounded-pill extra-small" style={{ border: '1px solid #fbbf24' }}>Negotiated Offer</span>
+                                                                            )}
+                                                                            {selectedOrder.item_id?.original_price > 0 && selectedOrder.item_id.original_price > selectedOrder.item_price ? (
+                                                                                <div className="d-flex align-items-center gap-2">
+                                                                                    <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.8rem' }}>
+                                                                                        {formatPrice(selectedOrder.item_id.original_price, selectedOrder.currency_id)}
+                                                                                    </span>
+                                                                                    <span className="fw-bold text-danger small">{formatPrice(selectedOrder.item_price, selectedOrder.currency_id)}</span>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <span className="fw-bold text-dark small">{formatPrice(selectedOrder.item_price, selectedOrder.currency_id)}</span>
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -1997,7 +2090,7 @@ const ProfileContent = () => {
                                                             <span>{t('profile.status', 'Status')}</span>
                                                             <span className={`status-pill ${selectedOrder.payment_status}`}>
                                                                 {selectedOrder.payment_status === 'paid' ? <FaCheckCircle /> : <FaClock />}
-                                                                {selectedOrder.payment_status === 'paid' ? t('profile.paid', 'PAID') : selectedOrder.payment_status?.toUpperCase()}
+                                                                {selectedOrder.payment_status === 'paid' ? t('profile.paid', 'PAID') : selectedOrder.payment_status?.replace(/_/g, ' ').toUpperCase()}
                                                             </span>
                                                         </div>
                                                         <div className="payment-row">
@@ -2091,6 +2184,14 @@ const ProfileContent = () => {
                                                             <p className="small mb-1"><strong>{t('profile.refunded', 'Refunded')}:</strong> {formatPrice(selectedOrder.refund_amount, selectedOrder.currency_id)}</p>
                                                             <p className="small mb-1"><strong>Processing Note:</strong> {selectedOrder.partial_refund_reason || 'N/A'}</p>
                                                             <p className="extra-small text-muted mb-0">The item has been successfully returned and payment settled.</p>
+                                                            {mode === 'seller' && selectedOrder.item_id && (
+                                                                <button 
+                                                                    className="btn btn-outline-success btn-sm mt-3 fw-bold"
+                                                                    onClick={() => handleRelistItem(selectedOrder.item_id._id || selectedOrder.item_id)}
+                                                                >
+                                                                    Relist Item
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     )}
 
@@ -2266,8 +2367,6 @@ const ProfileContent = () => {
                                     </div>
                                 </div>
                             )}
-                        </div>
-                    )}
 
                     {activeTab === 'messages' && (
                         <div className="p-0">
@@ -2332,6 +2431,20 @@ const ProfileContent = () => {
                                         value={actionModal.inputValue}
                                         onChange={(e) => setActionModal({ ...actionModal, inputValue: e.target.value })}
                                     />
+                                    {actionModal.type === 'refund_full' && (
+                                        <div className="form-check mt-3">
+                                            <input 
+                                                className="form-check-input" 
+                                                type="checkbox" 
+                                                id="relistCheckbox" 
+                                                checked={actionModal.relist || false}
+                                                onChange={(e) => setActionModal({ ...actionModal, relist: e.target.checked })}
+                                            />
+                                            <label className="form-check-label extra-small fw-bold text-muted" htmlFor="relistCheckbox">
+                                                Relist this item for resale
+                                            </label>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -2354,7 +2467,7 @@ const ProfileContent = () => {
                                         if (actionModal.onConfirm) {
                                             setActionSubmitting(true);
                                             try {
-                                                await actionModal.onConfirm(actionModal.inputValue, actionModal.inputValue2);
+                                                await actionModal.onConfirm(actionModal.inputValue, actionModal.inputValue2, actionModal.relist);
                                             } finally {
                                                 setActionSubmitting(false);
                                             }
@@ -2378,7 +2491,14 @@ const ProfileContent = () => {
                     item={editingItem}
                     onClose={() => setEditingItem(null)}
                     onUpdate={(updatedItem, close = false) => {
-                        setMyListings(prev => prev.map(it => it._id === updatedItem._id ? updatedItem : it));
+                        if (listingsSubTab === 'all' && (updatedItem.is_sold || updatedItem.status === 'sold')) {
+                            setMyListings(prev => prev.filter(it => it._id !== updatedItem._id));
+                            setAllListingsCount(prev => Math.max(0, prev - 1));
+                            setSoldListingsCount(prev => prev + 1);
+                        } else {
+                            setMyListings(prev => prev.map(it => it._id === updatedItem._id ? updatedItem : it));
+                        }
+                        
                         if (close) {
                             setEditingItem(null);
                         }

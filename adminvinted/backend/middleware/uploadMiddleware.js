@@ -12,7 +12,7 @@ const storage = multer.diskStorage({
 
         if (file.fieldname === 'profile_image') {
             dest += 'profile';
-        } else if (['site_logo', 'site_favicon', 'image_not_found', 'empty_table_image', 'stripe_logo', 'paypal_logo', 'image'].includes(file.fieldname) || (file.fieldname && file.fieldname.startsWith('social_icon_'))) {
+        } else if (['site_logo', 'site_favicon', 'site_og_image', 'image_not_found', 'empty_table_image', 'stripe_logo', 'paypal_logo', 'image'].includes(file.fieldname) || (file.fieldname && file.fieldname.startsWith('social_icon_'))) {
             dest += 'site';
         } else if (file.fieldname === 'category_image') {
             dest += 'categories';
@@ -20,8 +20,9 @@ const storage = multer.diskStorage({
             dest += 'items';
         }
 
-        // Save directly to the main user backend's images folder so the frontend can serve them
-        const fullPath = path.join(__dirname, '../../../vinted/backend/', dest);
+        // Use SHARED_IMAGE_PATH from .env if provided, otherwise fallback to local images folder
+        const basePath = process.env.SHARED_IMAGE_PATH || path.join(__dirname, '../');
+        const fullPath = path.join(basePath, dest);
         if (!fs.existsSync(fullPath)) {
             fs.mkdirSync(fullPath, { recursive: true });
         }

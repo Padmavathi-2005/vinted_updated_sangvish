@@ -72,9 +72,9 @@ const Orders = () => {
 
     // Filter with search
     const filteredOrders = orders.filter(order =>
-        (order.order_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (order.buyer_id?.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (order.seller_id?.username || '').toLowerCase().includes(searchTerm.toLowerCase())
+        (order.order_number || '').toLowerCase().includes(searchTerm?.toLowerCase()) ||
+        (order.buyer_id?.username || '').toLowerCase().includes(searchTerm?.toLowerCase()) ||
+        (order.seller_id?.username || '').toLowerCase().includes(searchTerm?.toLowerCase())
     );
     const exportToCSV = () => {
         if (filteredOrders.length === 0) return showToast('info', 'No data to export');

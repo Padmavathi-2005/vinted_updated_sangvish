@@ -12,15 +12,18 @@ const storage = multer.diskStorage({
 
         if (file.fieldname === 'profile_image') {
             dest += 'profile';
-        } else if (['site_logo', 'site_favicon', 'image_not_found', 'empty_table_image', 'image', 'stripe_logo', 'paypal_logo'].includes(file.fieldname)) {
+        } else if (['site_logo', 'site_favicon', 'site_og_image', 'image_not_found', 'empty_table_image', 'image', 'stripe_logo', 'paypal_logo'].includes(file.fieldname) || file.fieldname.startsWith('social_icon_')) {
             dest += 'site';
         } else if (file.fieldname === 'category_image') {
             dest += 'categories';
+        } else if (file.fieldname === 'message_image') {
+            dest += 'messages';
         } else {
             dest += 'items';
         }
 
-        const fullPath = path.join(__dirname, '../', dest);
+        const basePath = process.env.SHARED_IMAGE_PATH || path.join(__dirname, '../');
+        const fullPath = path.join(basePath, dest);
         if (!fs.existsSync(fullPath)) {
             fs.mkdirSync(fullPath, { recursive: true });
         }

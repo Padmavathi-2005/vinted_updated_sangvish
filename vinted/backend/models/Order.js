@@ -120,6 +120,9 @@ const orderSchema = mongoose.Schema(
         return_requested_at: {
             type: Date,
         },
+        returned_at: {
+            type: Date,
+        },
         cancelled_at: {
             type: Date,
         },

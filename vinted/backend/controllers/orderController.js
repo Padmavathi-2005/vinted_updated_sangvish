@@ -269,7 +269,7 @@ const createOrder = asyncHandler(async (req, res) => {
                 ? `You sold a bundle of ${groupItems.length} items. Order ID: #${orderNumber}`
                 : `Your item "${groupItems[0].title}" has been booked. Order ID: #${orderNumber}`,
             type: 'order',
-            link: `/profile?tab=orders&orderId=${order._id}`
+            link: `/profile?tab=orders&mode=seller&orderId=${order._id}`
         });
 
         // Notify Buyer
@@ -281,7 +281,7 @@ const createOrder = asyncHandler(async (req, res) => {
                 ? `Your bundle order of ${groupItems.length} items has been successfully placed. Order ID: #${orderNumber}`
                 : `Your order for "${groupItems[0].title}" has been successfully placed. Order ID: #${orderNumber}`,
             type: 'success',
-            link: `/profile?tab=orders&orderId=${order._id}`
+            link: `/profile?tab=orders&mode=buyer&orderId=${order._id}`
         });
 
         // Notify Admins
@@ -401,15 +401,35 @@ const createOrder = asyncHandler(async (req, res) => {
 const getMyOrders = asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status;
     const skip = (page - 1) * limit;
 
     const boughtQuery = { buyer_id: req.user._id };
     const soldQuery = { seller_id: req.user._id };
 
-    const [bought, sold, boughtCount, soldCount] = await Promise.all([
+    if (status && status !== 'all') {
+        if (status === 'booked') {
+            boughtQuery.order_status = { $in: ['pending', 'placed'] };
+            soldQuery.order_status = { $in: ['pending', 'placed'] };
+        } else if (status === 'dispatched') {
+            boughtQuery.order_status = { $in: ['shipped', 'dispatched', 'packed'] };
+            soldQuery.order_status = { $in: ['shipped', 'dispatched', 'packed'] };
+        } else if (status === 'on_the_way') {
+            boughtQuery.order_status = { $in: ['out_for_delivery', 'on_the_way'] };
+            soldQuery.order_status = { $in: ['out_for_delivery', 'on_the_way'] };
+        } else if (status === 'returns') {
+            boughtQuery.order_status = { $in: ['returned', 'return_requested'] };
+            soldQuery.order_status = { $in: ['returned', 'return_requested'] };
+        } else {
+            boughtQuery.order_status = status;
+            soldQuery.order_status = status;
+        }
+    }
+
+    const [bought, sold, boughtCount, soldCount, allBoughtCount, allSoldCount] = await Promise.all([
         Order.find(boughtQuery)
-            .populate('item_id', 'title images currency_id')
-            .populate('items.item_id', 'title size images currency_id')
+            .populate('item_id', 'title price original_price images currency_id status is_sold is_ordered')
+            .populate('items.item_id', 'title price original_price size images currency_id')
             .populate('seller_id', 'username')
             .populate('currency_id')
             .populate('shipping_company_id')
@@ -417,8 +437,8 @@ const getMyOrders = asyncHandler(async (req, res) => {
             .skip(skip)
             .limit(limit),
         Order.find(soldQuery)
-            .populate('item_id', 'title images currency_id')
-            .populate('items.item_id', 'title size images currency_id')
+            .populate('item_id', 'title price original_price images currency_id status is_sold is_ordered')
+            .populate('items.item_id', 'title price original_price size images currency_id')
             .populate('buyer_id', 'username')
             .populate('currency_id')
             .populate('shipping_company_id')
@@ -426,15 +446,17 @@ const getMyOrders = asyncHandler(async (req, res) => {
             .skip(skip)
             .limit(limit),
         Order.countDocuments(boughtQuery),
-        Order.countDocuments(soldQuery)
+        Order.countDocuments(soldQuery),
+        Order.countDocuments({ buyer_id: req.user._id }),
+        Order.countDocuments({ seller_id: req.user._id })
     ]);
 
     console.log(`FETCH ORDERS FOR USER: ${req.user._id}, Page: ${page}, Bought: ${bought.length}, Sold: ${sold.length}`);
     res.json({ 
         bought, 
         sold,
-        boughtCount,
-        soldCount,
+        boughtCount: allBoughtCount,
+        soldCount: allSoldCount,
         boughtPages: Math.ceil(boughtCount / limit),
         soldPages: Math.ceil(soldCount / limit),
         pagination: {
@@ -443,7 +465,9 @@ const getMyOrders = asyncHandler(async (req, res) => {
             boughtTotal: boughtCount,
             soldTotal: soldCount,
             boughtPages: Math.ceil(boughtCount / limit),
-            soldPages: Math.ceil(soldCount / limit)
+            soldPages: Math.ceil(soldCount / limit),
+            allBoughtTotal: allBoughtCount,
+            allSoldTotal: allSoldCount
         }
     });
 });
@@ -507,6 +531,33 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     }
 
     order.order_status = status;
+
+    // Cascade timestamps: If we reached a later stage, fill in previous stages if null
+    if (status === 'delivered') {
+        if (!order.delivered_at) order.delivered_at = new Date();
+        if (!order.out_for_delivery_at) order.out_for_delivery_at = new Date();
+        if (!order.shipped_at) order.shipped_at = new Date();
+        if (!order.packed_at) order.packed_at = new Date();
+        if (!order.confirmed_at) order.confirmed_at = new Date();
+    } else if (status === 'out_for_delivery' || status === 'on_the_way') {
+        if (!order.out_for_delivery_at) order.out_for_delivery_at = new Date();
+        if (!order.shipped_at) order.shipped_at = new Date();
+        if (!order.packed_at) order.packed_at = new Date();
+        if (!order.confirmed_at) order.confirmed_at = new Date();
+    } else if (status === 'shipped' || status === 'dispatched') {
+        if (!order.shipped_at) order.shipped_at = new Date();
+        if (!order.packed_at) order.packed_at = new Date();
+        if (!order.confirmed_at) order.confirmed_at = new Date();
+    } else if (status === 'packed') {
+        if (!order.packed_at) order.packed_at = new Date();
+        if (!order.confirmed_at) order.confirmed_at = new Date();
+    } else if (status === 'confirmed') {
+        if (!order.confirmed_at) order.confirmed_at = new Date();
+    } else if (status === 'return_requested') {
+        if (!order.return_requested_at) order.return_requested_at = new Date();
+    } else if (status === 'returned') {
+        if (!order.returned_at) order.returned_at = new Date();
+    }
     
     // Handle Cancellation Reason if provided
     if (status === 'cancelled' && req.body.cancel_reason) {
@@ -522,12 +573,13 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 
     // Notify Admins of Status Change (if not cancelled, as cancel is handled later)
     if (status !== 'cancelled') {
+        const displayStatus = status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
         for (const admin of adminsList) {
             await Notification.create({
                 user_id: admin._id,
                 on_model: 'Admin',
                 title: 'Order Status Updated',
-                message: `Order #${order.order_number} status is now ${status}.`,
+                message: `Order #${order.order_number} status is now ${displayStatus}.`,
                 type: 'info',
                 link: `/orders`
             });
@@ -536,11 +588,12 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 
     // Notify Seller of Status Change (to confirm their action)
     if (status !== 'cancelled') {
+        const displayStatus = status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
         await Notification.create({
             user_id: order.seller_id,
             on_model: 'User',
             title: 'Order Status Updated',
-            message: `Order #${order.order_number} status is now successfully ${status}.`,
+            message: `Order #${order.order_number} status is now successfully ${displayStatus}.`,
             type: 'success',
             link: `/profile?tab=orders&mode=seller&orderId=${order._id}`
         });
@@ -554,7 +607,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             title: 'Order Shipped!',
             message: `Your order "${populatedOrder.item_id?.title}" (#${order.order_number}) has been shipped.`,
             type: 'order',
-            link: `/profile?tab=orders&orderId=${order._id}`
+            link: `/profile?tab=orders&mode=buyer&orderId=${order._id}`
         });
 
         try {
@@ -572,7 +625,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             title: 'Order Packed',
             message: `Your order "${populatedOrder.item_id?.title}" (#${order.order_number}) has been packed and is getting ready to ship.`,
             type: 'order',
-            link: `/profile?tab=orders&orderId=${order._id}`
+            link: `/profile?tab=orders&mode=buyer&orderId=${order._id}`
         });
     } else if (status === 'out_for_delivery' || status === 'on_the_way') {
         await Notification.create({
@@ -581,7 +634,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             title: 'Order Out for Delivery!',
             message: `Your order "${populatedOrder.item_id?.title}" (#${order.order_number}) is out for delivery.`,
             type: 'order',
-            link: `/profile?tab=orders&orderId=${order._id}`
+            link: `/profile?tab=orders&mode=buyer&orderId=${order._id}`
         });
     } else if (status === 'delivered') {
         const title = 'Order Delivered! ⭐';
@@ -593,7 +646,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             title,
             message,
             type: 'order',
-            link: `/profile?tab=orders&orderId=${order._id}`
+            link: `/profile?tab=orders&mode=buyer&orderId=${order._id}`
         });
 
         try {
@@ -604,25 +657,6 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
                 html: `<p>Hi ${populatedOrder.buyer_id.username},</p><p>Your order <b>#${order.order_number}</b> for "${populatedOrder.item_id?.title}" has been delivered! Please log in to your account to confirm everything is okay and leave a review for the seller.</p>`
             });
         } catch(e) { console.error('Delivered email failed', e); }
-
-        // Cascade timestamps: If we reached a later stage, fill in previous stages if null
-        if (status === 'delivered') {
-            if (!order.delivered_at) order.delivered_at = new Date();
-            if (!order.out_for_delivery_at) order.out_for_delivery_at = new Date();
-            if (!order.shipped_at) order.shipped_at = new Date();
-            if (!order.packed_at) order.packed_at = new Date();
-        } else if (status === 'out_for_delivery') {
-            if (!order.out_for_delivery_at) order.out_for_delivery_at = new Date();
-            if (!order.shipped_at) order.shipped_at = new Date();
-            if (!order.packed_at) order.packed_at = new Date();
-        } else if (status === 'shipped') {
-            if (!order.shipped_at) order.shipped_at = new Date();
-            if (!order.packed_at) order.packed_at = new Date();
-        } else if (status === 'packed') {
-            if (!order.packed_at) order.packed_at = new Date();
-        }
-        
-        await order.save();
 
         // Also send system message in conversation
         try {
@@ -673,14 +707,16 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             await Item.findByIdAndUpdate(item.item_id, { status: 'available', is_sold: false, is_ordered: false });
         }
 
+        const sellerName = req.user.username || 'the seller';
+
         // Notify Buyer
         await Notification.create({
             user_id: order.buyer_id,
             on_model: 'User',
-            title: 'Order Cancelled by Seller',
-            message: `Your order "${populatedOrder.item_id?.title}" (#${order.order_number}) has been cancelled by the seller. Reason: ${order.cancel_reason || 'N/A'}. A full refund has been processed.`,
+            title: `Order Cancelled by ${sellerName}`,
+            message: `Your order "${populatedOrder.item_id?.title}" (#${order.order_number}) has been cancelled by ${sellerName}. Reason: ${order.cancel_reason || 'N/A'}. A full refund has been processed.`,
             type: 'alert',
-            link: `/profile?tab=orders&orderId=${order._id}`
+            link: `/profile?tab=orders&mode=buyer&orderId=${order._id}`
         });
 
         // Notify Admins
@@ -688,8 +724,8 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             await Notification.create({
                 user_id: admin._id,
                 on_model: 'Admin',
-                title: 'Order Cancelled by Seller',
-                message: `Order #${order.order_number} was cancelled by the seller. Refund processed.`,
+                title: `Order Cancelled by ${sellerName}`,
+                message: `Order #${order.order_number} was cancelled by ${sellerName}. Refund processed.`,
                 type: 'info',
                 link: `/orders`
             });
@@ -698,9 +734,9 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
         try {
             await sendEmail({
                 email: populatedOrder.buyer_id.email,
-                subject: `Order Cancelled: #${order.order_number}`,
-                message: `Your order was cancelled by the seller.`,
-                html: `<p>Hi ${populatedOrder.buyer_id.username},</p><p>Unfortunately, the seller has cancelled your order <b>#${order.order_number}</b>.</p><p>Reason: ${order.cancel_reason || 'N/A'}</p><p>A full refund has been initiated to your original payment method.</p>`
+                subject: `Order Cancelled by ${sellerName}: #${order.order_number}`,
+                message: `Your order was cancelled by ${sellerName}.`,
+                html: `<p>Hi ${populatedOrder.buyer_id.username},</p><p>Unfortunately, ${sellerName} has cancelled your order <b>#${order.order_number}</b>.</p><p>Reason: ${order.cancel_reason || 'N/A'}</p><p>A full refund has been initiated to your original payment method.</p>`
             });
         } catch(e) { console.error('Seller cancel email failed', e); }
 
@@ -782,14 +818,16 @@ const cancelOrder = asyncHandler(async (req, res) => {
         await Item.findByIdAndUpdate(item.item_id, { status: 'available', is_sold: false, is_ordered: false });
     }
 
+    const buyerName = req.user.username || 'the buyer';
+
     // Notify Seller
     await Notification.create({
         user_id: order.seller_id,
         on_model: 'User',
-        title: 'Order Cancelled by Buyer',
-        message: `Order #${order.order_number} has been cancelled by the buyer. Reason: ${order.cancel_reason}`,
+        title: `Order Cancelled by ${buyerName}`,
+        message: `Order #${order.order_number} has been cancelled by ${buyerName}. Reason: ${order.cancel_reason}`,
         type: 'info',
-        link: `/profile?tab=orders&orderId=${order._id}`
+        link: `/profile?tab=orders&mode=seller&orderId=${order._id}`
     });
 
     // Notify Buyer
@@ -799,16 +837,16 @@ const cancelOrder = asyncHandler(async (req, res) => {
         title: 'Order Cancelled Successfully',
         message: `Your cancellation for Order #${order.order_number} was successful. A full refund has been processed.`,
         type: 'success',
-        link: `/profile?tab=orders&orderId=${order._id}`
+        link: `/profile?tab=orders&mode=buyer&orderId=${order._id}`
     });
 
     try {
         const populatedCancelOrder = await Order.findById(order._id).populate('seller_id', 'email username').populate('item_id', 'title');
         await sendEmail({
             email: populatedCancelOrder.seller_id.email,
-            subject: `Order Cancelled by Buyer: #${order.order_number}`,
-            message: `The buyer has cancelled this order.`,
-            html: `<p>Hi ${populatedCancelOrder.seller_id.username},</p><p>The buyer has cancelled Order <b>#${order.order_number}</b>.</p><p>Reason: ${order.cancel_reason}</p><p>The items have been automatically re-listed as Available.</p>`
+            subject: `Order Cancelled by ${buyerName}: #${order.order_number}`,
+            message: `${buyerName} has cancelled this order.`,
+            html: `<p>Hi ${populatedCancelOrder.seller_id.username},</p><p>${buyerName} has cancelled Order <b>#${order.order_number}</b>.</p><p>Reason: ${order.cancel_reason}</p><p>The items have been automatically re-listed as Available.</p>`
         });
 
         // Send system message in conversation
@@ -853,8 +891,8 @@ const cancelOrder = asyncHandler(async (req, res) => {
         await Notification.create({
             user_id: admin._id,
             on_model: 'Admin',
-            title: 'Order Cancelled',
-            message: `Order #${order.order_number} was cancelled. Refund processed.`,
+            title: `Order Cancelled by ${buyerName}`,
+            message: `Order #${order.order_number} was cancelled by ${buyerName}. Refund processed.`,
             type: 'info',
             link: `/orders`
         });
@@ -909,14 +947,16 @@ const requestReturn = asyncHandler(async (req, res) => {
     order.return_requested_at = new Date();
     await order.save();
 
+    const buyerName = req.user.username || 'the buyer';
+
     // Notify Seller
     await Notification.create({
         user_id: order.seller_id,
         on_model: 'User',
-        title: 'Return Requested',
-        message: `Buyer requested a return for order #${order.order_number}. Reason: ${reason}`,
+        title: `Return Requested by ${buyerName}`,
+        message: `${buyerName} requested a return for order #${order.order_number}. Reason: ${reason}`,
         type: 'alert',
-        link: `/profile?tab=orders&orderId=${order._id}`
+        link: `/profile?tab=orders&mode=seller&orderId=${order._id}`
     });
 
     // Notify Admin
@@ -925,8 +965,8 @@ const requestReturn = asyncHandler(async (req, res) => {
         await Notification.create({
             user_id: admin._id,
             on_model: 'Admin',
-            title: 'Return Request',
-            message: `Order #${order.order_number} return was requested by the buyer.`,
+            title: `Return Request by ${buyerName}`,
+            message: `Order #${order.order_number} return was requested by ${buyerName}.`,
             type: 'warning',
             link: `/orders`
         });
@@ -973,25 +1013,53 @@ const processReturn = asyncHandler(async (req, res) => {
     order.payment_status = refundType === 'partial' ? 'partially_refunded' : 'refunded';
     order.partial_refund_reason = reason;
     order.refund_amount = refundType === 'full' ? order.total_amount : amount;
+    order.returned_at = new Date();
     await order.save();
 
-    // Mark items as available again if requested
-    if (relist === true || relist === 'true') {
+    // Mark items as available again if requested or if it is a full refund
+    let shouldRelist = false;
+    if (refundType === 'full') {
+        shouldRelist = true;
+    } else if (relist === true || relist === 'true') {
+        shouldRelist = true;
+    }
+
+    if (shouldRelist) {
         const itemsToRelist = order.is_bundle ? order.items : [{ item_id: order.item_id }];
         for (const itm of itemsToRelist) {
-            await Item.findByIdAndUpdate(itm.item_id, { status: 'available', is_sold: false, is_ordered: false });
+            await Item.findByIdAndUpdate(itm.item_id, { status: 'active', is_sold: false, is_ordered: false });
+        }
+    } else {
+        const itemsToRelist = order.is_bundle ? order.items : [{ item_id: order.item_id }];
+        for (const itm of itemsToRelist) {
+            await Item.findByIdAndUpdate(itm.item_id, { status: 'sold', is_sold: true, is_ordered: false });
         }
     }
+
+    const sellerName = req.user.username || 'the seller';
 
     // Notify Buyer
     await Notification.create({
         user_id: order.buyer_id,
         on_model: 'User',
         title: `Return Processed (${refundType === 'full' ? 'Full' : 'Partial'} Refund)`,
-        message: `Your return for order #${order.order_number} has been processed.`,
+        message: `Your return for order #${order.order_number} has been processed by ${sellerName}.`,
         type: 'info',
-        link: `/profile?tab=orders&orderId=${order._id}`
+        link: `/profile?tab=orders&mode=buyer&orderId=${order._id}`
     });
+
+    // Notify Admins
+    const adminsList = await Admin.find({ is_active: { $ne: false } });
+    for (const admin of adminsList) {
+        await Notification.create({
+            user_id: admin._id,
+            on_model: 'Admin',
+            title: `Return Processed (${refundType === 'full' ? 'Full' : 'Partial'} Refund)`,
+            message: `A ${refundType === 'full' ? 'full' : 'partial'} refund for order #${order.order_number} has been processed by ${sellerName}.`,
+            type: 'info',
+            link: `/orders`
+        });
+    }
 
     // Release any remaining pending funds (admin commission, delivery fee, or remaining seller funds) since the return is concluded
     await releaseOrderPayment(order._id);
@@ -1003,9 +1071,13 @@ const processReturn = asyncHandler(async (req, res) => {
 // @route   GET /api/orders/:id
 // @access  Private
 const getOrderById = asyncHandler(async (req, res) => {
-    const order = await Order.findById(req.params.id)
-        .populate('item_id', 'title images currency_id')
-        .populate('items.item_id', 'title size images currency_id')
+    const orderQuery = mongoose.Types.ObjectId.isValid(req.params.id) 
+        ? { _id: req.params.id } 
+        : { order_number: req.params.id };
+
+    const order = await Order.findOne(orderQuery)
+        .populate('item_id', 'title price original_price images currency_id status is_sold is_ordered')
+        .populate('items.item_id', 'title price original_price size images currency_id')
         .populate('seller_id', 'username')
         .populate('buyer_id', 'username')
         .populate('currency_id')

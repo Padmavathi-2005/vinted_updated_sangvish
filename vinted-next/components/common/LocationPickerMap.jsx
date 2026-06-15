@@ -368,10 +368,10 @@ const LocationPickerMap = ({ onLocationSelect, initialLat, initialLng, initialLa
             {!readOnly && (
                 <>
                     {/* Search + Live Location row */}
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {/* Autocomplete input wrapper */}
-                        <div ref={suggestionsRef} style={{ flex: 1, position: 'relative' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', background: '#fff' }}>
+                        <div ref={suggestionsRef} style={{ flex: '1 1 200px', minWidth: '200px', position: 'relative' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', background: '#fff', width: '100%' }}>
                                 <span style={{ padding: '0 12px', color: '#94a3b8', fontSize: '0.9rem' }}><FaSearch /></span>
                                 <input
                                     type="text"
@@ -425,7 +425,9 @@ const LocationPickerMap = ({ onLocationSelect, initialLat, initialLng, initialLa
                             style={{
                                 ...styles.liveBtn,
                                 opacity: locating ? 0.7 : 1,
-                                cursor: locating ? 'not-allowed' : 'pointer'
+                                cursor: locating ? 'not-allowed' : 'pointer',
+                                flex: '1 1 auto',
+                                minHeight: '44px'
                             }}
                         >
                             {locating ? (
@@ -445,13 +447,17 @@ const LocationPickerMap = ({ onLocationSelect, initialLat, initialLng, initialLa
                     {/* Location error */}
                     {locationError && (
                         <div style={styles.errorBox}>
-                            <FaExclamationTriangle /> {locationError}
+                            <FaExclamationTriangle style={{ flexShrink: 0, marginTop: '2px' }} /> 
+                            <span style={{ flex: 1, wordBreak: 'break-word' }}>{locationError}</span>
                         </div>
                     )}
 
-                    <p style={{ fontSize: '0.76rem', color: '#94a3b8', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <FaLightbulb style={{ color: '#f59e0b' }} /> <strong>{t('sell_item.tip')}</strong> {t('sell_item.location_tip_text')}
-                    </p>
+                    <div style={{ fontSize: '0.76rem', color: '#94a3b8', margin: 0, display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                        <FaLightbulb style={{ color: '#f59e0b', flexShrink: 0, marginTop: '2px' }} /> 
+                        <span style={{ flex: 1, wordBreak: 'break-word' }}>
+                            <strong>{t('sell_item.tip')}</strong> {t('sell_item.location_tip_text')}
+                        </span>
+                    </div>
                 </>
             )}
 
@@ -474,8 +480,8 @@ const LocationPickerMap = ({ onLocationSelect, initialLat, initialLng, initialLa
             {/* Selected location label */}
             {selectedLocation.label && (
                 <div style={styles.locationLabel}>
-                    <FaMapMarkerAlt style={{ marginTop: '3px' }} />
-                    <span style={{ fontSize: '0.85rem' }}>{selectedLocation.label}</span>
+                    <FaMapMarkerAlt style={{ flexShrink: 0, marginTop: '3px' }} />
+                    <span style={{ fontSize: '0.85rem', flex: 1, wordBreak: 'break-word' }}>{selectedLocation.label}</span>
                 </div>
             )}
 

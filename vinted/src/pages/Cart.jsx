@@ -11,12 +11,14 @@ import AuthContext from '../context/AuthContext';
 import { getImageUrl, getItemImageUrl, safeString } from '../utils/constants';
 import { usePopup } from '../components/common/Popup';
 import Meta from '../components/common/Meta';
+import { useTranslation } from 'react-i18next';
 import '../styles/Cart.css';
 
 const SHIPPING_FEE = 200; // ₹200 temp flat fee
 
 const Cart = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { user } = useContext(AuthContext);
     const { formatPrice, currencies, defaultCurrency } = useContext(CurrencyContext);
     const {
@@ -30,7 +32,7 @@ const Cart = () => {
     // Helper to group items by seller
     const groupedItems = cartItems.reduce((groups, item) => {
         const sellerId = item.seller_id?._id || item.seller_id;
-        const sellerName = safeString(item.seller_id?.username) || 'Unknown Seller';
+        const sellerName = safeString(item.seller_id?.username) || t('cart.unknown_seller', 'Unknown Seller');
         if (!groups[sellerId]) groups[sellerId] = { items: [], sellerName, seller: item.seller_id };
         groups[sellerId].items.push(item);
         return groups;
@@ -104,10 +106,10 @@ const Cart = () => {
     const handleRemove = (item) => {
         showPopup({
             type: 'confirm',
-            title: 'Remove Item?',
-            message: `Remove "${item.title}" from your cart?`,
-            confirmText: 'Remove',
-            cancelText: 'Keep',
+            title: t('cart.remove_item_title', 'Remove Item?'),
+            message: t('cart.remove_item_msg', 'Remove "{{item}}" from your cart?').replace('{{item}}', item.title),
+            confirmText: t('cart.remove', 'Remove'),
+            cancelText: t('cart.keep', 'Keep'),
             onConfirm: () => removeFromCart(item._id)
         });
     };
@@ -116,21 +118,21 @@ const Cart = () => {
         if (selectedItems.length === 0) return;
         showPopup({
             type: 'confirm',
-            title: `Remove ${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''}?`,
-            message: 'These items will be removed from your cart.',
-            confirmText: 'Remove',
-            cancelText: 'Cancel',
+            title: t('cart.remove_items_title', 'Remove {{count}} item(s)?').replace('{{count}}', selectedItems.length),
+            message: t('cart.remove_items_msg', 'These items will be removed from your cart.'),
+            confirmText: t('cart.remove', 'Remove'),
+            cancelText: t('cart.cancel', 'Cancel'),
             onConfirm: removeSelected
         });
     };
 
     const handleCheckout = () => {
         if (!user) {
-            showPopup({ type: 'warning', title: 'Login Required', message: 'Please log in to proceed to checkout.' });
+            showPopup({ type: 'warning', title: t('cart.login_required_title', 'Login Required'), message: t('cart.login_required_msg', 'Please log in to proceed to checkout.') });
             return;
         }
         if (selectedItems.length === 0) {
-            showPopup({ type: 'info', title: 'No Items Selected', message: 'Please select at least one item to checkout.' });
+            showPopup({ type: 'info', title: t('cart.no_items_title', 'No Items Selected'), message: t('cart.no_items_msg', 'Please select at least one item to checkout.') });
             return;
         }
         navigate('/checkout');
@@ -141,9 +143,9 @@ const Cart = () => {
             <div className="cart-page">
                 <div className="cart-empty-state">
                     <FaShoppingCart className="cart-empty-icon" />
-                    <h2>Login to see your cart</h2>
-                    <p>You need to be logged in to manage your shopping cart.</p>
-                    <Link to="/login" className="cart-btn-primary">Login</Link>
+                    <h2>{t('cart.login_required_title', 'Login to see your cart')}</h2>
+                    <p>{t('cart.login_required', 'You need to be logged in to manage your shopping cart.')}</p>
+                    <Link to="/login" className="cart-btn-primary">{t('cart.login_btn', 'Log In / Sign Up')}</Link>
                 </div>
                 <PopupComponent />
             </div>
@@ -155,9 +157,9 @@ const Cart = () => {
             <div className="cart-page">
                 <div className="cart-empty-state">
                     <FaBoxOpen className="cart-empty-icon" />
-                    <h2>Your cart is empty</h2>
-                    <p>Browse items and add them to your cart to get started.</p>
-                    <Link to="/products" className="cart-btn-primary">Browse Products</Link>
+                    <h2>{t('cart.empty_cart', 'Your cart is empty')}</h2>
+                    <p>{t('cart.start_shopping', 'Browse items and add them to your cart to get started.')}</p>
+                    <Link to="/products" className="cart-btn-primary">{t('cart.browse_items', 'Browse Items')}</Link>
                 </div>
                 <PopupComponent />
             </div>
@@ -166,23 +168,23 @@ const Cart = () => {
 
     return (
         <div className="cart-page">
-            <Meta title="Shopping Cart" description="View and manage the items in your shopping cart before checking out." />
+            <Meta title={t('cart.shopping_cart', 'Shopping Cart')} description="View and manage the items in your shopping cart before checking out." />
             <div className="cart-container">
                 {/* Breadcrumb */}
                 <div className="cart-breadcrumb">
-                    <Link to="/">Home</Link>
+                    <Link to="/">{t('item_detail.home', 'Home')}</Link>
                     <FaChevronRight />
-                    <span>Shopping Cart</span>
+                    <span>{t('cart.shopping_cart', 'Shopping Cart')}</span>
                 </div>
 
                 <div className="cart-header-row">
                     <h1 className="cart-heading">
-                        <FaShoppingCart /> Shopping Cart
+                        <FaShoppingCart /> {t('cart.shopping_cart', 'Shopping Cart')}
                         <span className="cart-count-badge">{cartCount}</span>
                     </h1>
                     {selectedItems.length > 1 && (
                         <div className="cart-bundle-badge">
-                            <FaTag /> Bundle Discovery: Multiple items from same seller group automatically!
+                            <FaTag /> {t('cart.bundle_discovery', 'Bundle Discovery: Multiple items from same seller group automatically!')}
                         </div>
                     )}
                 </div>
@@ -197,13 +199,13 @@ const Cart = () => {
                                 onClick={allSelected ? deselectAll : selectAll}
                             >
                                 {allSelected
-                                    ? <><FaCheckSquare className="cart-check-icon checked" /> Deselect All</>
-                                    : <><FaSquare className="cart-check-icon" /> Select All</>
+                                    ? <><FaCheckSquare className="cart-check-icon checked" /> {t('cart.deselect_all', 'Deselect All')}</>
+                                    : <><FaSquare className="cart-check-icon" /> {t('cart.select_all', 'Select All')}</>
                                 }
                             </button>
                             {selectedItems.length > 0 && (
                                 <button className="cart-remove-sel-btn" onClick={handleRemoveSelected}>
-                                    <FaTrash /> Remove Selected ({selectedItems.length})
+                                    <FaTrash /> {t('cart.remove_selected_count', 'Remove Selected ({{count}})').replace('{{count}}', selectedItems.length)}
                                 </button>
                             )}
                         </div>
@@ -218,17 +220,17 @@ const Cart = () => {
                                     <div key={sellerId} className="cart-seller-group">
                                         <div className="cart-group-header">
                                             <div className="d-flex align-items-center gap-2">
-                                                <span className="cart-group-seller-label">Seller:</span>
+                                                <span className="cart-group-seller-label">{t('cart.seller_label', 'Seller:')}</span>
                                                 <Link to={`/seller/${sellerId}`} className="cart-group-seller-name">{group.sellerName}</Link>
                                                 {selectedInGroup.length > 1 && (
                                                     <span className="cart-group-bundle-tag">
-                                                        <FaBoxOpen /> Bundle ({selectedInGroup.length} items)
+                                                        <FaBoxOpen /> {t('cart.bundle_count', 'Bundle ({{count}} items)').replace('{{count}}', selectedInGroup.length)}
                                                     </span>
                                                 )}
                                             </div>
                                             {group.seller?.bundle_discounts?.enabled && (
                                                 <div className="cart-group-promo-tag">
-                                                    <FaTag /> Bundle discounts available
+                                                    <FaTag /> {t('cart.bundle_discounts_available', 'Bundle discounts available')}
                                                 </div>
                                             )}
                                         </div>
@@ -265,10 +267,10 @@ const Cart = () => {
                                                             </Link>
                                                             <div className="cart-item-meta">
                                                                 {item.condition && <span className="cart-meta-chip">{item.condition}</span>}
-                                                                {item.size && <span className="cart-meta-chip">Size: {item.size}</span>}
+                                                                {item.size && <span className="cart-meta-chip">{t('cart.size', 'Size:')} {item.size}</span>}
                                                             </div>
                                                             <div className="cart-item-shipping-note">
-                                                                {item.shipping_included && <span className="ship-free">Free shipping</span>}
+                                                                {item.shipping_included && <span className="ship-free">{t('cart.free_shipping', 'Free shipping')}</span>}
                                                             </div>
                                                         </div>
 
@@ -297,13 +299,13 @@ const Cart = () => {
                                                 <div className="cart-group-shipping-info">
                                                     <FaTruck />
                                                     {selectedInGroup.every(i => i.shipping_included)
-                                                        ? ' Combined shipping: Free'
-                                                        : ` Combined shipping: ${formatPrice(SHIPPING_FEE, 'inr')}`
+                                                        ? ` ${t('cart.combined_shipping_free', 'Combined shipping: Free')}`
+                                                        : ` ${t('cart.combined_shipping_cost', 'Combined shipping:')} ${formatPrice(SHIPPING_FEE, 'inr')}`
                                                     }
                                                 </div>
                                                 {hasDiscount && (
                                                     <div className="cart-group-discount-info">
-                                                        <FaTag /> Bundle savings applied!
+                                                        <FaTag /> {t('cart.bundle_savings', 'Bundle savings applied!')}
                                                     </div>
                                                 )}
                                             </div>
@@ -317,21 +319,21 @@ const Cart = () => {
                     {/* ── Right: Order Summary ── */}
                     <aside className="cart-summary-panel">
                         <div className="cart-summary-card">
-                            <h2 className="cart-summary-title">Order Summary</h2>
+                            <h2 className="cart-summary-title">{t('cart.order_summary', 'Order Summary')}</h2>
 
                             <div className="cart-summary-row">
-                                <span>Subtotal</span>
+                                <span>{t('cart.subtotal', 'Subtotal')}</span>
                                 <span>{formatPrice(subtotal)}</span>
                             </div>
                             <div className="cart-summary-row">
-                                <span>Combined Shipping</span>
+                                <span>{t('cart.combined_shipping', 'Combined Shipping')}</span>
                                 <span className={shippingTotal === 0 ? 'cart-free-tag' : ''}>
-                                    {shippingTotal === 0 ? 'FREE' : formatPrice(shippingTotal)}
+                                    {shippingTotal === 0 ? t('cart.free', 'FREE') : formatPrice(shippingTotal)}
                                 </span>
                             </div>
                             {discountTotal > 0 && (
                                 <div className="cart-summary-row cart-discount-row">
-                                    <span>Bundle Discount</span>
+                                    <span>{t('cart.bundle_discount', 'Bundle Discount')}</span>
                                     <span>-{formatPrice(discountTotal)}</span>
                                 </div>
                             )}
@@ -339,7 +341,7 @@ const Cart = () => {
                             <div className="cart-summary-divider" />
 
                             <div className="cart-summary-row cart-summary-total">
-                                <span>To Pay</span>
+                                <span>{t('cart.to_pay', 'To Pay')}</span>
                                 <span>{formatPrice(total)}</span>
                             </div>
 
@@ -348,20 +350,20 @@ const Cart = () => {
                                 onClick={handleCheckout}
                                 disabled={selectedItems.length === 0}
                             >
-                                Checkout ({selectedItems.length}) <FaArrowRight />
+                                {t('cart.checkout_count', 'Checkout ({{count}})').replace('{{count}}', selectedItems.length)} <FaArrowRight />
                             </button>
 
 
                             <div className="cart-trust-row">
-                                <span><FaShieldAlt /> Buyer Protection</span>
-                                <span><FaLock /> Secure Payment</span>
+                                <span><FaShieldAlt /> {t('cart.buyer_protection', 'Buyer Protection')}</span>
+                                <span><FaLock /> {t('cart.secure_payment', 'Secure Payment')}</span>
                             </div>
                         </div>
 
                         {/* Selected Items preview */}
                         {selectedItems.length > 0 && (
                             <div className="cart-selected-preview">
-                                <p className="cart-preview-label">Selected Items</p>
+                                <p className="cart-preview-label">{t('cart.selected_items', 'Selected Items')}</p>
                                 {selectedItems.map(item => (
                                     <div key={item._id} className="cart-preview-row">
                                         <img

@@ -108,7 +108,7 @@
 
 .wallet-stat-card:hover {
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
+    /* removed transform translateY */
 }
 
 [data-admin-theme="dark"] .wallet-stat-card {
@@ -352,7 +352,7 @@
 }
 
 .wallet-btn-primary:hover {
-    transform: translateY(-1px);
+    /* removed transform translateY */
     box-shadow: 0 6px 18px rgba(14, 165, 233, 0.4);
     filter: brightness(1.05);
 }
@@ -383,7 +383,7 @@
 
 .wallet-btn-success:hover {
     filter: brightness(0.93);
-    transform: translateY(-1px);
+    /* removed transform translateY */
 }
 
 .wallet-btn-danger {
@@ -394,7 +394,7 @@
 
 .wallet-btn-danger:hover {
     filter: brightness(0.93);
-    transform: translateY(-1px);
+    /* removed transform translateY */
 }
 
 .wallet-btn-sm {

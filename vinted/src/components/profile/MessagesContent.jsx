@@ -5,7 +5,7 @@ import AuthContext from '../../context/AuthContext';
 import NotificationContext from '../../context/NotificationContext';
 import CurrencyContext from '../../context/CurrencyContext';
 import { useTranslation } from 'react-i18next';
-import { FaPaperPlane, FaUser, FaClock, FaCheck, FaTimes, FaInbox, FaBan, FaEllipsisV, FaEnvelope, FaShoppingBag, FaArrowLeft, FaPlus } from 'react-icons/fa';
+import { FaPaperPlane, FaUser, FaClock, FaCheck, FaTimes, FaInbox, FaBan, FaEllipsisV, FaEnvelope, FaShoppingBag, FaArrowLeft, FaPlus, FaImage } from 'react-icons/fa';
 import { getImageUrl, safeString } from '../../utils/constants';
 import '../../styles/Messaging.css';
 import getSocket from '../../utils/socket';
@@ -35,8 +35,57 @@ const MessagesContent = () => {
     const [userSearchTerm, setUserSearchTerm] = useState('');
     const [settings, setSettings] = useState(null);
     const [mobileChatOpen, setMobileChatOpen] = useState(false);
-    const chatEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
+    const chatEndRef = useRef(null);
+    const fileInputRef = useRef(null);
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const otherParticipant = activeConv?.participants?.find(p => (p.user?._id || p.user)?.toString() !== (user.id || user._id)?.toString());
+        const targetReceiverId = otherParticipant?.user?._id || otherParticipant?.user;
+        const targetModel = otherParticipant?.on_model || 'User';
+
+        if (!targetReceiverId) return;
+
+        const formData = new FormData();
+        formData.append('message_image', file);
+        formData.append('receiver_id', targetReceiverId);
+        formData.append('receiver_model', targetModel);
+        if (activeConv?._id !== 'new') {
+            formData.append('conversation_id', activeConv?._id);
+        }
+
+        try {
+            const res = await axios.post('/api/messages/image', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            const returnedConv = res.data.conversation;
+            const returnedMsg = res.data.message || res.data;
+
+            setMessages(prev => [...prev, returnedMsg]);
+            
+            if (returnedConv) {
+                setActiveConv(returnedConv);
+                setConversations(prev => {
+                    const exists = prev.find(c => c._id === returnedConv._id);
+                    if (exists) return prev.map(c => c._id === returnedConv._id ? returnedConv : c);
+                    return [returnedConv, ...prev];
+                });
+            }
+        } catch (err) {
+            console.error('Error uploading image:', err);
+            alert('Failed to upload image. Please try again.');
+        } finally {
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
     const initialLoadRef = useRef(true);
 
     const handleImageError = (e) => {
@@ -118,7 +167,7 @@ const MessagesContent = () => {
 
     // Handle ?user= param — auto-open conversation window with that user
     useEffect(() => {
-        if (!allUsers.length) return;
+        if (loading || !allUsers.length) return;
         const queryParams = new URLSearchParams(location.search);
         const targetUserId = queryParams.get('user');
         if (!targetUserId) return;
@@ -129,16 +178,34 @@ const MessagesContent = () => {
         );
 
         if (existingConv) {
-            setActiveConv(existingConv);
-            setShowUserPicker(false);
+            setActiveConv(prev => {
+                if (prev?._id === existingConv._id) return prev;
+                setShowUserPicker(false);
+                return existingConv;
+            });
         } else {
             // No existing — find them in allUsers and open a new chat window
             const targetUser = allUsers.find(u => u._id === targetUserId);
             if (targetUser) {
-                handleStartChat(targetUser);
+                setActiveConv(prev => {
+                    if (prev?._id === 'new' && prev.participants?.some(p => (p.user?._id || p.user) === targetUserId)) {
+                        return prev;
+                    }
+                    setShowUserPicker(false);
+                    setMessages([]);
+                    return {
+                        _id: 'new',
+                        participants: [
+                            { user: user, on_model: 'User' },
+                            { user: targetUser, on_model: 'User' }
+                        ],
+                        status: 'pending',
+                        initiator_id: user.id || user._id
+                    };
+                });
             }
         }
-    }, [allUsers, location.search]);
+    }, [allUsers, conversations, location.search, loading, user]);
 
     useEffect(() => {
         if (activeConv) {
@@ -928,6 +995,20 @@ const MessagesContent = () => {
                                             );
                                         }
 
+                                        if (msg.message_type === 'image') {
+                                            return (
+                                                <div key={msg._id} className={`pd-msg-bubble ${isSent ? 'sent' : 'received'} p-1`}>
+                                                    <img 
+                                                        src={getImageUrl(msg.message)} 
+                                                        alt="Shared" 
+                                                        style={{ maxWidth: '250px', maxHeight: '250px', borderRadius: '8px', cursor: 'pointer', objectFit: 'contain' }}
+                                                        onClick={() => window.open(getImageUrl(msg.message), '_blank')}
+                                                    />
+                                                    <div className="pd-msg-bubble-time px-2 pb-1">{formatTime(msg.created_at)}</div>
+                                                </div>
+                                            );
+                                        }
+
                                         return (
                                             <div key={msg._id} className={`pd-msg-bubble ${isSent ? 'sent' : 'received'}`}>
                                                 {safeString(msg.message)}
@@ -946,6 +1027,21 @@ const MessagesContent = () => {
                             !messages.some(m => m.message_type === 'system') && (
                                 <div className="pd-msg-input-area">
                                     <form className="pd-msg-form" onSubmit={handleSendMessage}>
+                                        <button 
+                                            type="button" 
+                                            className="pd-msg-send-btn text-secondary" 
+                                            title="Upload Image"
+                                            onClick={() => fileInputRef.current?.click()}
+                                        >
+                                            <FaImage />
+                                        </button>
+                                        <input 
+                                            type="file" 
+                                            ref={fileInputRef} 
+                                            style={{ display: 'none' }} 
+                                            accept="image/*" 
+                                            onChange={handleImageUpload} 
+                                        />
                                         <input
                                             type="text"
                                             className="pd-msg-input"

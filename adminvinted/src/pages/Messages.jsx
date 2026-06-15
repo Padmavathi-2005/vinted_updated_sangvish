@@ -60,6 +60,23 @@ const Messages = () => {
             setSelectedConv(res.data.conversation);
             setMessages(res.data.messages);
             setMsgLoading(false);
+            
+            // Optimistically update the sidebar unread status instantly
+            setConversations(prev => prev.map(c => {
+                if (c._id === convId && c.participants) {
+                    const newC = { ...c };
+                    newC.participants = newC.participants.map(p => {
+                        const pId = p.user?._id || p.user;
+                        if (p.on_model === 'Admin' || pId?.toString() === (adminId || '').toString()) {
+                            return { ...p, unread_count: 0 };
+                        }
+                        return p;
+                    });
+                    return newC;
+                }
+                return c;
+            }));
+            
             if (!silent) {
                 setTimeout(() => scrollToBottom("auto"), 50);
             }
@@ -153,7 +170,7 @@ const Messages = () => {
                 return (
                     <div className="rich-notification order">
                         <div className="rich-notif-header">
-                            {data.type === 'order_delivered' ? '✅ Order Delivered' : '🛒 New Order'}
+                            {data.type === 'order_delivered' ? '✅ Order Delivered' : (data.type === 'order_cancelled' ? '❌ Order Cancelled' : '🛒 New Order')}
                         </div>
                         <div className="rich-notif-body">
                             {data.is_bundle ? (
@@ -180,7 +197,7 @@ const Messages = () => {
                         <div className="rich-notif-header">💰 Withdrawal Request</div>
                         <div className="rich-notif-body">
                             <div>Amount: <strong>{data.amount}</strong></div>
-                            <div>Method: {data.method}</div>
+                            <div>Method: {typeof data.method === 'object' ? (data.method.payout_type || 'Bank Transfer') : (data.method || 'Bank Transfer')}</div>
                         </div>
                     </div>
                 );
@@ -189,18 +206,68 @@ const Messages = () => {
             }
         }
 
+        // Handle Report Notifications
+        if (messageStr.startsWith('🚩 **Report Submitted**')) {
+            try {
+                // Parse the basic markdown-ish string
+                const lines = messageStr.split('\n').filter(l => l.trim());
+                // lines[0] = 🚩 **Report Submitted**
+                // lines[1] = **Product:** <title> (ID: <id>)
+                // lines[2] = **Reason:** <reason>
+                // lines[3] = **Details:** <message>
+                
+                const productLine = lines.find(l => l.includes('**Product:**'))?.replace('**Product:**', '')?.trim() || 'N/A';
+                const reasonLine = lines.find(l => l.includes('**Reason:**'))?.replace('**Reason:**', '')?.trim() || 'N/A';
+                const detailsLine = lines.find(l => l.includes('**Details:**'))?.replace('**Details:**', '')?.trim() || 'N/A';
+
+                return (
+                    <div className="rich-notification report">
+                        <div className="rich-notif-header" style={{ color: '#ef4444' }}>
+                            <FaExclamationCircle className="me-2" /> Report Submitted
+                        </div>
+                        <div className="rich-notif-body">
+                            <div className="mb-1"><strong className="text-dark">Product:</strong> {productLine}</div>
+                            <div className="mb-1"><strong className="text-dark">Reason:</strong> {reasonLine}</div>
+                            {detailsLine !== 'N/A' && (
+                                <div className="mt-2 pt-2 border-top">
+                                    <strong className="text-dark">Details:</strong><br/>
+                                    <span className="text-muted small">{detailsLine}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            } catch (e) {
+                return messageStr;
+            }
+        }
+
+        // Handle Image Messages
+        if (messageStr.startsWith('images/messages/') || messageStr.startsWith('message_image-')) {
+            return (
+                <div className="message-image-container">
+                    <img 
+                        src={getImageUrl(messageStr)} 
+                        alt="Shared" 
+                        style={{ maxWidth: '250px', maxHeight: '250px', borderRadius: '8px', cursor: 'pointer', objectFit: 'contain' }}
+                        onClick={() => window.open(getImageUrl(messageStr), '_blank')}
+                    />
+                </div>
+            );
+        }
+
         return messageStr;
     };
 
     const filteredConversations = conversations.filter(c => {
         const other = getOtherParticipant(c);
         const name = safeString(other?.user?.username || other?.user?.name) || 'User';
-        return name.toLowerCase().includes(search.toLowerCase());
+        return name?.toLowerCase().includes(search?.toLowerCase());
     });
 
     const filteredUsers = allUsers.filter(u =>
-        (u.username || u.name || '').toLowerCase().includes(userSearch.toLowerCase()) ||
-        (u.email || '').toLowerCase().includes(userSearch.toLowerCase())
+        (u.username || u.name || '').toLowerCase().includes(userSearch?.toLowerCase()) ||
+        (u.email || '').toLowerCase().includes(userSearch?.toLowerCase())
     );
 
     const startNewChat = (user) => {
@@ -270,11 +337,25 @@ const Messages = () => {
                         const other = otherParticipant?.user;
                         const isOnline = other?.last_login && (new Date() - new Date(other.last_login)) < 5 * 60000;
                         const isActive = selectedConv?._id === c._id;
+                        
+                        // Determine the chat title to avoid Admin confusion
+                        let chatTitle = safeString(other?.username || other?.name) || 'User';
+                        const isUserToUser = c.participants && !c.participants.some(p => p.on_model === 'Admin');
+                        if (isUserToUser && c.participants.length >= 2) {
+                            const p1 = c.participants[0]?.user;
+                            const p2 = c.participants[1]?.user;
+                            const name1 = safeString(p1?.username || p1?.name) || 'User';
+                            const name2 = safeString(p2?.username || p2?.name) || 'User';
+                            chatTitle = `${name1} & ${name2}`;
+                        }
+                        
+                        const adminParticipant = c.participants?.find(p => p.on_model === 'Admin' || (p.user?._id || p.user)?.toString() === (adminId || '').toString());
+                        const hasUnread = adminParticipant && adminParticipant.unread_count > 0;
 
                         return (
                             <div
                                 key={c._id}
-                                className={`conv-item ${isActive ? 'active-conv' : ''}`}
+                                className={`conv-item ${isActive ? 'active-conv' : ''} ${hasUnread ? 'fw-bold bg-light' : ''}`}
                                 onClick={() => fetchMessages(c._id)}
                             >
                                 <div className="conv-avatar-wrapper" style={{ position: 'relative', width: '48px', height: '48px', flexShrink: 0 }}>
@@ -296,13 +377,13 @@ const Messages = () => {
                                 </div>
                                 <div className="conv-info">
                                     <div className="conv-header">
-                                        <span className="conv-name">{safeString(other?.username || other?.name) || 'User'}</span>
+                                        <span className="conv-name" style={{ fontSize: isUserToUser ? '0.85rem' : '1rem' }}>{chatTitle}</span>
                                         <span className="conv-time">
                                             {c.last_message_at ? new Date(c.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                         </span>
                                     </div>
                                     <div className="d-flex justify-content-between align-items-center">
-                                        <p className="conv-last-msg">
+                                        <p className={`conv-last-msg ${hasUnread ? 'text-dark fw-bold' : ''}`}>
                                             {(() => {
                                                 const lm = c.last_message || '';
                                                 if (lm.startsWith('ORDER_NOTIFICATION::')) return 'Order Update';
@@ -310,6 +391,7 @@ const Messages = () => {
                                                 return safeString(lm) || 'No messages yet';
                                             })()}
                                         </p>
+                                        {hasUnread && <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#0ea5e9' }}></div>}
                                     </div>
                                 </div>
                             </div>
@@ -370,7 +452,7 @@ const Messages = () => {
                                 );
                             })()}
                             <div className="chat-header-actions">
-                                {selectedConv?.item_id && (
+                                {selectedConv?.item_id && typeof selectedConv.item_id === 'object' && selectedConv.item_id.title && (
                                     <div className="chat-item-context-mini">
                                         <div className="text-muted small text-end">Regarding item:</div>
                                         <div className="fw-bold small">{safeString(selectedConv.item_id?.title)}</div>
@@ -380,7 +462,7 @@ const Messages = () => {
                             </div>
                         </header>
 
-                        {selectedConv?.item_id && (
+                        {selectedConv?.item_id && typeof selectedConv.item_id === 'object' && selectedConv.item_id.title && (
                             <div className="chat-item-banner">
                                 <div className="d-flex align-items-center gap-3">
                                     <img 
@@ -414,12 +496,16 @@ const Messages = () => {
                                             <p>{t('messages.send_prompt', 'Send a message to start this conversation')}</p>
                                         </div>
                                     )}
-                                    {messages.map((m) => {
+                                    {messages.map((m, index) => {
                                         const senderId = m.sender_id?._id || m.sender_id;
                                         const isMe = m.sender_model === 'Admin' && senderId?.toString() === (adminId || '').toString();
+                                        const isConsecutive = index > 0 && 
+                                            (messages[index - 1].sender_id?._id || messages[index - 1].sender_id)?.toString() === 
+                                            (m.sender_id?._id || m.sender_id)?.toString();
+                                            
                                         return (
-                                            <div key={m._id} className={`message-wrapper ${isMe ? 'sent' : 'received'}`}>
-                                                <div className={`message-bubble ${m.message?.startsWith('ORDER_NOTIFICATION::') || m.message?.startsWith('WITHDRAWAL_REQUEST::') ? 'rich' : ''}`}>
+                                            <div key={m._id} className={`message-wrapper ${isMe ? 'sent' : 'received'} ${isConsecutive ? 'consecutive' : ''}`}>
+                                                <div className={`message-bubble ${m.message?.startsWith('ORDER_NOTIFICATION::') || m.message?.startsWith('WITHDRAWAL_REQUEST::') || m.message?.startsWith('🚩 **Report Submitted**') ? 'rich' : ''}`}>
                                                     {renderMessageContent(m.message)}
                                                     <div className="message-time-meta">
                                                         <span>{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -436,8 +522,6 @@ const Messages = () => {
 
                         <div className="chat-input-wrapper">
                             <form className="chat-input-form" onSubmit={handleSendMessage}>
-                                <button type="button" className="input-action-btn"><FaImage /></button>
-                                <button type="button" className="input-action-btn"><FaSmile /></button>
                                 <input
                                     placeholder={t('messages.type_message', 'Type a message...')}
                                     className="chat-input-field"

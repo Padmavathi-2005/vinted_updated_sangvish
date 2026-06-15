@@ -4,7 +4,7 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from '@/utils/axios';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { FaSearch, FaBell, FaShoppingCart, FaBars, FaTimes, FaChevronRight, FaChevronLeft, FaPlus, FaHeart, FaCoins, FaCheck, FaGlobe, FaUser, FaExchangeAlt, FaSignOutAlt, FaThLarge, FaCamera, FaRegHeart, FaRegBell, FaListAlt, FaTachometerAlt } from 'react-icons/fa';
+import { FaSearch, FaBell, FaShoppingCart, FaBars, FaTimes, FaChevronRight, FaChevronLeft, FaPlus, FaHeart, FaCoins, FaCheck, FaGlobe, FaUser, FaExchangeAlt, FaSignOutAlt, FaThLarge, FaCamera, FaRegHeart, FaRegBell, FaListAlt, FaTachometerAlt, FaRegCommentDots } from 'react-icons/fa';
 import { FiShoppingCart, FiGlobe, FiChevronDown } from 'react-icons/fi';
 import { HiSparkles } from 'react-icons/hi';
 import ReactMarkdown from 'react-markdown';
@@ -39,6 +39,8 @@ const Header = () => {
     const fileInputRef = useRef(null);
     const mobileLangRef = useRef(null);
     const mobileCurrRef = useRef(null);
+
+    const isRtl = currentLanguage?.direction === 'rtl';
 
 
     // User Dropdown State
@@ -761,7 +763,7 @@ const Header = () => {
 
                             {isSettingsDropdownOpen && (
                                 <div className="user-dropdown-wrapper" style={{
-                                    position: 'absolute', top: '100%', right: '0',
+                                    position: 'absolute', top: '100%', ...(isRtl ? { left: '0' } : { right: '0' }),
                                     paddingTop: '15px', zIndex: 1100, width: '280px',
                                     animation: 'fadeIn 0.2s ease',
                                 }}>
@@ -771,7 +773,7 @@ const Header = () => {
                                         padding: '0', textAlign: 'left', position: 'relative',
                                         display: 'flex', flexDirection: 'column', overflow: 'hidden'
                                     }}>
-                                        <div style={{ position: "absolute", top: "-6px", right: "20px", width: "12px", height: "12px", background: 'white', transform: "rotate(45deg)", borderLeft: "1px solid #e9ecef", borderTop: "1px solid #e9ecef" }} />
+                                        <div style={{ position: "absolute", top: "-6px", ...(isRtl ? { left: "20px" } : { right: "20px" }), width: "12px", height: "12px", background: 'white', transform: "rotate(45deg)", borderLeft: "1px solid #e9ecef", borderTop: "1px solid #e9ecef" }} />
 
                                         {/* Tab Headers */}
                                         <div style={{ display: 'flex', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', padding: '4px' }}>
@@ -895,7 +897,7 @@ const Header = () => {
 
                                     {isNotifDropdownOpen && (
                                         <div style={{
-                                            position: 'absolute', top: '100%', right: '-60px',
+                                            position: 'absolute', top: '100%', ...(isRtl ? { left: '-60px' } : { right: '-60px' }),
                                             paddingTop: '16px', zIndex: 1100, width: '340px',
                                             animation: 'fadeIn 0.2s ease',
                                         }}>
@@ -906,7 +908,7 @@ const Header = () => {
                                                 position: 'relative'
                                             }}>
                                                 {/* Caret */}
-                                                <div style={{ position: "absolute", top: "-6px", right: "72px", width: "12px", height: "12px", background: "white", transform: "rotate(45deg)", borderLeft: "1px solid #e9ecef", borderTop: "1px solid #e9ecef" }} />
+                                                <div style={{ position: "absolute", top: "-6px", ...(isRtl ? { left: "72px" } : { right: "72px" }), width: "12px", height: "12px", background: "white", transform: "rotate(45deg)", borderLeft: "1px solid #e9ecef", borderTop: "1px solid #e9ecef" }} />
                                                 <div style={{
                                                     display: 'flex', justifyContent: 'space-between',
                                                     alignItems: 'center', padding: '14px 16px 10px',
@@ -950,7 +952,14 @@ const Header = () => {
                                                                 key={n._id}
                                                                 onClick={() => {
                                                                     if (!n.is_read) markAsRead(n._id);
-                                                                    if (n.link) router.push(n.link);
+                                                                    if (n.link) {
+                                                                        const urlParams = new URLSearchParams(n.link.split('?')[1]);
+                                                                        const linkMode = urlParams.get('mode');
+                                                                        if (linkMode && linkMode !== mode) {
+                                                                            setMode(linkMode);
+                                                                        }
+                                                                        router.push(n.link);
+                                                                    }
                                                                     else router.push('/profile?tab=notifications');
                                                                     setIsNotifDropdownOpen(false);
                                                                 }}
@@ -1086,7 +1095,7 @@ const Header = () => {
                                         <div className="user-dropdown-wrapper" style={{
                                             position: 'absolute',
                                             top: '100%',
-                                            right: 0,
+                                            ...(isRtl ? { left: 0 } : { right: 0 }),
                                             paddingTop: '20px', // Bridge the gap between avatar and dropdown
                                             zIndex: 1100,
                                             width: '240px',
@@ -1104,7 +1113,7 @@ const Header = () => {
                                                 <div style={{
                                                     position: 'absolute',
                                                     top: '-6px',
-                                                    right: '16px',
+                                                    ...(isRtl ? { left: '16px' } : { right: '16px' }),
                                                     width: '12px',
                                                     height: '12px',
                                                     background: 'white',
@@ -1411,15 +1420,52 @@ const Header = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="mm-item-grid">
-                                        <Link
-                                            href={`/products?category=${activeCategory.slug}`}
-                                            className="mm-item-link"
-                                            style={{ fontWeight: '600', fontSize: '1.1rem' }}
-                                            onClick={() => setShowCategoryBar(false)}
-                                        >
-                                            View all {t(`categories.${safeString(activeCategory.name)}`, { defaultValue: safeString(activeCategory.name) })} products
-                                        </Link>
+                                    <div className="mm-item-grid" style={{ alignItems: 'start' }}>
+                                        <div style={{ gridColumn: '1 / -1', marginBottom: '10px' }}>
+                                            <Link
+                                                href={`/products?category=${activeCategory.slug}`}
+                                                className="mm-item-link"
+                                                style={{ fontWeight: '600', fontSize: '1.1rem' }}
+                                                onClick={() => setShowCategoryBar(false)}
+                                            >
+                                                View all {t(`categories.${safeString(activeCategory.name)}`, { defaultValue: safeString(activeCategory.name) })} products
+                                            </Link>
+                                        </div>
+                                        
+                                        {activeCategory.subcategories && activeCategory.subcategories.length > 0 && activeCategory.subcategories.map(sub => (
+                                            <div key={sub._id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
+                                                <Link
+                                                    href={`/products?category=${activeCategory.slug}&subcategory=${sub.slug}`}
+                                                    style={{ fontWeight: '700', color: '#1e293b', paddingBottom: '4px', borderBottom: '1px solid #f1f5f9', textDecoration: 'none' }}
+                                                    onClick={() => setShowCategoryBar(false)}
+                                                >
+                                                    {t(`categories.${safeString(sub.name)}`, { defaultValue: safeString(sub.name) })}
+                                                </Link>
+                                                {sub.items && sub.items.length > 0 ? (
+                                                    sub.items.slice(0, 6).map(item => (
+                                                        <Link
+                                                            key={item._id}
+                                                            href={`/products?category=${activeCategory.slug}&subcategory=${sub.slug}&itemType=${item.slug}`}
+                                                            style={{ fontSize: '0.85rem', color: '#64748b', transition: 'color 0.2s', textDecoration: 'none' }}
+                                                            onMouseEnter={(e) => e.target.style.color = settings?.primary_color || '#3b82f6'}
+                                                            onMouseLeave={(e) => e.target.style.color = '#64748b'}
+                                                            onClick={() => setShowCategoryBar(false)}
+                                                        >
+                                                            {t(`categories.${safeString(item.name)}`, { defaultValue: safeString(item.name) })}
+                                                        </Link>
+                                                    ))
+                                                ) : null}
+                                                {sub.items && sub.items.length > 6 && (
+                                                    <Link
+                                                        href={`/products?category=${activeCategory.slug}&subcategory=${sub.slug}`}
+                                                        style={{ fontSize: '0.85rem', color: settings?.primary_color || '#3b82f6', fontWeight: '600', textDecoration: 'none' }}
+                                                        onClick={() => setShowCategoryBar(false)}
+                                                    >
+                                                        {t('header.view_more', 'View more')}
+                                                    </Link>
+                                                )}
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
@@ -1621,11 +1667,20 @@ const Header = () => {
                                             {mode === 'seller' ? <FaListAlt size={16} /> : <FaShoppingCart size={16} />}
                                             {mode === 'seller' ? t('user_menu.manage_listings') : t('user_menu.my_orders')}
                                         </Link>
-                                        <Link href="/profile?tab=favorites&mode=buyer" className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <FaRegHeart size={16} /> {t('header.favorites')}
+                                        {mode === 'seller' ? (
+                                            <Link href="/profile?tab=payments&mode=seller" className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <FaCoins size={16} /> {t('user_menu.payments', 'Payments')}
+                                            </Link>
+                                        ) : (
+                                            <Link href="/profile?tab=favorites&mode=buyer" className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <FaRegHeart size={16} /> {t('header.favorites')}
+                                            </Link>
+                                        )}
+                                        <Link href="/profile?tab=notifications" className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <FaRegBell size={16} /> {t('header.notifications', 'Notifications')}
                                         </Link>
                                         <Link href={`/profile?tab=messages&mode=${mode}`} className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <FaRegBell size={16} /> {t('user_menu.messages')}
+                                            <FaRegCommentDots size={16} /> {t('user_menu.messages')}
                                         </Link>
                                         <Link href="/cart" className="mobile-link" onClick={closeMobileMenu} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                             <FiShoppingCart size={16} /> {t('header.cart')}

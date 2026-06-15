@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Button, Table as BTable, Form } from 'react-bootstrap';
-import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaEye } from 'react-icons/fa';
 import { useSettings } from '../context/SettingsContext';
 import { showToast } from '../utils/swal';
 import Toggle from './Toggle';
@@ -15,6 +15,7 @@ const Table = ({
     actions,
     onEdit,
     onDelete,
+    onView,
     pagination,
     emptyMessage = "No records found"
 }) => {
@@ -160,6 +161,15 @@ const Table = ({
                                     {actions && (
                                         <td className="text-end action-cell" data-label={t('table.actions', 'Actions')}>
                                             <div className="action-buttons">
+                                                {onView && (
+                                                    <button
+                                                        className="action-btn view-btn"
+                                                        onClick={() => onView(row)}
+                                                        title="View"
+                                                    >
+                                                        <FaEye size={14} />
+                                                    </button>
+                                                )}
                                                 {onEdit && (
                                                     <button
                                                         className="action-btn edit-btn"

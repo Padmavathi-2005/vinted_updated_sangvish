@@ -71,7 +71,7 @@ const ShippingCompanies = () => {
     };
 
     const filteredCompanies = Array.isArray(companies) ? companies.filter(c =>
-        (c.company_name || '').toLowerCase().includes(searchTerm.toLowerCase())
+        (c.company_name || '').toLowerCase().includes(searchTerm?.toLowerCase())
     ) : [];
 
     const handleAdd = () => {
@@ -176,7 +176,7 @@ const ShippingCompanies = () => {
             render: (row) => (
                 <div className="small text-muted text-truncate" style={{ maxWidth: '300px' }}>
                     {row.tracking_url}
-                    <div className="extra-small text-primary opacity-75 mt-1">%tracking_id% {'->'} Placeholder</div>
+                    <div className="extra-small opacity-75 mt-1">%tracking_id% {'->'} Placeholder</div>
                 </div>
             )
         },
@@ -204,7 +204,7 @@ const ShippingCompanies = () => {
                 <Card className="main-content-card border-0 shadow-sm p-4">
                     <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                         <div>
-                            <h1 className="dashboard-title h3 mb-1 text-primary">{t('shipping.title', 'Shipping Companies')}</h1>
+                            <h1 className="dashboard-title h3 mb-1">{t('shipping.title', 'Shipping Companies')}</h1>
                             <p className="text-muted small mb-0">{t('shipping.subtitle', 'Manage marketplace delivery partners')}</p>
                         </div>
                         <Button variant="primary" onClick={handleAdd} className="btn-admin-action">

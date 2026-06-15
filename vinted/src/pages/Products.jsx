@@ -397,7 +397,7 @@ const Products = () => {
                     {/* Sidebar header */}
                     <div className="filter-sidebar-header">
                         <div className="filter-sidebar-title">
-                            <div className="filter-sidebar-icon-wrap"><FaFilter size={12} className="text-primary" /></div>
+                            <div className="filter-sidebar-icon-wrap"><FaFilter size={12} /></div>
                             <span>{t('products.filter', 'Filter')}</span>
                             {activeFiltersCount > 0 && (
                                 <span className="filter-active-badge">{activeFiltersCount}</span>
@@ -456,7 +456,7 @@ const Products = () => {
                         <div className="topbar-left">
                             {!sidebarOpen && (
                                 <button className="open-filters-btn d-none d-lg-flex" onClick={() => setSidebarOpen(true)}>
-                                    <FaFilter size={12} className="text-primary" /> {t('products.filter', 'Filter')}
+                                    <FaFilter size={12} /> {t('products.filter', 'Filter')}
                                     {activeFiltersCount > 0 && <span className="filter-active-badge sm">{activeFiltersCount}</span>}
                                 </button>
                             )}

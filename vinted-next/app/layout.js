@@ -18,6 +18,7 @@ export async function generateMetadata() {
     const siteFavicon = settings?.site_favicon ? getImageUrl(settings.site_favicon) : '/favicon.ico';
 
     return {
+      metadataBase: new URL(BASE_URL),
       title: {
         default: siteName,
         template: `%s | ${siteName}`,
@@ -57,6 +58,7 @@ export async function generateMetadata() {
     };
   } catch (error) {
     return {
+      metadataBase: new URL(BASE_URL),
       title: {
         default: 'Resale',
         template: '%s | Resale',
@@ -79,7 +81,7 @@ export default async function RootLayout({ children }) {
   } catch (error) {}
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         {primaryColor && (
           <style dangerouslySetInnerHTML={{ __html: `:root { --primary-color: ${primaryColor}; }` }} />

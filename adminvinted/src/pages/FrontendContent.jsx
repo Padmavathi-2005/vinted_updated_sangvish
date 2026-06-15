@@ -61,7 +61,7 @@ const FrontendContent = () => {
     };
 
     const formatSectionTitle = (title) => {
-        if (title.toLowerCase() === 'home') return 'Hero Section';
+        if (title?.toLowerCase() === 'home') return 'Hero Section';
 
         return title.split('.')
             .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
@@ -131,12 +131,12 @@ const FrontendContent = () => {
 
     // Filtered lists for dropdowns
     const filteredSections = sections.filter(s =>
-        formatSectionTitle(s).toLowerCase().includes(sectionSearch.toLowerCase())
+        formatSectionTitle(s).toLowerCase().includes(sectionSearch?.toLowerCase())
     );
 
     const filteredLanguages = languages.filter(l =>
-        l.name.toLowerCase().includes(langSearch.toLowerCase()) ||
-        l.code.toLowerCase().includes(langSearch.toLowerCase())
+        l.name?.toLowerCase().includes(langSearch?.toLowerCase()) ||
+        l.code?.toLowerCase().includes(langSearch?.toLowerCase())
     );
 
     if (loading) {
@@ -245,10 +245,10 @@ const FrontendContent = () => {
                         {activeSection && (() => {
                             const sectionContent = content.filter(item => item.section === activeSection);
 
-                            const isImageField = (key) => key.toLowerCase().includes('image') ||
-                                key.toLowerCase().includes('banner') ||
-                                key.toLowerCase().includes('logo') ||
-                                key.toLowerCase().includes('background');
+                            const isImageField = (key) => key?.toLowerCase().includes('image') ||
+                                key?.toLowerCase().includes('banner') ||
+                                key?.toLowerCase().includes('logo') ||
+                                key?.toLowerCase().includes('background');
 
                             const textItems = sectionContent.filter(item => !isImageField(item.key));
                             const imageItems = sectionContent.filter(item => isImageField(item.key));
@@ -267,7 +267,7 @@ const FrontendContent = () => {
                                                     return (
                                                         <Col md={4} key={`${item.section}-${item.key}`}>
                                                             <div className="fc-field-cluster h-100">
-                                                                <label className="fc-label">{label} ({activeLang.toUpperCase()})</label>
+                                                                <label className="fc-label">{label} ({activeLang?.toUpperCase()})</label>
                                                                 <div className="fc-text-box">
                                                                     <textarea
                                                                         className="fc-textarea-v3"
@@ -300,7 +300,7 @@ const FrontendContent = () => {
                                                         <Col md={6} key={`${item.section}-${item.key}`}>
                                                             <div className="fc-field-cluster h-100">
                                                                 <div className="d-flex justify-content-between align-items-center mb-1">
-                                                                    <label className="fc-label mb-0">{label} ({activeLang.toUpperCase()})</label>
+                                                                    <label className="fc-label mb-0">{label} ({activeLang?.toUpperCase()})</label>
                                                                     {activeLang !== 'en' && !isTranslated && value && (
                                                                         <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>(Using EN fallback)</span>
                                                                     )}

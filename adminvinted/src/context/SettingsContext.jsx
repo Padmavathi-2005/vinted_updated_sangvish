@@ -96,7 +96,7 @@ export const SettingsProvider = ({ children }) => {
             const generalDefaults = generalRes.status === 'fulfilled' ? generalRes.value.data : {};
             const siteDefaults = siteRes.status === 'fulfilled' ? siteRes.value.data : {};
 
-            const combinedDefaults = { ...generalDefaults, ...siteDefaults };
+            const combinedDefaults = { ...siteDefaults, ...generalDefaults };
 
             if (Object.keys(combinedDefaults).length > 0) {
                 const newSettings = {

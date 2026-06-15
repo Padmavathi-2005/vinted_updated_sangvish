@@ -41,7 +41,16 @@ const AdminHeader = ({ toggleSidebar }) => {
     useEffect(() => {
         const closeDropdowns = () => setActiveDropdown(null);
         window.addEventListener('click', closeDropdowns);
-        return () => window.removeEventListener('click', closeDropdowns);
+        
+        const handleNotifRead = () => {
+            setNotificationCount(prev => Math.max(0, prev - 1));
+        };
+        window.addEventListener('notification_read', handleNotifRead);
+        
+        return () => {
+            window.removeEventListener('click', closeDropdowns);
+            window.removeEventListener('notification_read', handleNotifRead);
+        };
     }, []);
 
     useEffect(() => {
@@ -78,12 +87,18 @@ const AdminHeader = ({ toggleSidebar }) => {
                             const pId = p.user?._id || p.user;
                             return pId?.toString() !== (verifyResp.data.admin._id || '').toString();
                         });
+                        
+                        const adminParticipant = conv.participants.find(p => {
+                            const pId = p.user?._id || p.user;
+                            return pId?.toString() === (verifyResp.data.admin._id || '').toString() || p.on_model === 'Admin';
+                        });
+                        
                         return {
                             id: conv._id,
                             sender: safeString(otherParticipant?.user?.username || otherParticipant?.user?.name) || 'User',
                             subject: safeString(conv.last_message),
                             time: conv.last_message_at ? new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now',
-                            read: false // Simplified
+                            read: adminParticipant ? (adminParticipant.unread_count || 0) === 0 : true
                         };
                     });
                     setLatestMessages(latestConvs);
@@ -141,22 +156,35 @@ const AdminHeader = ({ toggleSidebar }) => {
                             const pId = p.user?._id || p.user;
                             return pId?.toString() !== (admin._id || '').toString();
                         });
+                        
+                        const adminParticipant = conv.participants.find(p => {
+                            const pId = p.user?._id || p.user;
+                            return pId?.toString() === (admin._id || '').toString() || p.on_model === 'Admin';
+                        });
+
                         return {
                             id: conv._id,
                             sender: safeString(otherParticipant?.user?.username || otherParticipant?.user?.name) || 'User',
                             subject: safeString(conv.last_message),
                             time: conv.last_message_at ? new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now',
-                            read: false
+                            read: adminParticipant ? (adminParticipant.unread_count || 0) === 0 : true
                         };
                     });
                     setLatestMessages(latestConvs);
                 }).catch(err => console.error('Error fetching messages on socket event', err));
             };
 
+            const handleMessagesRead = () => {
+                axios.get('/api/admin-messages/count')
+                    .then(msgCountResp => setMessageCount(msgCountResp.data.count || 0))
+                    .catch(() => {});
+            };
+
             sock.on('new_notification', handleNotification);
             sock.on('receive_message', handleMessage);
+            sock.on('messages_read', handleMessagesRead);
 
-            sock._cleanupHandlers = { joinRoom, handleNotification, handleMessage };
+            sock._cleanupHandlers = { joinRoom, handleNotification, handleMessage, handleMessagesRead };
         });
 
         return () => {
@@ -165,6 +193,7 @@ const AdminHeader = ({ toggleSidebar }) => {
                     sock.off('connect', sock._cleanupHandlers.joinRoom);
                     sock.off('new_notification', sock._cleanupHandlers.handleNotification);
                     sock.off('receive_message', sock._cleanupHandlers.handleMessage);
+                    sock.off('messages_read', sock._cleanupHandlers.handleMessagesRead);
                 }
             });
         };
@@ -182,13 +211,24 @@ const AdminHeader = ({ toggleSidebar }) => {
         setLangSearch('');
     };
 
-    const mapLink = (link) => {
+    const mapLink = (link, notifTitle = '') => {
         if (!link) return '/notifications';
         if (link.includes('/profile?tab=orders')) return '/orders';
         if (link.includes('/profile?tab=messages')) return '/messages';
         if (link.includes('/profile?tab=listings')) return '/listings';
+        
+        // Retroactively route legacy product reports to the correct page
+        if (link === '/reports' && notifTitle.toLowerCase().includes('product report')) {
+            return '/product-reports';
+        }
+
         // If it's a relative link that doesn't exist in admin, default to /notifications
-        const adminRoutes = ['/dashboard', '/users', '/listings', '/orders', '/wallet', '/categories', '/settings', '/notifications', '/messages', '/reports'];
+        const adminRoutes = [
+            '/dashboard', '/users', '/listings', '/orders', '/wallet', '/categories', 
+            '/settings', '/notifications', '/messages', '/reports', '/product-reports',
+            '/shipping-companies', '/newsletter', '/pages', '/contact-inquiries',
+            '/system'
+        ];
         if (link.startsWith('/') && !adminRoutes.some(route => link.startsWith(route))) {
             return '/notifications';
         }
@@ -214,10 +254,10 @@ const AdminHeader = ({ toggleSidebar }) => {
                     n._id === notif._id ? { ...n, is_read: true } : n
                 ));
             }
-            navigate(mapLink(notif.link));
+            navigate(mapLink(notif.link, notif.title));
         } catch (error) {
             console.error('Error marking notification as read:', error);
-            navigate(mapLink(notif.link));
+            navigate(mapLink(notif.link, notif.title));
         }
     };
 

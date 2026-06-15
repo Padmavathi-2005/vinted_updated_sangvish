@@ -130,9 +130,9 @@ const ProductReports = () => {
 
     const filteredReports = reports.filter(r => {
         const term = (searchTerm || '').toLowerCase();
-        const reasonMatch = r.reason ? r.reason.toLowerCase().includes(term) : false;
-        const titleMatch = r.item_id && r.item_id.title ? r.item_id.title.toLowerCase().includes(term) : false;
-        const userMatch = r.reporter_id && r.reporter_id.username ? r.reporter_id.username.toLowerCase().includes(term) : false;
+        const reasonMatch = r.reason ? r.reason?.toLowerCase().includes(term) : false;
+        const titleMatch = r.item_id && r.item_id.title ? r.item_id.title?.toLowerCase().includes(term) : false;
+        const userMatch = r.reporter_id && r.reporter_id.username ? r.reporter_id.username?.toLowerCase().includes(term) : false;
         return reasonMatch || titleMatch || userMatch;
     });
 
@@ -212,7 +212,7 @@ const ProductReports = () => {
                                     />
                                     <div>
                                         <h5 className="mb-1">{selectedReport.item_id?.title}</h5>
-                                        <p className="mb-1 text-primary fw-bold">{formatPrice(selectedReport.item_id?.price)}</p>
+                                        <p className="mb-1 fw-bold">{formatPrice(selectedReport.item_id?.price)}</p>
                                         <Badge bg={selectedReport.item_id?.status === 'active' ? 'success' : 'danger'}>
                                             Status: {selectedReport.item_id?.status}
                                         </Badge>

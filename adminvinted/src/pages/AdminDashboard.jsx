@@ -372,7 +372,7 @@ const AdminDashboard = () => {
                                                 <tr><td colSpan="3" className="text-center text-muted py-4">{t('dashboard.no_recent_bookings')}</td></tr>
                                             ) : stats.latestBookings.map((order, idx) => (
                                                 <tr key={idx} className="border-bottom">
-                                                    <td className="fw-semibold text-primary px-4 py-3"><Link to="/users" className="text-decoration-none">{safeString(order.buyer_id?.username) || 'Guest'}</Link></td>
+                                                    <td className="fw-semibold px-4 py-3"><Link to="/users" className="text-decoration-none">{safeString(order.buyer_id?.username) || 'Guest'}</Link></td>
                                                     <td className="fw-bold px-4 py-3 text-success">{formatPrice(order.total_amount)}</td>
                                                     <td className="text-muted small px-4 py-3">
                                                         {formatAdminDate(order.created_at, globalSettings)}
@@ -405,7 +405,7 @@ const AdminDashboard = () => {
                                                 <tr><td colSpan="4" className="text-center text-muted py-4">{t('dashboard.no_recent_listings')}</td></tr>
                                             ) : stats.latestProperties.map((item, idx) => (
                                                 <tr key={idx} className="border-bottom">
-                                                    <td className="fw-semibold text-primary px-4 py-3"><Link to="/listings" className="text-decoration-none">{safeString(item.title)}</Link></td>
+                                                    <td className="fw-semibold px-4 py-3"><Link to="/listings" className="text-decoration-none">{safeString(item.title)}</Link></td>
                                                     <td className="px-4 py-3"><Link to="/users" className="text-dark text-decoration-none">{safeString(item.seller_id?.username) || 'Seller'}</Link></td>
                                                     <td className="text-muted small px-4 py-3">
                                                         {formatAdminDate(item.created_at, globalSettings)}
@@ -507,7 +507,7 @@ const AdminDashboard = () => {
                                                             </Link>
                                                         </div>
                                                     </td>
-                                                    <td className="fw-bold text-primary text-end px-4 py-3">{formatPrice(buyer.totalSpent)}</td>
+                                                    <td className="fw-bold text-end px-4 py-3">{formatPrice(buyer.totalSpent)}</td>
                                                     <td className="text-end px-4 py-3"><span className="badge bg-light text-dark border px-3 py-2 rounded-pill shadow-sm">{buyer.ordersCount}</span></td>
                                                 </tr>
                                             ))}

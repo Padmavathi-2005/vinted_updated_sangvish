@@ -10,8 +10,13 @@ export const safeString = (val, fallback = '') => {
 
 export const getImageUrl = (path) => {
     if (!path) return '';
-    const pathStr = String(path);
+    let pathStr = String(path);
     if (pathStr.startsWith('http')) return pathStr;
+    if (pathStr.startsWith('data:')) return pathStr;
+
+    if (pathStr.startsWith('message_image-')) {
+        pathStr = 'images/messages/' + pathStr;
+    }
 
     const baseRaw = import.meta.env.VITE_IMAGE_BASE_URL || '/';
     

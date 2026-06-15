@@ -526,3 +526,52 @@ input[type="number"].eim-discount-input {
 /* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
 .btn-save-premium { position: relative; }
 .btn-save-premium::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+
+@media (max-width: 600px) {
+    .eim-footer-actions {
+        flex-direction: row;
+        gap: 12px !important;
+        align-items: center !important;
+        padding: 16px;
+    }
+    
+    .eim-footer-actions > div {
+        flex-direction: row;
+        width: auto;
+        flex: 1;
+        gap: 8px !important;
+        display: flex;
+    }
+    
+    .eim-btn-text {
+        display: none !important;
+    }
+
+    .eim-btn-icon-mobile {
+        display: block !important;
+    }
+    
+    .btn-cancel-premium,
+    .eim-btn-delete {
+        width: 48px !important;
+        height: 48px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+        flex-shrink: 0;
+        border-radius: 12px;
+        font-size: 1.2rem;
+    }
+
+    .btn-cancel-premium svg,
+    .eim-btn-delete svg {
+        margin: 0 !important;
+    }
+    
+    .eim-btn-save {
+        flex: 1;
+        width: 100% !important;
+        padding: 0 16px;
+        height: 48px;
+        font-size: 0.95rem;
+    }
+}

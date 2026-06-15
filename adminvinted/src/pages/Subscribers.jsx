@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Card, Row, Col, Form, Button, Badge, Dropdown } from 'react-bootstrap';
+import { Container, Card, Row, Col, Form, Button, Badge, Dropdown, InputGroup } from 'react-bootstrap';
 import axios from '../utils/axios';
 import Table from '../components/Table';
 import { FaTrash, FaSearch, FaSync, FaEnvelope, FaDownload, FaFileCsv, FaFilePdf } from 'react-icons/fa';
@@ -212,7 +212,7 @@ const Subscribers = () => {
                 <Card className="main-content-card border-0 shadow-sm p-4">
                     <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                         <div>
-                            <h1 className="dashboard-title h3 mb-1 text-primary">{t('subscribers.title', 'Newsletter Subscribers')}</h1>
+                            <h1 className="dashboard-title h3 mb-1">{t('subscribers.title', 'Newsletter Subscribers')}</h1>
                             <p className="text-muted small mb-0">{t('subscribers.subtitle', 'Manage your newsletter list and subscribers')}</p>
                         </div>
                         <div className="d-flex gap-2">

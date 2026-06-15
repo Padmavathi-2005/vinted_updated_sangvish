@@ -77,6 +77,16 @@ export default function ForgotPassword() {
         }
     };
 
+    const handleOtpChange = (e) => {
+        const val = e.target.value.replace(/\D/g, '');
+        setOtp(val);
+        if (val.length > 0 && val.length < 6) {
+            setError('Please enter at least 6 digits');
+        } else if (error === 'Please enter at least 6 digits') {
+            setError('');
+        }
+    };
+
     const handleVerifyOTP = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -115,7 +125,7 @@ export default function ForgotPassword() {
             <div className="auth-page">
                 <div className="auth-card">
                     <div className="auth-back mb-4">
-                        <Link href="/login" className="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2" style={{borderRadius: '10px', padding: '10px', fontSize: '14px', fontWeight: '500', color: '#64748b', border: '1px solid #e2e8f0'}}>
+                        <Link href="/login" className="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2" style={{borderRadius: '10px', padding: '10px', fontSize: '14px', fontWeight: '500', border: '1px solid #e2e8f0'}}>
                             <FaChevronLeft size={12} /> Back to Login
                         </Link>
                     </div>
@@ -162,7 +172,7 @@ export default function ForgotPassword() {
                                             type="text"
                                             className="auth-input"
                                             value={otp}
-                                            onChange={(e) => setOtp(e.target.value)}
+                                            onChange={handleOtpChange}
                                             placeholder="Enter 6-digit code"
                                             maxLength="6"
                                             required

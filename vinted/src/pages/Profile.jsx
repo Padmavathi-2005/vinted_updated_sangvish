@@ -160,6 +160,7 @@ const Profile = () => {
         onConfirm: null,
         inputValue: '',
         inputValue2: '', // for partial refund amount
+        relist: false,
         isLoading: false
     });
 
@@ -599,6 +600,30 @@ const Profile = () => {
         }
     };
 
+    const handleRelistItem = async (itemId) => {
+        try {
+            await axios.put(`/api/items/${itemId}`, { status: 'available', is_sold: false, is_ordered: false });
+            alert('Item has been successfully relisted for resale!');
+            // To update the item_id status in the UI, re-fetch orders
+            fetchMyOrders();
+            // If the modal is open, we can also manually patch selectedOrder
+            setSelectedOrder(prev => {
+                if (!prev || !prev.item_id) return prev;
+                return {
+                    ...prev,
+                    item_id: {
+                        ...prev.item_id,
+                        status: 'available',
+                        is_sold: false,
+                        is_ordered: false
+                    }
+                };
+            });
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to relist item');
+        }
+    };
+
     // Fetch Initial Counts
     useEffect(() => {
         if (user && activeTab === 'dashboard') {
@@ -764,7 +789,7 @@ const Profile = () => {
                 show: true,
                 type: 'error',
                 title: t('profile.cannot_delete_account', 'Account Deletion Blocked'),
-                message: t('profile.balance_remaining_error', 'You have a remaining balance of {{balance}} in your wallet. Please withdraw all funds before deleting your account.', { balance: formatPrice(user.balance) }),
+                message: t('profile.balance_remaining_error', 'You have a remaining balance of {{balance}} in your wallet. Please withdraw all funds before deleting your account.', { balance: formatPrice(user.balance, user.wallet_currency) }),
                 confirmLabel: t('common.ok', 'OK')
             });
             return;
@@ -939,6 +964,7 @@ const Profile = () => {
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'confirmed' ? 'active' : ''}`} onClick={() => setOrderSubTab('confirmed')}>{t('order_status.confirmed', 'Confirmed')}</div>
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'packed' ? 'active' : ''}`} onClick={() => setOrderSubTab('packed')}>{t('order_status.packed', 'Packed')}</div>
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'shipped' ? 'active' : ''}`} onClick={() => setOrderSubTab('shipped')}>{t('order_status.shipped', 'Shipped')}</div>
+                                    <div className={`pd-sidemenu-item ${orderSubTab === 'out_for_delivery' ? 'active' : ''}`} onClick={() => setOrderSubTab('out_for_delivery')}>{t('order_status.out_for_delivery', 'Out for Delivery')}</div>
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'delivered' ? 'active' : ''}`} onClick={() => setOrderSubTab('delivered')}>{t('order_status.delivered', 'Delivered')}</div>
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'returns' ? 'active' : ''}`} onClick={() => setOrderSubTab('returns')}>{t('order_status.returned', 'Returned')}</div>
                                     <div className={`pd-sidemenu-item ${orderSubTab === 'cancelled' ? 'active' : ''}`} onClick={() => setOrderSubTab('cancelled')}>{t('order_status.cancelled', 'Cancelled')}</div>
@@ -1029,7 +1055,7 @@ const Profile = () => {
                                         </div>
                                         <div className="pd-stat-card clickable" onClick={() => handleTabChange('payments')}>
                                             <div className="pd-stat-icon yellow"><FaWallet /></div>
-                                            <div className="pd-stat-value">{formatPrice(user.balance || 0)}</div>
+                                            <div className="pd-stat-value">{formatPrice(user.balance || 0, user.wallet_currency)}</div>
                                             <div className="pd-stat-label">{t('profile.available_balance')}</div>
                                         </div>
                                     </>
@@ -1047,7 +1073,7 @@ const Profile = () => {
                                         </div>
                                         <div className="pd-stat-card clickable" onClick={() => handleTabChange('payments')}>
                                             <div className="pd-stat-icon yellow"><FaWallet /></div>
-                                            <div className="pd-stat-value">{formatPrice(user.balance || 0)}</div>
+                                            <div className="pd-stat-value">{formatPrice(user.balance || 0, user.wallet_currency)}</div>
                                             <div className="pd-stat-label">{t('profile.available_balance')}</div>
                                         </div>
                                     </>
@@ -1529,30 +1555,43 @@ const Profile = () => {
                                                         <h4 className="detail-section-title">{t('profile.delivery_progress', 'Delivery Progress')}</h4>
                                                         <div className="order-tracker">
                                                             {/* Step 1: Confirmed */}
-                                                            <div className={`tracker-step ${['confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered'].includes(selectedOrder.order_status) ? 'completed' : ''}`}>
+                                                            <div className={`tracker-step ${['confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'returned', 'return_requested'].includes(selectedOrder.order_status) ? 'completed' : ''}`}>
                                                                 <div className="tracker-dot"></div>
                                                                 <div className="tracker-label">{t('order_status.confirmed', 'Confirmed')}</div>
+                                                                {selectedOrder.confirmed_at && <div className="tracker-date text-muted" style={{fontSize: '0.65rem', marginTop: '2px'}}>{new Date(selectedOrder.confirmed_at).toLocaleDateString()}</div>}
                                                             </div>
                                                             {/* Step 2: Packed / Dispatched */}
-                                                            <div className={`tracker-step ${['packed', 'shipped', 'out_for_delivery', 'delivered'].includes(selectedOrder.order_status) ? 'completed' : ''}`}>
+                                                            <div className={`tracker-step ${['packed', 'shipped', 'out_for_delivery', 'delivered', 'returned', 'return_requested'].includes(selectedOrder.order_status) ? 'completed' : ''}`}>
                                                                 <div className="tracker-dot"></div>
                                                                 <div className="tracker-label">{t('order_status.packed_dispatched', 'Packed / Dispatched')}</div>
+                                                                {selectedOrder.packed_at && <div className="tracker-date text-muted" style={{fontSize: '0.65rem', marginTop: '2px'}}>{new Date(selectedOrder.packed_at).toLocaleDateString()}</div>}
                                                             </div>
                                                             {/* Step 3: Shipped */}
-                                                            <div className={`tracker-step ${['shipped', 'out_for_delivery', 'delivered'].includes(selectedOrder.order_status) ? 'completed' : ''}`}>
+                                                            <div className={`tracker-step ${['shipped', 'out_for_delivery', 'delivered', 'returned', 'return_requested'].includes(selectedOrder.order_status) ? 'completed' : ''}`}>
                                                                 <div className="tracker-dot"></div>
                                                                 <div className="tracker-label">{t('order_status.shipped', 'Shipped')}</div>
+                                                                {selectedOrder.shipped_at && <div className="tracker-date text-muted" style={{fontSize: '0.65rem', marginTop: '2px'}}>{new Date(selectedOrder.shipped_at).toLocaleDateString()}</div>}
                                                             </div>
                                                             {/* Step 4: Out for Delivery */}
-                                                            <div className={`tracker-step ${['out_for_delivery', 'delivered'].includes(selectedOrder.order_status) ? 'completed' : ''}`}>
+                                                            <div className={`tracker-step ${['out_for_delivery', 'delivered', 'returned', 'return_requested'].includes(selectedOrder.order_status) ? 'completed' : ''}`}>
                                                                 <div className="tracker-dot"></div>
                                                                 <div className="tracker-label">{t('order_status.out_for_delivery', 'Out for Delivery')}</div>
+                                                                {selectedOrder.out_for_delivery_at && <div className="tracker-date text-muted" style={{fontSize: '0.65rem', marginTop: '2px'}}>{new Date(selectedOrder.out_for_delivery_at).toLocaleDateString()}</div>}
                                                             </div>
                                                             {/* Step 5: Delivered */}
-                                                            <div className={`tracker-step ${selectedOrder.order_status === 'delivered' ? 'completed' : ''}`}>
+                                                            <div className={`tracker-step ${['delivered', 'returned', 'return_requested'].includes(selectedOrder.order_status) ? 'completed' : ''}`}>
                                                                 <div className="tracker-dot"></div>
                                                                 <div className="tracker-label">{t('order_status.delivered', 'Delivered')}</div>
+                                                                {selectedOrder.delivered_at && <div className="tracker-date text-muted" style={{fontSize: '0.65rem', marginTop: '2px'}}>{new Date(selectedOrder.delivered_at).toLocaleDateString()}</div>}
                                                             </div>
+                                                            {/* Step 6: Returned (if applicable) */}
+                                                            {['returned', 'return_requested'].includes(selectedOrder.order_status) && (
+                                                                <div className={`tracker-step completed`}>
+                                                                    <div className="tracker-dot"></div>
+                                                                    <div className="tracker-label">{t('order_status.returned', 'Returned')}</div>
+                                                                    {(selectedOrder.returned_at || selectedOrder.updated_at) && <div className="tracker-date text-muted" style={{fontSize: '0.65rem', marginTop: '2px'}}>{new Date(selectedOrder.returned_at || selectedOrder.updated_at).toLocaleDateString()}</div>}
+                                                                </div>
+                                                            )}
                                                             <div className="tracker-line-bg"></div>
                                                             <div className="tracker-line-fill" data-status={selectedOrder.order_status || 'pending'}></div>
                                                         </div>
@@ -1667,22 +1706,34 @@ const Profile = () => {
                                                                                     e.target.src = DEFAULT_IMAGE_PLACEHOLDER;
                                                                                 }}
                                                                             />
-                                                                            <div className="flex-grow-1">
-                                                                                <h5 className="h6 fw-bold mb-1 text-dark">
+                                                                            <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                                                                                <h5 className="h6 fw-bold mb-1 text-dark text-truncate">
                                                                                     {subItem.item_id ? (
-                                                                                        <Link to={`/items/${subItem.item_id?._id}`} className="text-decoration-none text-dark hover-primary">
+                                                                                        <Link to={`/items/${subItem.item_id?._id}`} className="text-decoration-none text-dark hover-primary" title={safeString(subItem.item_id?.title)}>
                                                                                             {safeString(subItem.item_id?.title)}
                                                                                         </Link>
                                                                                     ) : (
                                                                                         'Unknown Item'
                                                                                     )}
                                                                                 </h5>
-                                                                                <p className="text-muted extra-small mb-2 fw-bold text-uppercase">
+                                                                                <p className="text-muted extra-small mb-2 fw-bold text-uppercase text-truncate" title={mode === 'buyer' ? `${t('profile.sold_by', 'Sold by:')} ${safeString(selectedOrder.seller_id?.username)}` : `${t('profile.bought_by', 'Bought by:')} ${safeString(selectedOrder.buyer_id?.username)}`}>
                                                                                     {mode === 'buyer' ? `${t('profile.sold_by', 'Sold by:')} ${safeString(selectedOrder.seller_id?.username)}` : `${t('profile.bought_by', 'Bought by:')} ${safeString(selectedOrder.buyer_id?.username)}`}
                                                                                 </p>
-                                                                                <div className="d-flex align-items-center gap-2">
+                                                                                <div className="d-flex align-items-center gap-2 flex-wrap">
                                                                                     <span className="badge bg-primary-soft text-primary px-2 py-1 rounded-pill extra-small">Item Price</span>
-                                                                                    <span className="fw-bold text-dark small">{formatPrice(subItem.price)}</span>
+                                                                                    {subItem.item_id?.price > subItem.price && (
+                                                                                        <span className="badge bg-warning-soft text-warning px-2 py-1 rounded-pill extra-small" style={{ border: '1px solid #fbbf24' }}>Negotiated Offer</span>
+                                                                                    )}
+                                                                                    {subItem.item_id?.original_price > 0 && subItem.item_id.original_price > subItem.price ? (
+                                                                                        <div className="d-flex align-items-center gap-2">
+                                                                                            <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.8rem' }}>
+                                                                                                {formatPrice(subItem.item_id.original_price)}
+                                                                                            </span>
+                                                                                            <span className="fw-bold text-danger small">{formatPrice(subItem.price)}</span>
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <span className="fw-bold text-dark small">{formatPrice(subItem.price)}</span>
+                                                                                    )}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -1702,22 +1753,34 @@ const Profile = () => {
                                                                             e.target.src = DEFAULT_IMAGE_PLACEHOLDER;
                                                                         }}
                                                                     />
-                                                                    <div className="flex-grow-1">
-                                                                        <h5 className="h6 fw-bold mb-1 text-dark">
+                                                                    <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                                                                        <h5 className="h6 fw-bold mb-1 text-dark text-truncate">
                                                                             {selectedOrder.item_id ? (
-                                                                                <Link to={`/items/${selectedOrder.item_id?._id}`} className="text-decoration-none text-dark hover-primary">
+                                                                                <Link to={`/items/${selectedOrder.item_id?._id}`} className="text-decoration-none text-dark hover-primary" title={safeString(selectedOrder.item_id?.title)}>
                                                                                     {safeString(selectedOrder.item_id?.title)}
                                                                                 </Link>
                                                                             ) : (
                                                                                 'Unknown Item'
                                                                             )}
                                                                         </h5>
-                                                                        <p className="text-muted extra-small mb-2 fw-bold text-uppercase">
+                                                                        <p className="text-muted extra-small mb-2 fw-bold text-uppercase text-truncate" title={mode === 'buyer' ? `${t('profile.sold_by', 'Sold by:')} ${safeString(selectedOrder.seller_id?.username)}` : `${t('profile.bought_by', 'Bought by:')} ${safeString(selectedOrder.buyer_id?.username)}`}>
                                                                             {mode === 'buyer' ? `${t('profile.sold_by', 'Sold by:')} ${safeString(selectedOrder.seller_id?.username)}` : `${t('profile.bought_by', 'Bought by:')} ${safeString(selectedOrder.buyer_id?.username)}`}
                                                                         </p>
-                                                                        <div className="d-flex align-items-center gap-2">
+                                                                        <div className="d-flex align-items-center gap-2 flex-wrap">
                                                                             <span className="badge bg-primary-soft text-primary px-2 py-1 rounded-pill extra-small">Item Price</span>
-                                                                            <span className="fw-bold text-dark small">{formatPrice(selectedOrder.item_price)}</span>
+                                                                            {selectedOrder.item_id?.price > selectedOrder.item_price && (
+                                                                                <span className="badge bg-warning-soft text-warning px-2 py-1 rounded-pill extra-small" style={{ border: '1px solid #fbbf24' }}>Negotiated Offer</span>
+                                                                            )}
+                                                                            {selectedOrder.item_id?.original_price > 0 && selectedOrder.item_id.original_price > selectedOrder.item_price ? (
+                                                                                <div className="d-flex align-items-center gap-2">
+                                                                                    <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.8rem' }}>
+                                                                                        {formatPrice(selectedOrder.item_id.original_price)}
+                                                                                    </span>
+                                                                                    <span className="fw-bold text-danger small">{formatPrice(selectedOrder.item_price)}</span>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <span className="fw-bold text-dark small">{formatPrice(selectedOrder.item_price)}</span>
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -1764,9 +1827,15 @@ const Profile = () => {
                                                                         </div>
                                                                     )}
                                                                     {selectedOrder.delivered_at && (
+                                                                        <div className={`timeline-milestone ${selectedOrder.order_status === 'delivered' ? 'active' : ''}`}>
+                                                                            <span className={`text-${selectedOrder.order_status === 'delivered' ? 'success' : 'muted'} extra-small fw-bold uppercase`}>Delivered</span>
+                                                                            <span className={`small fw-bold text-${selectedOrder.order_status === 'delivered' ? 'success' : 'dark'}`}>{new Date(selectedOrder.delivered_at).toLocaleDateString()}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {selectedOrder.order_status === 'returned' && (
                                                                         <div className="timeline-milestone active">
-                                                                            <span className="text-success extra-small fw-bold uppercase">Delivered</span>
-                                                                            <span className="small fw-bold text-success">{new Date(selectedOrder.delivered_at).toLocaleDateString()}</span>
+                                                                            <span className="text-danger extra-small fw-bold uppercase">Returned</span>
+                                                                            <span className="small fw-bold text-danger">{new Date(selectedOrder.returned_at || selectedOrder.updated_at).toLocaleDateString()}</span>
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -1891,6 +1960,14 @@ const Profile = () => {
                                                             <p className="small mb-1"><strong>Refunded:</strong> {formatPrice(selectedOrder.refund_amount, selectedOrder.currency_id)}</p>
                                                             <p className="small mb-1"><strong>Processing Note:</strong> {selectedOrder.partial_refund_reason || 'N/A'}</p>
                                                             <p className="extra-small text-muted mb-0">The item has been successfully returned and payment settled.</p>
+                                                            {mode === 'seller' && selectedOrder.item_id && (
+                                                                <button 
+                                                                    className="btn btn-outline-success btn-sm mt-3 fw-bold bg-white"
+                                                                    onClick={() => handleRelistItem(selectedOrder.item_id._id || selectedOrder.item_id)}
+                                                                >
+                                                                    Relist Item
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     )}
 
@@ -2122,6 +2199,20 @@ const Profile = () => {
                                         value={actionModal.inputValue}
                                         onChange={(e) => setActionModal({ ...actionModal, inputValue: e.target.value })}
                                     />
+                                    {actionModal.type === 'refund_partial' && (
+                                        <div className="form-check mt-3">
+                                            <input 
+                                                className="form-check-input" 
+                                                type="checkbox" 
+                                                id="relistCheckbox" 
+                                                checked={actionModal.relist || false}
+                                                onChange={(e) => setActionModal({ ...actionModal, relist: e.target.checked })}
+                                            />
+                                            <label className="form-check-label extra-small fw-bold text-muted" htmlFor="relistCheckbox">
+                                                Relist this item for resale
+                                            </label>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -2133,7 +2224,7 @@ const Profile = () => {
                                 )}
                                 <button
                                     className={`btn btn-${['cancel', 'error'].includes(actionModal.type) ? 'danger' : (['success'].includes(actionModal.type) ? 'success' : 'primary')} flex-fill fw-bold py-2`}
-                                    onClick={() => actionModal.onConfirm ? actionModal.onConfirm(actionModal.inputValue, actionModal.inputValue2) : setActionModal({ ...actionModal, show: false })}
+                                    onClick={() => actionModal.onConfirm ? actionModal.onConfirm(actionModal.inputValue, actionModal.inputValue2, actionModal.relist) : setActionModal({ ...actionModal, show: false })}
                                 >
                                     {actionModal.confirmLabel}
                                 </button>

@@ -109,7 +109,7 @@ const WithdrawalRequests = () => {
     /* ── Filtered data ─────────────────────────────────────── */
     const filteredData = useMemo(() => {
         return requests.filter(r => {
-            const term = searchTerm.toLowerCase();
+            const term = searchTerm?.toLowerCase();
             const matchSearch =
                 r.user_id?.username?.toLowerCase().includes(term) ||
                 r.user_id?.email?.toLowerCase().includes(term) ||
@@ -185,7 +185,7 @@ const WithdrawalRequests = () => {
             render: (row) => {
                 const conf = statusConf[row.status] || { cls: 'secondary', labelKey: row.status };
                 const label = t(`withdrawals.status.${conf.labelKey}`, row.status);
-                return <span className={`wallet-badge wallet-badge-${conf.cls}`}>{label.toUpperCase()}</span>;
+                return <span className={`wallet-badge wallet-badge-${conf.cls}`}>{label?.toUpperCase()}</span>;
             }
         },
         {
@@ -238,7 +238,7 @@ const WithdrawalRequests = () => {
                 </div>
                 <div className="wallet-mobile-card-row">
                     <span className="wallet-mobile-card-key">{t('withdrawals.table.status', 'Status')}</span>
-                    <span className={`wallet-badge wallet-badge-${conf.cls}`}>{label.toUpperCase()}</span>
+                    <span className={`wallet-badge wallet-badge-${conf.cls}`}>{label?.toUpperCase()}</span>
                 </div>
                 {row.status === 'pending' && (
                     <div className="wallet-mobile-card-actions">
@@ -307,12 +307,11 @@ const WithdrawalRequests = () => {
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <select className="wallet-filter-select" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                        <select className="admin-filter-select" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                             <option value="all">{t('withdrawals.all_statuses', 'All Statuses')}</option>
                             <option value="pending">{t('withdrawals.pending', 'Pending')}</option>
                             <option value="approved">{t('withdrawals.approved', 'Approved')}</option>
                             <option value="rejected">{t('withdrawals.rejected', 'Rejected')}</option>
-                            <option value="completed">{t('withdrawals.completed', 'Completed')}</option>
                         </select>
                     </div>
                     <div className="wallet-controls-right" style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>

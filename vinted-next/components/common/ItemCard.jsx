@@ -162,9 +162,10 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
                             background: 'none',
                             border: 'none',
                             zIndex: 20,
-                            cursor: 'pointer',
+                            cursor: (item.is_sold || item.status === 'sold' || item.is_ordered || item.status === 'inactive') ? 'not-allowed' : 'pointer',
                             opacity: (item.is_sold || item.status === 'sold' || item.is_ordered || item.status === 'inactive') ? 0.6 : 1
                         }}
+                        disabled={item.is_sold || item.status === 'sold' || item.is_ordered || item.status === 'inactive'}
                     >
                         {isFav ? <FaHeart style={{ color: '#ef4444', fontSize: '1.2rem' }} /> : <FaRegHeart style={{ color: 'white', fontSize: '1.2rem' }} />}
                         <span style={{
@@ -222,7 +223,7 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
                 {/* ORDERED Badge */}
                 {(item.is_sold || item.status === 'sold' || item.is_ordered) && (
                     <div className="sold-overlay" style={{ zIndex: 10 }}>
-                        <span>ORDERED</span>
+                        <span>{item.is_ordered ? 'ORDERED' : 'SOLD'}</span>
                     </div>
                 )}
 

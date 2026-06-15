@@ -32,7 +32,13 @@ const optimizeImages = async (req, res, next) => {
             if (file.fieldname === 'profile_image') {
                 minDim = 300;
                 maxDim = 500;
-            } else if (['site_logo', 'site_favicon', 'stripe_logo', 'paypal_logo', 'category_image', 'image_not_found', 'empty_table_image'].includes(file.fieldname)) {
+            } else if (['site_logo', 'stripe_logo', 'paypal_logo'].includes(file.fieldname)) {
+                minDim = 0;
+                maxDim = 400;
+            } else if (['site_favicon'].includes(file.fieldname) || (file.fieldname && file.fieldname.startsWith('social_icon_'))) {
+                minDim = 0;
+                maxDim = 120;
+            } else if (['site_og_image', 'category_image', 'image_not_found', 'empty_table_image'].includes(file.fieldname)) {
                 minDim = 0;
                 maxDim = 800;
             } else if (file.fieldname === 'image') {

@@ -8,7 +8,7 @@ import AuthContext from '@/context/AuthContext';
 import NotificationContext from '@/context/NotificationContext';
 import CurrencyContext from '@/context/CurrencyContext';
 import { useTranslation } from 'react-i18next';
-import { FaPaperPlane, FaUser, FaClock, FaCheck, FaCheckDouble, FaTimes, FaInbox, FaBan, FaEllipsisV, FaEnvelope, FaShoppingBag, FaArrowLeft, FaPlus, FaBoxOpen } from 'react-icons/fa';
+import { FaPaperPlane, FaUser, FaClock, FaCheck, FaCheckDouble, FaTimes, FaInbox, FaBan, FaEllipsisV, FaEnvelope, FaShoppingBag, FaArrowLeft, FaPlus, FaBoxOpen, FaWallet, FaImage } from 'react-icons/fa';
 import { getImageUrl, safeString } from '@/utils/constants';
 import '@/app/styles/Messaging.css';
 import getSocket from '@/utils/socket';
@@ -42,6 +42,58 @@ const MessagesContent = () => {
     const [mobileChatOpen, setMobileChatOpen] = useState(false);
     const chatEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
+    const fileInputRef = useRef(null);
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const otherParticipant = activeConv?.participants?.find(p => (p.user?._id || p.user)?.toString() !== (user.id || user._id)?.toString());
+        const targetReceiverId = otherParticipant?.user?._id || otherParticipant?.user;
+        const targetModel = otherParticipant?.on_model || 'User';
+
+        if (!targetReceiverId) return;
+
+        const formData = new FormData();
+        formData.append('message_image', file);
+        formData.append('receiver_id', targetReceiverId);
+        formData.append('receiver_model', targetModel);
+        if (activeConv?._id !== 'new') {
+            formData.append('conversation_id', activeConv?._id);
+        }
+
+        try {
+            const res = await axios.post('/api/messages/image', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            const returnedConv = res.data.conversation;
+            const returnedMsg = res.data.message || res.data;
+
+            setMessages(prev => {
+                if (prev.find(m => m._id === returnedMsg._id)) return prev;
+                return [...prev, returnedMsg];
+            });
+            
+            if (returnedConv) {
+                setActiveConv(returnedConv);
+                setConversations(prev => {
+                    const exists = prev.find(c => c._id === returnedConv._id);
+                    if (exists) return prev.map(c => c._id === returnedConv._id ? returnedConv : c);
+                    return [returnedConv, ...prev];
+                });
+            }
+        } catch (err) {
+            console.error('Error uploading image:', err);
+            alert('Failed to upload image. Please try again.');
+        } finally {
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
     const initialLoadRef = useRef(true);
 
     const handleImageError = (e) => {
@@ -118,6 +170,9 @@ const MessagesContent = () => {
                         if (prev.find(c => c._id === conversation._id)) return prev;
                         return [{ ...conversation, unread_count: 0 }, ...prev];
                     });
+                } else {
+                    // Update the active conversation state if it changed (e.g., status became accepted)
+                    setActiveConv(prev => ({ ...prev, ...conversation, unread_count: 0 }));
                 }
             }
 
@@ -192,29 +247,46 @@ const MessagesContent = () => {
 
     // Handle ?user= and ?item= params — auto-open conversation window for specific product
     useEffect(() => {
-        if (!allUsers.length) return;
+        if (loading || !allUsers.length) return;
         const targetUserId = searchParams.get('user');
         const targetItemId = searchParams.get('item');
         if (!targetUserId) return;
 
-        // Check if existing conversation with this user about this item
+        // Check if existing conversation with this user
         const existingConv = conversations.find(c =>
-            c.participants?.some(p => (p.user?._id || p.user) === targetUserId) &&
-            (targetItemId ? (c.item_id?._id || c.item_id) === targetItemId : true)
+            c.participants?.some(p => (p.user?._id || p.user) === targetUserId)
         );
 
         if (existingConv) {
-            setActiveConv(existingConv);
-            setShowUserPicker(false);
+            setActiveConv(prev => {
+                if (prev?._id === existingConv._id) return prev;
+                setShowUserPicker(false);
+                return existingConv;
+            });
         } else {
             // No existing — find them in allUsers and open a new chat window for this item
             const targetUser = allUsers.find(u => u._id === targetUserId);
             if (targetUser) {
-                // If item context exists, try to find item details to populate the 'new' chat context
-                handleStartChat(targetUser, targetItemId);
+                setActiveConv(prev => {
+                    if (prev?._id === 'new' && prev.participants?.some(p => (p.user?._id || p.user) === targetUserId)) {
+                        return prev;
+                    }
+                    setShowUserPicker(false);
+                    setMessages([]);
+                    return {
+                        _id: 'new',
+                        participants: [
+                            { user: user, on_model: 'User' },
+                            { user: targetUser, on_model: 'User' }
+                        ],
+                        item_id: targetItemId, // Carry the item context
+                        status: 'pending',
+                        initiator_id: user.id || user._id
+                    };
+                });
             }
         }
-    }, [allUsers, searchParams, conversations]);
+    }, [allUsers, searchParams, conversations, loading, user]);
 
     useEffect(() => {
         if (activeConv) {
@@ -234,7 +306,7 @@ const MessagesContent = () => {
                 fetchItemData();
             }
         }
-    }, [activeConv?._id, activeConv?.item_id]);
+    }, [activeConv?._id, typeof activeConv?.item_id === 'object' ? activeConv?.item_id?._id : activeConv?.item_id]);
 
     useEffect(() => {
         if (initialLoadRef.current) {
@@ -323,8 +395,7 @@ const MessagesContent = () => {
 
     const handleStartChat = async (targetUser, targetItemId = null) => {
         const existing = conversations.find(c =>
-            c.participants.some(p => (p.user?._id || p.user) === targetUser._id) &&
-            (targetItemId ? (c.item_id?._id || c.item_id) === targetItemId : true)
+            c.participants.some(p => (p.user?._id || p.user) === targetUser._id)
         );
 
         if (existing) {
@@ -702,7 +773,9 @@ const MessagesContent = () => {
                                             if (lm.startsWith('ORDER_NOTIFICATION::')) {
                                                 try {
                                                     const data = JSON.parse(lm.replace('ORDER_NOTIFICATION::', ''));
-                                                    return data.type === 'order_delivered' ? `✅ Delivered: ${data.item_title}` : `🛒 New Order: ${data.item_title}`;
+                                                    if (data.type === 'order_delivered') return `✅ Delivered: ${data.item_title}`;
+                                                    if (data.type === 'order_cancelled') return `❌ Cancelled: ${data.item_title}`;
+                                                    return `🛒 New Order: ${data.item_title}`;
                                                 } catch (e) { return 'Order Notification'; }
                                             }
                                             if (lm.includes('Report Submitted')) return '🚩 Product Report';
@@ -788,7 +861,7 @@ const MessagesContent = () => {
                                             <div className="text-muted small">
                                                 {headerOtherOnModel === 'Admin' ? 'Official Support' : 'Order Notifications'}
                                                 <span className="ms-2 badge bg-success-soft text-success">
-                                                    {t('profile.balance')}: {formatPrice(user?.balance || 0)}
+                                                    {t('profile.balance', 'Balance')}: {formatPrice(user?.balance || 0)}
                                                 </span>
                                             </div>
                                         ) : (
@@ -799,12 +872,12 @@ const MessagesContent = () => {
                                     </div>
                                     
                                     <div className={`pd-msg-status ${activeConv.status}`}>
-                                          {hasSystemMsgs
+                                          {isMarketplace
                                               ? (headerOtherOnModel === 'Admin' ? t('profile.status_official', 'OFFICIAL') : t('profile.status_updates', 'UPDATES'))
                                               : activeConv.status === 'accepted' ? t('profile.status_accepted', 'ACCEPTED') : t('profile.status_pending', 'PENDING')}
                                     </div>
 
-                                    {!hasSystemMsgs && (
+                                    {!isMarketplace && (
                                         <button
                                             className={`pd-msg-header-btn ms-2 ${activeConv.blocked_by?.includes(user.id || user._id) ? 'text-danger' : 'text-muted'}`}
                                             onClick={handleToggleBlock}
@@ -897,7 +970,7 @@ const MessagesContent = () => {
                                                     msgContent = (
                                                         <div className="pd-rich-system-card order">
                                                             <div className="pd-rich-system-header">
-                                                                {data.type === 'order_delivered' ? '✅ Delivered' : '🛒 New Order'}
+                                                                {data.type === 'order_delivered' ? '✅ Delivered' : (data.type === 'order_cancelled' ? '❌ Cancelled' : '🛒 New Order')}
                                                             </div>
                                                             <div className="pd-rich-system-body">
                                                                 <p className="fw-bold mb-1">{data.is_bundle ? `${data.item_count} items` : data.item_title}</p>
@@ -909,7 +982,7 @@ const MessagesContent = () => {
                                                             <div className="pd-rich-system-footer">
                                                                 <button 
                                                                     className="pd-rich-system-btn primary"
-                                                                    onClick={() => router.push(`/profile?tab=orders&orderId=${data.order_id}`)}
+                                                                    onClick={() => window.dispatchEvent(new CustomEvent('openOrderModal', { detail: data.order_id }))}
                                                                 >
                                                                     <FaBoxOpen size={14} /> {t('profile.view_order_details', 'View Order Details')}
                                                                 </button>
@@ -928,7 +1001,7 @@ const MessagesContent = () => {
                                                             <div className="pd-rich-system-header">💰 Withdrawal Request</div>
                                                             <div className="pd-rich-system-body">
                                                                 <p className="mb-1"><strong>Amount:</strong> <span className="text-success fw-bold">{formatPrice(data.amount, data.currency)}</span></p>
-                                                                <p className="mb-1 small"><strong>Method:</strong> {data.method || 'Bank Transfer'}</p>
+                                                                <p className="mb-1 small"><strong>Method:</strong> {typeof data.method === 'object' ? (data.method.payout_type || 'Bank Transfer') : (data.method || 'Bank Transfer')}</p>
                                                                 <p className="mb-0 xsmall text-muted">ID: {data.request_id}</p>
                                                             </div>
                                                             <div className="pd-rich-system-footer">
@@ -1063,6 +1136,29 @@ const MessagesContent = () => {
                                             );
                                         }
 
+                                        if (msg.message_type === 'image') {
+                                            return (
+                                                <div key={msg._id} className={`pd-msg-item ${isSent ? 'sent' : 'received'}`}>
+                                                    <div className="pd-msg-bubble p-1" style={{ backgroundColor: 'transparent', boxShadow: 'none' }}>
+                                                        <img 
+                                                            src={getImageUrl(msg.message)} 
+                                                            alt="Shared" 
+                                                            style={{ maxWidth: '250px', maxHeight: '250px', borderRadius: '8px', cursor: 'pointer', objectFit: 'contain' }}
+                                                            onClick={() => window.open(getImageUrl(msg.message), '_blank')}
+                                                        />
+                                                        <div className="pd-msg-time" style={{ justifyContent: isSent ? 'flex-end' : 'flex-start', marginTop: '4px' }}>
+                                                            {formatTime(msg.created_at)}
+                                                            {isSent && (
+                                                                msg.is_read ? 
+                                                                <FaCheckDouble className="ms-1" style={{ fontSize: '11px', color: '#4ade80' }} title="Read" /> : 
+                                                                <FaCheck className="ms-1" style={{ fontSize: '10px' }} title="Sent" />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
                                         return (
                                             <div key={msg._id} className={`pd-msg-item ${isSent ? 'sent' : 'received'}`}>
                                                 <div className="pd-msg-bubble">
@@ -1087,16 +1183,35 @@ const MessagesContent = () => {
                         {/* Input Area */}
                         <div className="pd-msg-chat-input">
                             {activeConv.status === 'accepted' ? (
-                                <form onSubmit={handleSendMessage} className="d-flex gap-2">
+                                <form onSubmit={handleSendMessage} className="d-flex gap-2 align-items-center">
+                                    <button 
+                                        type="button" 
+                                        className="btn btn-light" 
+                                        style={{ border: 'none', background: 'transparent', color: '#64748b' }}
+                                        title="Upload Image"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={activeConv.blocked_by?.length > 0}
+                                    >
+                                        <FaImage size={18} />
+                                    </button>
+                                    <input 
+                                        type="file" 
+                                        ref={fileInputRef} 
+                                        style={{ display: 'none' }} 
+                                        accept="image/*" 
+                                        onChange={handleImageUpload} 
+                                    />
                                     <input
                                         type="text"
                                         placeholder={t('profile.type_message', 'Type a message...')}
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
                                         disabled={activeConv.blocked_by?.length > 0}
+                                        className="flex-grow-1"
+                                        style={{ border: 'none', background: 'transparent', outline: 'none' }}
                                     />
-                                    <button type="submit" disabled={!newMessage.trim() || activeConv.blocked_by?.length > 0}>
-                                        <FaPaperPlane />
+                                    <button type="submit" disabled={!newMessage.trim() || activeConv.blocked_by?.length > 0} style={{ border: 'none', background: 'transparent', color: 'var(--primary-color, #0ea5e9)' }}>
+                                        <FaPaperPlane size={18} />
                                     </button>
                                 </form>
                             ) : (

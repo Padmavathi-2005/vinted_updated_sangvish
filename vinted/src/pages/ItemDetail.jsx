@@ -471,9 +471,11 @@ const ItemDetail = () => {
                                     <button className="id-overlay-btn" onClick={() => setShareModal(true)} title="Share">
                                         <FaShareAlt />
                                     </button>
-                                    <button className="id-overlay-btn" title="Report" onClick={() => setReportModal(true)}>
-                                        <FaRegFlag />
-                                    </button>
+                                    {!isOwnItem && (
+                                        <button className="id-overlay-btn" title="Report" onClick={() => setReportModal(true)}>
+                                            <FaRegFlag />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -719,8 +721,8 @@ const ItemDetail = () => {
                                 <h3 className="id-box-title">{t('item_detail.seller')}</h3>
                                 <div className="id-seller-top">
                                     <Link to={`/seller/${seller._id}`} className="id-seller-avatar-link">
-                                        <div className="id-seller-avatar" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', borderRadius: '50%', overflow: 'hidden' }}>
-                                            <div className="id-seller-avatar-placeholder" style={{ fontSize: '1.2rem', fontWeight: '800', color: '#64748b' }}>
+                                        <div className="id-seller-avatar" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--primary-color, #0ea5e9)', borderRadius: '50%', overflow: 'hidden' }}>
+                                            <div className="id-seller-avatar-placeholder" style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff' }}>
                                                 {(seller.username || 'U').charAt(0).toUpperCase()}
                                             </div>
                                             {seller.profile_image && (

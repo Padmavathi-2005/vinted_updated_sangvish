@@ -5,9 +5,13 @@ export const DEFAULT_IMAGE_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxu
 
 export const getImageUrl = (path) => {
     if (!path || String(path).includes('not_found.png')) return DEFAULT_IMAGE_PLACEHOLDER;
-    const pathStr = String(path);
+    let pathStr = String(path);
     if (pathStr.startsWith('data:')) return pathStr;
     if (pathStr.startsWith('http')) return pathStr;
+    
+    if (pathStr.startsWith('message_image-')) {
+        pathStr = 'images/messages/' + pathStr;
+    }
 
     // Robust normalization for frontend
     let clean = pathStr.replace(/\\/g, '/').replace(/^\/+/, '');

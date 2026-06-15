@@ -234,7 +234,7 @@ const DynamicSettings = () => {
 
                                         <Col md={12}>
                                             <Form.Group>
-                                                <Form.Label className="form-label-bold">Custom Name ({activeGlobalLang.toUpperCase()})</Form.Label>
+                                                <Form.Label className="form-label-bold">Custom Name ({activeGlobalLang?.toUpperCase()})</Form.Label>
                                                 <Form.Control
                                                     type="text"
                                                     className="ds-input"
@@ -247,7 +247,7 @@ const DynamicSettings = () => {
 
                                         <Col md={12}>
                                             <Form.Group>
-                                                <Form.Label className="form-label-bold">Description ({activeGlobalLang.toUpperCase()})</Form.Label>
+                                                <Form.Label className="form-label-bold">Description ({activeGlobalLang?.toUpperCase()})</Form.Label>
                                                 <Form.Control
                                                     as="textarea"
                                                     rows={2}
@@ -474,7 +474,7 @@ const DynamicSettings = () => {
                                     A score of 1.0 indicates a likely human, while 0.0 indicates a likely bot.
                                 </p>
                                 <div className="recaptcha-steps">
-                                    <div className="fw-bold xx-small text-primary mb-2 text-uppercase tracking-wider">How to get your keys:</div>
+                                    <div className="fw-bold xx-small mb-2 text-uppercase tracking-wider">How to get your keys:</div>
                                     <ol className="mb-0 ps-3 xx-small text-muted leading-relaxed">
                                         <li className="mb-1">Go to the <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noreferrer" className="text-primary text-decoration-none fw-bold">Google reCAPTCHA Admin Console</a>.</li>
                                         <li className="mb-1">Click the <b>+ (Create)</b> icon to register a new site.</li>
@@ -1190,7 +1190,7 @@ const DynamicSettings = () => {
         // Skip gateway fields if we are in payment_settings (they are handled by renderPaymentGateways)
         if (type === 'payment_settings' && (key.startsWith('stripe_') || key.startsWith('paypal_'))) return null;
 
-        const defaultLabel = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const defaultLabel = key.replace(/_/g, ' ').replace(/\b\w/g, l => l?.toUpperCase());
         const label = t(`settings.fields.${key}`, defaultLabel);
 
         if (['site_logo', 'site_favicon', 'site_og_image'].includes(key)) {
@@ -1360,7 +1360,7 @@ const DynamicSettings = () => {
             return (
                 <Col key={key} md={12} className="mb-3">
                     <Form.Group>
-                        <Form.Label className="fw-bold">{label} ({activeGlobalLang.toUpperCase()})</Form.Label>
+                        <Form.Label className="fw-bold">{label} ({activeGlobalLang?.toUpperCase()})</Form.Label>
                         <Form.Control
                             as="textarea"
                             rows={3}
@@ -1399,7 +1399,7 @@ const DynamicSettings = () => {
                     <Form.Group>
                         <Form.Label className="fw-bold">{label}</Form.Label>
                         <Form.Control
-                            type={key === 'mail_password' || key === 'gemini_api_key' || key === 'huggingface_api_key' || key.toLowerCase().includes('secret') || key.toLowerCase().includes('private_key') ? 'password' : 'text'}
+                            type={key === 'mail_password' || key === 'gemini_api_key' || key === 'huggingface_api_key' || key?.toLowerCase().includes('secret') || key?.toLowerCase().includes('private_key') ? 'password' : 'text'}
                             name={key}
                             value={formData[key] || ''}
                             onChange={handleInputChange}
@@ -1429,7 +1429,7 @@ const DynamicSettings = () => {
         return (
             <Col key={key} md={6} className="mb-3">
                 <Form.Group>
-                    <Form.Label className="fw-bold">{label} ({activeGlobalLang.toUpperCase()})</Form.Label>
+                    <Form.Label className="fw-bold">{label} ({activeGlobalLang?.toUpperCase()})</Form.Label>
                     <Form.Control
                         type="text"
                         name={key}

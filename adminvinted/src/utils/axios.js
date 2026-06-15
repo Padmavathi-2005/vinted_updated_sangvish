@@ -6,7 +6,7 @@ const instance = axios.create({
 });
 
 // Separate URL for serving images/media (always main backend port 5000)
-export const imageBaseURL = import.meta.env.VITE_IMAGE_BASE_URL || 'https://vinted.sangvish.com';
+export const imageBaseURL = import.meta.env.VITE_IMAGE_BASE_URL || import.meta.env.VITE_ADMIN_API_BASE_URL || 'https://vinted.sangvish.com';
 
 // Add interceptors to handle authentication tokens
 instance.interceptors.request.use(

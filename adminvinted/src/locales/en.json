@@ -398,7 +398,7 @@
     "approved": "Approved",
     "rejected": "Rejected",
     "all_statuses": "All Statuses",
-    "search_placeholder": "...Search user, email, method",
+    "search_placeholder": "Search user, email, method...",
     "table": {
       "date": "Date",
       "user": "User",
@@ -439,7 +439,7 @@
       "subcategories": "Subcategories",
       "item_types": "Item Types"
     },
-    "search_placeholder": "...Search categories",
+    "search_placeholder": "Search categories...",
     "table": {
       "category": "Category",
       "subcategories": "Subcategories",
@@ -476,7 +476,7 @@
     "subtitle": "Manage your newsletter list and subscribers",
     "export": "Export",
     "all_statuses": "All Statuses",
-    "search_placeholder": "...Search by email",
+    "search_placeholder": "Search by email...",
     "table": {
       "actions": "Actions",
       "subscribed_at": "Subscribed At",
@@ -490,7 +490,7 @@
     "title": "Static Pages",
     "subtitle": "Manage your website static informational pages",
     "create_page": "Create Page",
-    "search_placeholder": "...Search by title or slug",
+    "search_placeholder": "Search by title or slug...",
     "table": {
       "title": "Title",
       "slug": "Slug (URL)",
@@ -502,7 +502,7 @@
   "product_reports": {
     "title": "Product Reports",
     "subtitle": "Manage and review complaints about listings",
-    "search_placeholder": "...Search reports",
+    "search_placeholder": "Search reports...",
     "table": {
       "item": "ITEM",
       "reporter": "REPORTER",

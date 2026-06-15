@@ -153,7 +153,7 @@ const Currencies = () => {
                     <FaMoneyBillWave className="text-success opacity-50" />
                     <div>
                         <div className="fw-bold">{row.name}</div>
-                        <div className="small text-muted">{row.code.toUpperCase()}</div>
+                        <div className="small text-muted">{row.code?.toUpperCase()}</div>
                     </div>
                 </div>
             )
@@ -171,7 +171,7 @@ const Currencies = () => {
         {
             header: 'Exchange Rate',
             accessor: 'exchange_rate',
-            render: (row) => <span className="fw-bold text-primary">{row.exchange_rate}</span>
+            render: (row) => <span className="fw-bold">{row.exchange_rate}</span>
         },
         {
             header: 'Status',
@@ -187,8 +187,8 @@ const Currencies = () => {
     ];
 
     const filteredData = Array.isArray(currencies) ? currencies.filter(c =>
-        (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.code || '').toLowerCase().includes(searchTerm.toLowerCase())
+        (c.name || '').toLowerCase().includes(searchTerm?.toLowerCase()) ||
+        (c.code || '').toLowerCase().includes(searchTerm?.toLowerCase())
     ) : [];
 
 

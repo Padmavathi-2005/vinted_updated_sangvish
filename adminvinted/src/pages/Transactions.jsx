@@ -21,7 +21,7 @@ const statusVariant = { completed: 'success', pending: 'pending', failed: 'dange
 const typeVariant = { credit: 'credit', debit: 'debit' };
 
 const purposeLabel = (p = '') =>
-    p.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    p.replace(/_/g, ' ').replace(/\b\w/g, c => c?.toUpperCase());
 
 /* ── Component ───────────────────────────────────────────── */
 const Transactions = () => {
@@ -62,7 +62,7 @@ const Transactions = () => {
     /* ── Derived data ──────────────────────────────────────── */
     const filteredData = useMemo(() => {
         return transactions.filter(t => {
-            const term = searchTerm.toLowerCase();
+            const term = searchTerm?.toLowerCase();
             const matchSearch =
                 t.user_id?.username?.toLowerCase().includes(term) ||
                 t.user_id?.email?.toLowerCase().includes(term) ||
@@ -322,7 +322,7 @@ const Transactions = () => {
                             />
                         </div>
                         <select
-                            className="wallet-filter-select"
+                            className="admin-filter-select"
                             value={filterType}
                             onChange={e => setFilterType(e.target.value)}
                         >
@@ -331,7 +331,7 @@ const Transactions = () => {
                             <option value="debit">Debit</option>
                         </select>
                         <select
-                            className="wallet-filter-select"
+                            className="admin-filter-select"
                             value={filterStatus}
                             onChange={e => setFilterStatus(e.target.value)}
                         >

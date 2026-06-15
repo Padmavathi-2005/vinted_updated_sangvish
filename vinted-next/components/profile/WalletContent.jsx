@@ -7,6 +7,7 @@ import {
     FaExclamationCircle, FaExchangeAlt, FaMoneyBillWave, FaUniversity, FaPlus
 } from 'react-icons/fa';
 import CurrencyContext from '@/context/CurrencyContext';
+import AuthContext from '@/context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { safeString } from '@/utils/constants';
 import { loadStripe } from '@stripe/stripe-js';
@@ -35,6 +36,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
     ];
     const router = useRouter();
     const { formatPrice, convertPrice, currentCurrency, defaultCurrency } = useContext(CurrencyContext);
+    const { updateUser } = useContext(AuthContext);
 
     /* internal sub-tab state — kept in sync with sidebar prop */
     const [activeSubTab, setActiveSubTab] = useState(propSubTab);
@@ -59,14 +61,16 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
     const [depositClientSecret, setDepositClientSecret] = useState('');
     const [depositLoading, setDepositLoading] = useState(false);
     const [stripePromise, setStripePromise] = useState(null);
+    const [primaryColor, setPrimaryColor] = useState('#0ea5e9');
 
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [wRes, hRes, pRes] = await Promise.all([
+            const [wRes, hRes, pRes, userRes] = await Promise.all([
                 axios.get('/api/wallet/me'),
                 axios.get('/api/wallet/withdrawals'),
                 axios.get('/api/wallet/payout-methods'),
+                axios.get('/api/users/me').catch(() => ({ data: null }))
             ]);
             setWalletData(wRes.data);
             setWithdrawHistory(hRes.data);
@@ -76,6 +80,14 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
             if (savedMethods.length > 0) {
                 const def = savedMethods.find(m => m.is_default) || savedMethods[0];
                 setWithdrawForm(prev => ({ ...prev, payout_method_id: def._id }));
+            }
+
+            if (userRes?.data && updateUser) {
+                updateUser({ 
+                    balance: userRes.data.balance, 
+                    pending_balance: userRes.data.pending_balance,
+                    wallet_currency: userRes.data.wallet_currency
+                });
             }
         } catch (err) {
             console.error('Error fetching wallet data:', err);
@@ -88,11 +100,14 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
         try {
             const settingsRes = await axios.get('/api/settings');
             const settings = settingsRes.data;
-            if (settings && !stripePromise) {
-                const isStripeTest = settings.stripe_test_mode !== false;
-                const stripePubKey = isStripeTest ? settings.stripe_test_public_key : settings.stripe_live_public_key;
-                if (stripePubKey) {
-                    setStripePromise(loadStripe(stripePubKey));
+            if (settings) {
+                if (settings.primary_color) setPrimaryColor(settings.primary_color);
+                if (!stripePromise) {
+                    const isStripeTest = settings.stripe_test_mode !== false;
+                    const stripePubKey = isStripeTest ? settings.stripe_test_public_key : settings.stripe_live_public_key;
+                    if (stripePubKey) {
+                        setStripePromise(loadStripe(stripePubKey));
+                    }
                 }
             }
         } catch (err) {
@@ -134,7 +149,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
         try {
             const res = await axios.post('/api/payments/stripe/create-intent', {
                 amount: parseFloat(depositAmount),
-                currency: (currentCurrency?.code || 'INR').toLowerCase(),
+                currency: (defaultCurrency?.code || 'INR').toLowerCase(),
                 purpose: 'deposit'
             });
             setDepositClientSecret(res.data.clientSecret);
@@ -188,8 +203,12 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                         {formatPrice((walletData?.wallet?.balance || 0) + (walletData?.wallet?.pending_balance || 0), walletData?.wallet?.currency, currentCurrency)}
                     </div>
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className="wc-withdraw-btn" onClick={() => setShowDepositModal(true)} style={{ background: '#ecfdf5', color: '#059669', borderColor: '#a7f3d0' }}>
+                <div className="wc-hero-actions" style={{ display: 'flex', gap: '10px' }}>
+                    <button 
+                        className="wc-withdraw-btn" 
+                        onClick={() => setShowDepositModal(true)} 
+                        style={{ background: primaryColor, color: '#fff', border: `1px solid ${primaryColor}` }}
+                    >
                         <FaArrowDown size={13} />
                         {t('wallet.add_funds', 'Add Funds')}
                     </button>
@@ -199,9 +218,19 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                         {t('wallet.withdrawal_pending', 'Withdrawal Pending')}
                     </button>
                 ) : (
-                    <button className="wc-withdraw-btn" onClick={() => setShowWithdrawModal(true)} disabled={walletData?.wallet?.balance <= 0}>
+                    <button 
+                        className="wc-withdraw-btn" 
+                        onClick={() => {
+                            const effectiveBalance = (walletData?.wallet?.balance || 0) + (walletData?.wallet?.pending_balance < 0 ? walletData?.wallet?.pending_balance : 0);
+                            if (effectiveBalance <= 0) {
+                                alert(t('wallet.insufficient_balance', 'You cannot withdraw funds because your available balance is zero or negative.'));
+                            } else {
+                                setShowWithdrawModal(true);
+                            }
+                        }}
+                    >
                         <FaArrowUp size={13} />
-                        {t('wallet.withdraw_funds', 'Withdraw')}
+                        {t('wallet.withdraw_funds', 'Withdraw Funds')}
                     </button>
                 )}
                 </div>
@@ -448,6 +477,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                         <button
                             type="submit"
                             className="wc-submit-btn"
+                            style={{ background: primaryColor, color: '#fff' }}
                             disabled={submitting || !withdrawForm.payout_method_id || !withdrawForm.amount}
                         >
                             {submitting
@@ -476,9 +506,9 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                     {!depositClientSecret ? (
                         <form onSubmit={handleDepositSubmit}>
                             <div className="wc-form-group">
-                                <label className="wc-label">{t('wallet.amount_to_deposit', 'Amount to deposit')}</label>
+                                <label className="wc-label">{t('wallet.amount_to_deposit', 'Amount to deposit')} ({defaultCurrency?.code || 'INR'})</label>
                                 <div className="wc-input-row">
-                                    <span className="wc-currency-sym">{currentCurrency?.symbol || '₹'}</span>
+                                    <span className="wc-currency-sym">{defaultCurrency?.symbol || '₹'}</span>
                                     <input
                                         type="number"
                                         className="wc-input"
@@ -493,6 +523,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                             <button
                                 type="submit"
                                 className="wc-submit-btn"
+                                style={{ background: primaryColor, color: '#fff' }}
                                 disabled={depositLoading || !depositAmount}
                             >
                                 {depositLoading ? t('common.processing', 'Processing…') : t('common.continue', 'Continue')}
@@ -501,13 +532,14 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                     ) : (
                         <div>
                             {stripePromise && (
-                                <Elements stripe={stripePromise} options={{ clientSecret: depositClientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#6366f1' } } }}>
+                                <Elements stripe={stripePromise} options={{ clientSecret: depositClientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: primaryColor || '#6366f1' } } }}>
                                     <StripePaymentForm 
                                         onPaymentSuccess={onDepositSuccess} 
                                         amount={depositAmount} 
                                         formattedAmount={formatPrice(depositAmount, defaultCurrency?.code, defaultCurrency)} 
                                         validateForm={() => true}
                                         isDeposit={true}
+                                        primaryColor={primaryColor}
                                         buttonText={t('wallet.add_funds', 'Add Funds')}
                                         successMessage={t('wallet.funds_added_success', 'Funds successfully added!')}
                                     />

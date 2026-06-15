@@ -50,8 +50,8 @@ const Subcategories = () => {
     ];
 
     const filteredData = subcategories.filter(s =>
-        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.category_id?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        s.name?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+        s.category_id?.name?.toLowerCase().includes(searchTerm?.toLowerCase())
     );
 
 

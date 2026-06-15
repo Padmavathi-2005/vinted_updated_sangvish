@@ -247,6 +247,10 @@
     /* No longer using justify-content: center here to avoid shifting thumbnails */
 }
 
+.id-gallery-layout.no-thumbnails {
+    grid-template-columns: 1fr;
+}
+
 .id-main-img-wrapper {
     position: relative;
     flex: 1;

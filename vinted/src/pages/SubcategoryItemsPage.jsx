@@ -136,7 +136,7 @@ const SubcategoryItemsPage = () => {
             {/* Breadcrumb header bar */}
             <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '10px 0' }}>
                 <Container fluid className="px-md-5 px-3">
-                    <div className="d-flex align-items-center gap-2" style={{ fontSize: '0.85rem' }}>
+                    <div className="d-flex flex-wrap align-items-center gap-2" style={{ fontSize: '0.85rem' }}>
                         <Link to="/" style={{ color: '#94a3b8', textDecoration: 'none' }}>Home</Link>
                         <span style={{ color: '#94a3b8' }}>/</span>
                         <Link to="/categories" style={{ color: '#94a3b8', textDecoration: 'none' }}>Categories</Link>

@@ -187,7 +187,7 @@ const ItemDetailContent = () => {
         : [''];
 
     const displayedImg = hoveredSide !== null ? hoveredSide : activeImg;
-    const isLiked = isWishlisted(id);
+    const isLiked = isWishlisted(item?._id);
 
     // Guard: require login, open popup instead of redirect
     const requireLogin = (action) => {
@@ -206,10 +206,10 @@ const ItemDetailContent = () => {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         if (!requireLogin('wishlist')) return;
         if (isLiked) {
-            removeFromWishlist(id);
+            removeFromWishlist(item._id);
             if (item) setItem({ ...item, likes_count: (item.likes_count || 1) - 1 });
         } else {
-            addToWishlist(id);
+            addToWishlist(item._id);
             if (item) setItem({ ...item, likes_count: (item.likes_count || 0) + 1 });
         }
     };
@@ -353,7 +353,7 @@ const ItemDetailContent = () => {
 
         setDiscountApplying(true);
         try {
-            await axios.put(`/api/items/${id}/discount`, { discounted_price: newPrice });
+            await axios.put(`/api/items/${item._id}/discount`, { discounted_price: newPrice });
             // Re-fetch complete item so seller_id stays populated & isOwnItem stays true
             const res = await axios.get(`/api/items/${id}`);
             setItem(res.data);
@@ -371,7 +371,7 @@ const ItemDetailContent = () => {
         setDiscountSuccess('');
         setDiscountApplying(true);
         try {
-            await axios.delete(`/api/items/${id}/discount`);
+            await axios.delete(`/api/items/${item._id}/discount`);
             // Re-fetch complete item so seller_id stays populated
             const res = await axios.get(`/api/items/${id}`);
             setItem(res.data);
@@ -402,7 +402,7 @@ const ItemDetailContent = () => {
         try {
             setReportSending(true);
             await axios.post('/api/reports', {
-                item_id: id,
+                item_id: item._id,
                 reason: reportReason,
                 message: reportMsg
             });
@@ -574,7 +574,7 @@ const ItemDetailContent = () => {
                 <div className="id-main-content-grid">
                     {/* ─── Left Column: Gallery ─── */}
                     <div className="id-gallery-col">
-                        <div className={`id-gallery-layout ${isPortrait ? 'has-portrait' : ''}`}>
+                        <div className={`id-gallery-layout ${isPortrait ? 'has-portrait' : ''} ${sideImages.length === 0 ? 'no-thumbnails' : ''}`}>
                             {/* Main Image */}
                             <div className={`id-main-img-wrapper ${isPortrait ? 'portrait-mode' : ''}`} onClick={() => setLightbox(true)}>
                                 <img
@@ -596,7 +596,7 @@ const ItemDetailContent = () => {
                                 )}
                                 {item.is_sold || item.status === 'sold' || item.is_ordered ? (
                                     <div className="id-sold-overlay">
-                                        <span>ORDERED</span>
+                                        <span>{item.is_ordered ? 'ORDERED' : 'SOLD'}</span>
                                     </div>
                                 ) : (
                                     <div className="id-condition-badge" style={{ backgroundColor: condCfg.color }}>{condLabel}</div>
@@ -622,9 +622,11 @@ const ItemDetailContent = () => {
                                     <button className="id-overlay-btn" onClick={() => setShareModal(true)} title="Share">
                                         <FaShareAlt />
                                     </button>
-                                    <button className="id-overlay-btn" title="Report" onClick={() => setReportModal(true)}>
-                                        <FaRegFlag />
-                                    </button>
+                                    {!isOwnItem && (
+                                        <button className="id-overlay-btn" title="Report" onClick={() => setReportModal(true)}>
+                                            <FaRegFlag />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -866,7 +868,7 @@ const ItemDetailContent = () => {
                             <div className={`id-cta-group${!item.negotiable ? ' no-offer' : ''}`}>
                                 {item.is_sold || item.status === 'sold' || item.is_ordered ? (
                                     <button className="id-btn-sold" disabled>
-                                        <FaShoppingBag /> ORDERED
+                                        <FaShoppingBag /> {item.is_ordered ? 'ORDERED' : 'SOLD'}
                                     </button>
                                 ) : (
                                     <>
@@ -911,7 +913,7 @@ const ItemDetailContent = () => {
                                 <h3 className="id-box-title">{t('item_detail.seller')}</h3>
                                 <div className="id-seller-top">
                                     <Link href={`/user/${seller._id || seller.id}`} className="id-seller-avatar-link">
-                                        <div className="id-seller-avatar" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', borderRadius: '50%', overflow: 'hidden' }}>
+                                        <div className="id-seller-avatar" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--primary-color, #0ea5e9)', borderRadius: '50%', overflow: 'hidden' }}>
                                             <div className="id-seller-avatar-placeholder" style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff' }}>
                                                 {(seller.username || 'U').charAt(0).toUpperCase()}
                                             </div>
@@ -920,7 +922,7 @@ const ItemDetailContent = () => {
                                                     src={getImageSrc(seller.profile_image)}
                                                     alt={seller.username}
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }}
-                                                    onError={handleImageError}
+                                                    onError={(e) => { e.target.style.display = 'none'; }}
                                                 />
                                             )}
                                         </div>

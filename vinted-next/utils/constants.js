@@ -1,13 +1,17 @@
 export const BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || 'https://vinted.sangvish.com';
-export const IMAGE_BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_IMAGE_BASE_URL) || 'https://vinted.sangvish.com';
+export const IMAGE_BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_IMAGE_BASE_URL) || (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || 'https://vinted.sangvish.com';
 
 export const DEFAULT_IMAGE_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMWY1ZjkiIHJ4PSIxMiIvPjxwYXRoIGQ9Ik0zNSAzMGgzMGMyLjc2IDAgNSAyLjI0IDUgNXYzMGMwIDIuNzYtMi4yNCA1LTUgNUgzNWMtMi43NiAwLTUtMi4yNC01LTVWMzVjMC0yLjc2IDIuMjQtNSA1LTV6bTAgM2MtMS4xIDAtMiAuOS0yIDJ2MzBjMCAxLjEuOSAyIDIgMmgzMGMxLjEgMCAyLS45IDItMlYzNWMwLTEuMS0uOS0yLTItMkgzNXptMTcuNSA3LjVsLTguNSAxMC41aDIybC04LjUtMTAuNS01IDQuNS01LTQuNXptLTggNC41YzEuMzggMCAyLjUtMS4xMiAyLjUtMi41cy0xLjEyLTIuNS0yLjUtMi41LTIuNSAxLjEyLTIuNSAyLjUgMS4xMiAyLjUgMi41IDIuNXoiIGZpbGw9IiM5NGEzYjgiLz48L3N2Zz4=';
 
 export const getImageUrl = (path) => {
     if (!path || String(path).includes('not_found.png')) return DEFAULT_IMAGE_PLACEHOLDER;
-    const pathStr = String(path).trim();
+    let pathStr = String(path).trim();
     if (pathStr.startsWith('data:')) return pathStr;
     if (pathStr.startsWith('http')) return pathStr;
+    
+    if (pathStr.startsWith('message_image-')) {
+        pathStr = 'images/messages/' + pathStr;
+    }
 
     // Robust normalization for frontend
     let clean = pathStr.replace(/\\/g, '/').replace(/^\/+/, '');
@@ -39,12 +43,12 @@ export const getItemImageUrl = (path) => {
     return getImageUrl(path);
 };
 
-export const safeString = (val, fallback = '') => {
+export const safeString = (val, fallback = '', langCode = null) => {
     if (!val) return fallback;
     if (typeof val === 'object' && val !== null) {
         // Try getting from localStorage, default to 'en'
-        const langCode = typeof window !== 'undefined' ? (localStorage.getItem('i18nextLng') || 'en').split('-')[0] : 'en';
-        const result = val[langCode] || val.en || val[Object.keys(val)[0]] || fallback;
+        const activeLang = langCode || (typeof window !== 'undefined' ? (localStorage.getItem('i18nextLng') || localStorage.getItem('user_language') || 'en').split('-')[0] : 'en');
+        const result = val[activeLang] || val.en || val[Object.keys(val)[0]] || fallback;
         return String(result || fallback);
     }
     return String(val || fallback);

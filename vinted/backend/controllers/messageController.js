@@ -76,10 +76,10 @@ const getConversations = asyncHandler(async (req, res) => {
 // @route   GET /api/admin-messages/count
 // @access  Private (Admin)
 const getAdminMessagesCount = asyncHandler(async (req, res) => {
-    // For admin, we might want to count all conversations that need attention
-    // or just the total number of conversations.
-    // Let's count all "pending" status conversations or just total count for now.
-    const count = await Conversation.countDocuments({ status: 'pending' });
+    const count = await Message.countDocuments({
+        receiver_id: req.user._id,
+        is_read: false
+    });
     res.status(200).json({ count });
 });
 
@@ -129,11 +129,27 @@ const getMessages = asyncHandler(async (req, res) => {
 
     if (updateResult.modifiedCount > 0 && req.io) {
         req.io.to(req.params.id).emit('messages_read', { conversation_id: req.params.id });
+        req.io.to(req.user._id.toString()).emit('messages_read', { conversation_id: req.params.id });
         const otherParticipant = conversation.participants.find(p => (p.user?._id || p.user)?.toString() !== req.user._id.toString());
         if (otherParticipant) {
             const otherUserId = (otherParticipant.user?._id || otherParticipant.user).toString();
             req.io.to(otherUserId).emit('messages_read', { conversation_id: req.params.id });
         }
+    }
+    
+    // Also reset the unread_count in the conversation document
+    let conversationUpdated = false;
+    conversation.participants.forEach(p => {
+        const pId = p.user?._id || p.user;
+        if (pId?.toString() === req.user._id.toString() || (req.user.role === 'admin' && p.on_model === 'Admin')) {
+            if (p.unread_count > 0) {
+                p.unread_count = 0;
+                conversationUpdated = true;
+            }
+        }
+    });
+    if (conversationUpdated) {
+        await conversation.save();
     }
 
     res.status(200).json({
@@ -146,7 +162,7 @@ const getMessages = asyncHandler(async (req, res) => {
 // @route   POST /api/messages
 // @access  Private
 const sendMessage = asyncHandler(async (req, res) => {
-    const { receiver_id, receiver_model = 'User', message, item_id, message_type = 'text', offer_amount = null } = req.body;
+    const { receiver_id, receiver_model = 'User', message, item_id, conversation_id, message_type = 'text', offer_amount = null } = req.body;
 
     if (!receiver_id || !message) {
         res.status(400);
@@ -160,16 +176,31 @@ const sendMessage = asyncHandler(async (req, res) => {
         ? new mongoose.Types.ObjectId(receiver_id)
         : receiver_id;
 
-    let query = {
-        participants: {
-            $all: [
-                { $elemMatch: { user: sender_id, on_model: sender_model } },
-                { $elemMatch: { user: receiverObjectId, on_model: receiver_model } }
-            ]
-        }
-    };
+    let conversation;
 
-    let conversation = await Conversation.findOne(query);
+    if (conversation_id) {
+        conversation = await Conversation.findById(conversation_id);
+    } else {
+        let query;
+        if (sender_model === 'Admin' || receiver_model === 'Admin') {
+            const userObjectId = sender_model === 'Admin' ? receiverObjectId : sender_id;
+            query = {
+                $and: [
+                    { participants: { $elemMatch: { on_model: 'Admin' } } },
+                    { participants: { $elemMatch: { user: userObjectId, on_model: 'User' } } }
+                ]
+            };
+        } else {
+            query = {
+                $and: [
+                    { participants: { $elemMatch: { user: sender_id, on_model: sender_model } } },
+                    { participants: { $elemMatch: { user: receiverObjectId, on_model: receiver_model } } }
+                ]
+            };
+        }
+
+        conversation = await Conversation.findOne(query);
+    }
 
     let isNewRequest = false;
 
@@ -269,7 +300,7 @@ const sendMessage = asyncHandler(async (req, res) => {
             link: receiver_model === 'Admin' ? `/messages` : `/profile?tab=messages&conversation=${conversation._id}`,
             image: req.user.profile_image
         });
-    } else if (conversation.status === 'accepted') {
+    } else if (conversation.status === 'accepted' || conversation.status === 'pending') {
         await Notification.create({
             user_id: receiver_id,
             on_model: receiver_model,
@@ -338,6 +369,151 @@ const sendMessage = asyncHandler(async (req, res) => {
         path: 'participants.user',
         select: 'name username profile_image last_login'
     });
+
+    if (req.io) {
+        const payload = {
+            message: populatedMessage,
+            conversation: populatedConversation || conversation
+        };
+        let emitter = req.io.to(conversation._id.toString());
+        if (receiver_id) emitter = emitter.to(receiver_id.toString());
+        if (sender_id) emitter = emitter.to(sender_id.toString());
+        emitter.emit('receive_message', payload);
+    }
+
+    res.status(201).json({ message: populatedMessage, conversation: populatedConversation || conversation });
+});
+
+// @desc    Send an image message
+// @route   POST /api/messages/image
+// @access  Private
+const sendImageMessage = asyncHandler(async (req, res) => {
+    const { receiver_id, receiver_model = 'User', item_id, conversation_id } = req.body;
+
+    if (!req.file) {
+        res.status(400);
+        throw new Error('Please upload an image file');
+    }
+
+    if (!receiver_id) {
+        res.status(400);
+        throw new Error('Please add receiver');
+    }
+
+    const message = `images/messages/${req.file.filename}`;
+
+    const sender_id = req.user._id;
+    const sender_model = req.user.role === 'admin' ? 'Admin' : 'User';
+
+    const receiverObjectId = mongoose.Types.ObjectId.isValid(receiver_id)
+        ? new mongoose.Types.ObjectId(receiver_id)
+        : receiver_id;
+
+    let conversation;
+
+    if (conversation_id) {
+        conversation = await Conversation.findById(conversation_id);
+    } else {
+        let query;
+        if (sender_model === 'Admin' || receiver_model === 'Admin') {
+            const userObjectId = sender_model === 'Admin' ? receiverObjectId : sender_id;
+            query = {
+                $and: [
+                    { participants: { $elemMatch: { on_model: 'Admin' } } },
+                    { participants: { $elemMatch: { user: userObjectId, on_model: 'User' } } }
+                ]
+            };
+        } else {
+            query = {
+                participants: {
+                    $all: [
+                        { $elemMatch: { user: sender_id, on_model: sender_model } },
+                        { $elemMatch: { user: receiverObjectId, on_model: receiver_model } }
+                    ]
+                }
+            };
+        }
+
+        conversation = await Conversation.findOne(query);
+    }
+
+    let isNewRequest = false;
+
+    if (!conversation) {
+        conversation = await Conversation.create({
+            participants: [
+                { user: sender_id, on_model: sender_model },
+                { user: receiverObjectId, on_model: receiver_model }
+            ],
+            item_id: item_id,
+            status: sender_model === 'Admin' ? 'accepted' : 'pending',
+            initiator_id: sender_id,
+            initiator_model: sender_model,
+            last_message: '📷 Image',
+            last_message_at: Date.now(),
+        });
+        isNewRequest = true;
+    } else {
+        if (conversation.blocked_by && conversation.blocked_by.length > 0) {
+            res.status(403);
+            throw new Error('This conversation is blocked.');
+        }
+
+        if (conversation.status === 'rejected') {
+            res.status(403);
+            throw new Error('This message request was declined.');
+        }
+
+        if (item_id) {
+            conversation.item_id = item_id;
+        }
+        conversation.last_message = '📷 Image';
+        conversation.last_message_at = Date.now();
+        await conversation.save();
+    }
+
+    const newMessage = await Message.create({
+        conversation_id: conversation._id,
+        sender_id: sender_id,
+        sender_model: sender_model,
+        receiver_id: receiver_id,
+        receiver_model: receiver_model,
+        message: message,
+        message_type: 'image',
+        item_id: item_id || conversation.item_id,
+    });
+
+    const populatedMessage = await Message.findById(newMessage._id).populate('sender_id', 'name username profile_image');
+
+    // Handle Notifications
+    if (isNewRequest) {
+        await Notification.create({
+            user_id: receiver_id,
+            on_model: receiver_model,
+            title: req.user.role === 'admin' ? 'Admin' : (req.user.username || req.user.name),
+            message: '📷 Sent an image',
+            type: 'request',
+            link: receiver_model === 'Admin' ? `/messages` : `/profile?tab=messages&conversation=${conversation._id}`,
+            image: req.user.profile_image
+        });
+    } else if (conversation.status === 'accepted' || conversation.status === 'pending') {
+        await Notification.create({
+            user_id: receiver_id,
+            on_model: receiver_model,
+            title: req.user.role === 'admin' ? 'Admin' : (req.user.username || req.user.name),
+            message: '📷 Sent an image',
+            type: 'message',
+            link: receiver_model === 'Admin' ? `/messages` : `/profile?tab=messages&conversation=${conversation._id}`,
+            image: req.user.profile_image
+        });
+    }
+
+    const populatedConversation = await Conversation.findById(conversation._id)
+        .populate({
+            path: 'participants.user',
+            select: 'name username profile_image last_login'
+        })
+        .populate('item_id', 'title price images currency_id');
 
     if (req.io) {
         const payload = {
@@ -569,6 +745,7 @@ export {
     getAdminMessagesCount,
     getMessages,
     sendMessage,
+    sendImageMessage,
     respondToRequest,
     toggleBlock,
     respondToOffer,

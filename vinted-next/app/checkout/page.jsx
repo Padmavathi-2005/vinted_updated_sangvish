@@ -894,7 +894,18 @@ const Checkout = () => {
                                             {item.condition && <span>{safeString(item.condition)}</span>}
                                         </div>
                                         <div className="checkout-summary-item-price">
-                                            <strong>{formatPrice(item.price, item.currency_id)}</strong>
+                                            {item.original_price > 0 && item.original_price > item.price ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                    <strong style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.8rem' }}>
+                                                        {formatPrice(item.original_price, item.currency_id)}
+                                                    </strong>
+                                                    <strong style={{ color: '#ef4444' }}>
+                                                        {formatPrice(item.price, item.currency_id)}
+                                                    </strong>
+                                                </div>
+                                            ) : (
+                                                <strong>{formatPrice(item.price, item.currency_id)}</strong>
+                                            )}
                                             {item.shipping_included && (
                                                 <small className="ship-inc">{t('checkout.shipping_included')}</small>
                                             )}

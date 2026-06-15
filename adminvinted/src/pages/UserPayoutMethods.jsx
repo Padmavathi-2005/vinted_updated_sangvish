@@ -60,7 +60,7 @@ const UserPayoutMethods = () => {
     /* ── Filtered ──────────────────────────────────────────── */
     const filteredData = useMemo(() => {
         return methods.filter(m => {
-            const term = searchTerm.toLowerCase();
+            const term = searchTerm?.toLowerCase();
             const matchSearch =
                 m.user_id?.username?.toLowerCase().includes(term) ||
                 m.user_id?.email?.toLowerCase().includes(term) ||
@@ -261,7 +261,7 @@ const UserPayoutMethods = () => {
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <select className="wallet-filter-select" value={filterType} onChange={e => setFilterType(e.target.value)}>
+                        <select className="admin-filter-select" value={filterType} onChange={e => setFilterType(e.target.value)}>
                             <option value="all">All Types</option>
                             <option value="Bank">Bank</option>
                             <option value="UPI">UPI</option>

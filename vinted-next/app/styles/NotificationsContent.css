@@ -43,7 +43,7 @@
 }
 
 .nc-unread-badge {
-    background: #3b82f6;
+    background: var(--primary-color, #3b82f6);
     color: white;
     font-size: 0.72rem;
     font-weight: 700;
@@ -158,7 +158,7 @@
 }
 
 .nc-list-item.active {
-    background: #eff6ff;
+    background: color-mix(in srgb, var(--primary-color, #3b82f6) 7%, white);
     border-left: 3px solid var(--primary-color, #3b82f6);
 }
 

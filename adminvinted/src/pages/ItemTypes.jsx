@@ -149,8 +149,8 @@ const ItemTypes = () => {
     ];
 
     const filteredData = itemTypes.filter(i =>
-        i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.subcategory_id?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        i.name?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+        i.subcategory_id?.name?.toLowerCase().includes(searchTerm?.toLowerCase())
     );
 
 

@@ -82,7 +82,7 @@
 
 .ds-btn-save:hover {
     background-color: #008f70;
-    transform: translateY(-2px);
+    /* removed transform translateY */
 }
 
 .ds-btn-save:active {

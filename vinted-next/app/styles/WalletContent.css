@@ -710,9 +710,15 @@
         font-size: 1.8rem;
     }
 
+    .wc-hero-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
     .wc-withdraw-btn {
         width: 100%;
         padding: 12px;
+        justify-content: center;
     }
 
     .wc-section {

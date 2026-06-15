@@ -28,7 +28,7 @@ const Reports = () => {
     const [data, setData] = useState({ chartData: [], topSellers: [], bookingLocations: [], recentOrders: [] });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const { formatPrice } = useLocalization();
+    const { formatPrice, t } = useLocalization();
 
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -182,7 +182,7 @@ const Reports = () => {
             {/* Header */}
             <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                 <div>
-                    <h1 className="dashboard-title h3 mb-1 text-primary">{t('reports.title', 'Business Reports')}</h1>
+                    <h1 className="dashboard-title h3 mb-1">{t('reports.title', 'Business Reports')}</h1>
                     <p className="text-muted small mb-0">{t('reports.subtitle', 'Comprehensive platform performance insights')}</p>
                 </div>
                 <Form onSubmit={handleFilterSubmit} className="d-flex flex-wrap align-items-end gap-2 bg-white p-3 rounded-4 shadow-sm border border-light w-100 w-sm-auto">
@@ -299,7 +299,7 @@ const Reports = () => {
                                             onClick={() => navigate(`/orders?search=${order.order_number}`)}
                                             onMouseEnter={() => handleOrderHover(order.addressFull)}
                                         >
-                                            <td className="py-3 px-3 fw-bold text-primary">{order.order_number}</td>
+                                            <td className="py-3 px-3 fw-bold">{order.order_number}</td>
                                             <td className="py-3 px-3 small text-truncate" style={{ maxWidth: '180px' }}>{safeString(order.addressFull)}</td>
                                             <td className="py-3 px-3 fw-bold text-success text-end">{formatPrice(order.total_amount)}</td>
                                         </tr>
@@ -357,7 +357,7 @@ const Reports = () => {
                                             <td className="text-muted px-3">{seller.email}</td>
                                             <td className="text-end fw-bold px-3">{seller.ordersCount}</td>
                                             <td className="text-end text-success fw-bold px-3">{formatPrice(seller.totalSales)}</td>
-                                            <td className="text-end text-primary fw-bold px-3">{formatPrice(seller.platformFee)}</td>
+                                            <td className="text-end fw-bold px-3">{formatPrice(seller.platformFee)}</td>
                                         </tr>
                                     ))}
                                 </tbody>

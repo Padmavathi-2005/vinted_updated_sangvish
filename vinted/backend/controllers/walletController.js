@@ -37,6 +37,10 @@ const getOrCreateWallet = async (ownerId, ownerType) => {
             balance: 0,
             currency: defCurrency
         });
+
+        if (ownerType === 'User') {
+            await User.findByIdAndUpdate(finalOwnerId, { $set: { wallet_currency: defCurrency } });
+        }
     }
     return wallet;
 };
@@ -297,22 +301,37 @@ const processRefundSplit = async (orderId, refundType, partialAmount, reason) =>
     const order = await Order.findById(orderId);
     if (!order) return;
 
-    const { seller_id, buyer_id, total_amount, currency_id } = order;
+    const { seller_id, buyer_id, item_price, currency_id } = order;
     const orderCurrency = await Currency.findById(currency_id);
     const orderRate = orderCurrency?.exchange_rate || 1;
 
+    // Fetch original commission rate
+    const settings = await Setting.findOne();
+    const commissionRate = settings?.admin_commission || 2;
+    const adminCommission = Number(((item_price * commissionRate) / 100).toFixed(2));
+
     let refundAmountToBuyer = 0;
+    let debitFromSeller = 0;
+    let debitFromAdmin = 0;
 
     if (refundType === 'full') {
         // Buyer gets full price of the item (Delivery fee is NOT refunded since item was transported)
-        refundAmountToBuyer = order.item_price;
+        refundAmountToBuyer = item_price;
+        // Seller reverses item_price minus admin commission
+        debitFromSeller = Number((item_price - adminCommission).toFixed(2));
+        // Admin reverses exactly their commission
+        debitFromAdmin = adminCommission;
     } else {
         // Partial Refund
         refundAmountToBuyer = Number(partialAmount);
+        // Seller bears the entire cost of the partial refund, Admin keeps commission
+        debitFromSeller = refundAmountToBuyer;
+        debitFromAdmin = 0;
     }
 
     // Helper to convert order currency amount to user wallet currency amount
     const convertToWallet = async (amount, userId, userType) => {
+        if (amount <= 0) return { wallet: null, convertedAmount: 0 };
         const wallet = await getOrCreateWallet(userId, userType);
         const walletCurrency = await Currency.findOne({ code: wallet.currency });
         const walletRate = walletCurrency?.exchange_rate || 1;
@@ -322,45 +341,73 @@ const processRefundSplit = async (orderId, refundType, partialAmount, reason) =>
         };
     };
 
-    // Since delivery happened and admin facilitated it, we deduct the refund purely from the Seller. 
-    // The seller bears the cost of the return refund.
-    let debitFromSeller = refundAmountToBuyer;
+    // 1. Debit Admin (If Full Refund)
+    if (debitFromAdmin > 0) {
+        const admin = await Admin.findOne({ is_active: { $ne: false } });
+        if (admin) {
+            const { wallet: adminWallet, convertedAmount: adminDebitConverted } = await convertToWallet(debitFromAdmin, admin._id, 'Admin');
+            if (adminWallet) {
+                adminWallet.pending_balance -= adminDebitConverted;
+                await adminWallet.save();
+                
+                await Transaction.create({
+                    user_id: admin._id,
+                    user_type: 'Admin',
+                    wallet_id: adminWallet._id,
+                    amount: adminDebitConverted,
+                    type: 'debit',
+                    purpose: 'return_refund_deduction',
+                    reference_id: orderId,
+                    reference_model: 'Order',
+                    description: `Commission reversal for ${refundType} return refund on order #${order.order_number}`
+                });
+            }
+        }
+    }
 
-    // Debit Seller (from pending balance since funds are not yet released)
-    const { wallet: sellerWallet, convertedAmount: sellerDebitConverted } = await convertToWallet(debitFromSeller, seller_id, 'User');
-    sellerWallet.pending_balance -= sellerDebitConverted;
-    await sellerWallet.save();
-    await User.findByIdAndUpdate(seller_id, { $inc: { pending_balance: -sellerDebitConverted } });
+    // 2. Debit Seller
+    if (debitFromSeller > 0) {
+        const { wallet: sellerWallet, convertedAmount: sellerDebitConverted } = await convertToWallet(debitFromSeller, seller_id, 'User');
+        if (sellerWallet) {
+            sellerWallet.pending_balance -= sellerDebitConverted;
+            await sellerWallet.save();
+            await User.findByIdAndUpdate(seller_id, { $inc: { pending_balance: -sellerDebitConverted } });
 
-    await Transaction.create({
-        user_id: seller_id,
-        user_type: 'User',
-        wallet_id: sellerWallet._id,
-        amount: sellerDebitConverted,
-        type: 'debit',
-        purpose: 'return_refund_deduction',
-        reference_id: orderId,
-        reference_model: 'Order',
-        description: `Deduction for ${refundType} return refund on order #${order.order_number}. Reason: ${reason || 'N/A'}`
-    });
+            await Transaction.create({
+                user_id: seller_id,
+                user_type: 'User',
+                wallet_id: sellerWallet._id,
+                amount: sellerDebitConverted,
+                type: 'debit',
+                purpose: 'return_refund_deduction',
+                reference_id: orderId,
+                reference_model: 'Order',
+                description: `Deduction for ${refundType} return refund on order #${order.order_number}. Reason: ${reason || 'N/A'}`
+            });
+        }
+    }
 
-    // Credit Buyer
-    const { wallet: buyerWallet, convertedAmount: buyerRefundConverted } = await convertToWallet(refundAmountToBuyer, buyer_id, 'User');
-    buyerWallet.balance += buyerRefundConverted;
-    await buyerWallet.save();
-    await User.findByIdAndUpdate(buyer_id, { $inc: { balance: buyerRefundConverted } });
+    // 3. Credit Buyer
+    if (refundAmountToBuyer > 0) {
+        const { wallet: buyerWallet, convertedAmount: buyerRefundConverted } = await convertToWallet(refundAmountToBuyer, buyer_id, 'User');
+        if (buyerWallet) {
+            buyerWallet.balance += buyerRefundConverted;
+            await buyerWallet.save();
+            await User.findByIdAndUpdate(buyer_id, { $inc: { balance: buyerRefundConverted } });
 
-    await Transaction.create({
-        user_id: buyer_id,
-        user_type: 'User',
-        wallet_id: buyerWallet._id,
-        amount: buyerRefundConverted,
-        type: 'credit',
-        purpose: 'return_refund',
-        reference_id: orderId,
-        reference_model: 'Order',
-        description: `Refund (${refundType}) for returned order #${order.order_number}`
-    });
+            await Transaction.create({
+                user_id: buyer_id,
+                user_type: 'User',
+                wallet_id: buyerWallet._id,
+                amount: buyerRefundConverted,
+                type: 'credit',
+                purpose: 'return_refund',
+                reference_id: orderId,
+                reference_model: 'Order',
+                description: `Refund (${refundType}) for returned order #${order.order_number}`
+            });
+        }
+    }
 };
 
 // @desc    Release funds from pending_balance to active balance when order completes

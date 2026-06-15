@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Row, Col, Card, Button, Badge, Spinner, Form, InputGroup } from 'react-bootstrap';
-import { FaBell, FaCheck, FaCircle, FaSearch, FaInfoCircle, FaEnvelope, FaShoppingCart, FaArrowLeft, FaEye, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import { FaBell, FaCheck, FaCircle, FaSearch, FaInfoCircle, FaEnvelope, FaShoppingCart, FaArrowLeft, FaEye, FaCheckCircle, FaExclamationCircle, FaExclamationTriangle, FaCog } from 'react-icons/fa';
 import axios from '../utils/axios';
 import { showToast, showConfirm } from '../utils/swal';
 import '../styles/Notifications.css';
@@ -66,8 +66,10 @@ const Notifications = () => {
         try {
             await axios.put(`/api/admin/notifications/${id}/read`);
             setNotifications(notifications.map(n => n._id === id ? { ...n, is_read: true } : n));
+            window.dispatchEvent(new CustomEvent('notification_read'));
         } catch (error) {
             setNotifications(notifications.map(n => n._id === id ? { ...n, is_read: true } : n));
+            window.dispatchEvent(new CustomEvent('notification_read'));
         }
     };
 
@@ -82,8 +84,8 @@ const Notifications = () => {
 
     const filteredNotifications = notifications.filter(n => {
         const matchesFilter = filter === 'all' || !n.is_read;
-        const matchesSearch = n.title.toLowerCase().includes(search.toLowerCase()) ||
-            n.message.toLowerCase().includes(search.toLowerCase());
+        const matchesSearch = n.title?.toLowerCase().includes(search?.toLowerCase()) ||
+            n.message?.toLowerCase().includes(search?.toLowerCase());
         return matchesFilter && matchesSearch;
     });
 
@@ -96,6 +98,8 @@ const Notifications = () => {
             case 'request': return <FaInfoCircle />;
             case 'success': return <FaCheckCircle />;
             case 'error': return <FaExclamationCircle />;
+            case 'warning': return <FaExclamationTriangle />;
+            case 'system': return <FaCog />;
             case 'info': return <FaInfoCircle />;
             default: return <FaBell />;
         }
@@ -163,13 +167,13 @@ const Notifications = () => {
                                             {getIcon(n.type)}
                                         </div>
                                         <div className="notif-content flex-grow-1 min-w-0">
-                                            <div className="d-flex justify-content-between align-items-start gap-2">
-                                                <h6 className={`mb-1 ${!n.is_read ? 'fw-bold text-dark' : 'text-secondary'}`} style={{ fontSize: '0.9rem', whiteSpace: 'normal', overflow: 'visible' }}>
+                                            <div className="d-flex justify-content-between align-items-start gap-2 min-w-0">
+                                                <h6 className={`mb-1 text-truncate min-w-0 ${!n.is_read ? 'fw-bold text-dark' : 'text-secondary'}`} style={{ fontSize: '0.9rem', maxWidth: '100%' }}>
                                                     {n.title}
                                                 </h6>
-                                                {!n.is_read && <div className="unread-dot-indicator"></div>}
+                                                {!n.is_read && <div className="unread-dot-indicator flex-shrink-0"></div>}
                                             </div>
-                                            <p className="notif-summary text-secondary mb-1" style={{ fontSize: '0.8rem', whiteSpace: 'normal', overflow: 'visible' }}>
+                                            <p className="notif-summary text-secondary mb-1 text-truncate-2" style={{ fontSize: '0.8rem' }}>
                                                 {n.message}
                                             </p>
                                             <span className="notif-date text-muted" style={{ fontSize: '0.75rem' }}>
@@ -204,7 +208,7 @@ const Notifications = () => {
                                     </div>
                                     <div>
                                         <div className="text-uppercase text-secondary fw-bold" style={{ fontSize: '0.65rem', letterSpacing: '0.05em' }}>
-                                            {selectedNotification.type ? t(`notifications_page.${selectedNotification.type}`, selectedNotification.type.toUpperCase()) : t('notifications_page.info', 'INFO')}
+                                            {selectedNotification.type ? t(`notifications_page.${selectedNotification.type}`, selectedNotification.type?.toUpperCase()) : t('notifications_page.info', 'INFO')}
                                         </div>
                                         <h4 className="mb-0 fw-bold" style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)' }}>{selectedNotification.title}</h4>
                                         <span className="text-muted small">

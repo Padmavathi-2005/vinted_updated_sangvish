@@ -135,7 +135,7 @@ const Backup = () => {
                                         <tr key={idx} className="align-middle">
                                             <td className="p-3 fw-bold">
                                                 <div className="d-flex align-items-center">
-                                                    <div className="bg-primary bg-opacity-10 text-primary p-2 rounded me-3"><FaDatabase /></div>
+                                                    <div className="bg-primary bg-opacity-10 p-2 rounded me-3"><FaDatabase /></div>
                                                     {backup.name}
                                                 </div>
                                             </td>

@@ -121,7 +121,8 @@ const CategoryPage = () => {
                     cursor: 'pointer',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                    height: '220px',
+                    height: '100%',
+                    minHeight: '220px',
                 }}
                 onMouseEnter={e => {
                     e.currentTarget.style.transform = 'translateY(-8px)';
@@ -178,9 +179,10 @@ const CategoryPage = () => {
                 <span style={{
                     fontSize: '0.95rem', fontWeight: '700', color: '#1e293b',
                     textAlign: 'center', lineHeight: '1.3',
-                    display: '-webkit-box', WebkitLineClamp: 2,
+                    display: '-webkit-box', WebkitLineClamp: 3,
                     WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                    maxHeight: '2.6em',
+                    maxHeight: '3.9em',
+                    wordBreak: 'break-word',
                     width: '100%',
                     transition: 'color 0.3s ease'
                 }}>
@@ -247,7 +249,7 @@ const CategoryPage = () => {
             {/* Page Header */}
             <div style={{ background: 'white', borderBottom: '1px solid #e2e8f0', padding: '32px 0 24px', marginBottom: '40px' }}>
                 <Container fluid className="px-md-5 px-3">
-                    <div className="d-flex align-items-center gap-2 mb-2" style={{ fontSize: '0.85rem' }}>
+                    <div className="d-flex flex-wrap align-items-center gap-2 mb-2" style={{ fontSize: '0.85rem' }}>
                         <Link href="/" style={{ color: '#94a3b8', textDecoration: 'none' }}>Home</Link>
                         <span style={{ color: '#94a3b8' }}>/</span>
                         <Link href="/categories" style={{ color: '#94a3b8', textDecoration: 'none' }}>All Categories</Link>

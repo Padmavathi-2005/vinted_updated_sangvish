@@ -174,7 +174,7 @@ const Cart = () => {
             <div className="cart-container">
                 {/* Breadcrumb */}
                 <div className="cart-breadcrumb">
-                    <Link href="/products">Home</Link> <FaChevronRight size={10} />
+                    <Link href="/products">{t('cart.home', 'Home')}</Link> <FaChevronRight size={10} />
                     <span>{t('cart.shopping_cart', 'Shopping Cart')}</span>
                 </div>
 

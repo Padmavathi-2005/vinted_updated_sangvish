@@ -88,7 +88,8 @@ const CategoriesPage = () => {
                                             cursor: 'pointer',
                                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                             boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                                            height: '240px',
+                                            height: '100%',
+                                            minHeight: '240px',
                                         }}
                                         onMouseEnter={e => {
                                             e.currentTarget.style.transform = 'translateY(-8px)';
@@ -153,10 +154,11 @@ const CategoriesPage = () => {
                                             textAlign: 'center',
                                             lineHeight: '1.3',
                                             display: '-webkit-box',
-                                            WebkitLineClamp: 2,
+                                            WebkitLineClamp: 3,
                                             WebkitBoxOrient: 'vertical',
                                             overflow: 'hidden',
-                                            maxHeight: '2.6em',
+                                            maxHeight: '3.9em',
+                                            wordBreak: 'break-word',
                                             width: '100%',
                                             transition: 'color 0.3s ease'
                                         }}>

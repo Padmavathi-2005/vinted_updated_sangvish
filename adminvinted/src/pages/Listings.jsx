@@ -289,7 +289,7 @@ const Listings = () => {
             header: t('listings.table.condition'),
             accessor: 'condition',
             render: (row) => {
-                const conditionKey = row.condition ? row.condition.toLowerCase().replace(/\s+/g, '_') : '';
+                const conditionKey = row.condition ? row.condition?.toLowerCase().replace(/\s+/g, '_') : '';
                 return <span className="text-capitalize small">{conditionKey ? t(`conditions.${conditionKey}`, row.condition) : ''}</span>;
             }
         },
@@ -307,9 +307,9 @@ const Listings = () => {
             accessor: 'status',
             render: (row) => (
                 <Toggle
-                    checked={row.status.toLowerCase() === 'active'}
+                    checked={row.status?.toLowerCase() === 'active'}
                     onChange={(checked) => handleStatusToggle(row, checked)}
-                    label={row.status.toLowerCase() === 'active' ? t('listings.modal.active') : t('listings.modal.blocked')}
+                    label={row.status?.toLowerCase() === 'active' ? t('listings.modal.active') : t('listings.modal.blocked')}
                     disabled={togglingItemId === row._id}
                 />
             )
@@ -317,8 +317,8 @@ const Listings = () => {
     ];
 
     const filteredListings = Array.isArray(listings) ? listings.filter(l =>
-        (l.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (l._id || '').toLowerCase().includes(searchTerm.toLowerCase())
+        (l.title || '').toLowerCase().includes(searchTerm?.toLowerCase()) ||
+        (l._id || '').toLowerCase().includes(searchTerm?.toLowerCase())
     ) : [];
 
     // Client-side pagination logic
@@ -331,7 +331,7 @@ const Listings = () => {
                 <Card className="main-content-card border-0 shadow-sm p-4">
                     <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                         <div>
-                            <h1 className="dashboard-title h3 mb-1 text-primary">{t('listings.title')}</h1>
+                            <h1 className="dashboard-title h3 mb-1">{t('listings.title')}</h1>
                             <p className="text-muted small mb-0">{t('listings.subtitle')}</p>
                         </div>
 
@@ -710,7 +710,7 @@ const Listings = () => {
                         </div>
 
                         <hr className="my-4" />
-                        <h5 className="mb-3 text-primary">{t('listings.modal.seo_settings', 'SEO Settings')} <span className="text-muted small fw-normal">{t('common.optional', '(Optional)')}</span></h5>
+                        <h5 className="mb-3">{t('listings.modal.seo_settings', 'SEO Settings')} <span className="text-muted small fw-normal">{t('common.optional', '(Optional)')}</span></h5>
                         
                         <Form.Group className="mb-3">
                             <Form.Label>{t('listings.modal.seo_title', 'SEO Title')} <span className="text-muted small fw-normal">{t('common.optional', '(Optional)')}</span></Form.Label>

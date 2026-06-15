@@ -13,7 +13,7 @@ export const LanguageProvider = ({ children }) => {
     const [defaultLanguage, setDefaultLanguage] = useState(null);
     const [dynamicContent, setDynamicContent] = useState({});
     const [contentLoading, setContentLoading] = useState(true);
-    const { i18n } = useTranslation();
+    const { i18n, t } = useTranslation();
 
     // Fetch languages and settings exactly once when app loads
     useEffect(() => {
@@ -95,8 +95,8 @@ export const LanguageProvider = ({ children }) => {
         if (dynamicContent[section] && dynamicContent[section][field]) {
             return dynamicContent[section][field];
         }
-        return fallback;
-    }, [dynamicContent]);
+        return t(key, fallback);
+    }, [dynamicContent, t]);
 
     const ti = useCallback((key, fallback) => {
         // dynamic image helper: ti('home.hero_image', 'https://example.com/default.jpg')

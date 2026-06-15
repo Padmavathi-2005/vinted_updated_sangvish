@@ -78,18 +78,27 @@ const getItemById = asyncHandler(async (req, res) => {
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.connection?.remoteAddress || 'unknown';
     const viewerId = currentUser ? currentUser._id : null;
     try {
-        const query = viewerId 
-            ? { item_id: item._id, user_id: viewerId } 
-            : { item_id: item._id, ip_address: ip };
-
-        const existingView = await ItemView.findOne(query);
+        const queryOr = [{ ip_address: ip }];
+        if (viewerId) queryOr.push({ user_id: viewerId });
+        
+        const existingView = await ItemView.findOne({
+            item_id: item._id,
+            $or: queryOr
+        });
         
         if (!existingView) {
             await ItemView.create({ item_id: item._id, ip_address: ip, user_id: viewerId });
             await Item.findByIdAndUpdate(item._id, { $inc: { views_count: 1 } });
+        } else if (viewerId && !existingView.user_id) {
+            // Update anonymous view with user_id now that they are logged in
+            existingView.user_id = viewerId;
+            await existingView.save();
         }
     } catch (err) {
-        console.error('View tracking error:', err.message);
+        // Ignore duplicate key errors from race conditions
+        if (err.code !== 11000) {
+            console.error('View tracking error:', err.message);
+        }
     }
 
     const itemObj = item.toObject();
@@ -422,6 +431,7 @@ const setItem = asyncHandler(async (req, res) => {
         condition,
         price,
         currency, // This might be a code like 'INR' 
+        currency_id, // Also support currency_id
         negotiable,
         shipping_included,
         category_id,
@@ -440,16 +450,18 @@ const setItem = asyncHandler(async (req, res) => {
 
     // Handle Currency: Find by code or ID
     let currencyId;
-    if (currency) {
+    const submittedCurrency = currency || currency_id;
+    
+    if (submittedCurrency) {
         // Try finding by code first
-        const currencyDoc = await Currency.findOne({ code: currency.toUpperCase() });
+        const currencyDoc = await Currency.findOne({ code: submittedCurrency.toUpperCase() });
         if (currencyDoc) {
             currencyId = currencyDoc._id;
         } else {
             // Assume it's an ID if not found by code, or fail gracefully
             // If currency is provided as ID string
-            if (currency.match(/^[0-9a-fA-F]{24}$/)) {
-                currencyId = currency;
+            if (submittedCurrency.match(/^[0-9a-fA-F]{24}$/)) {
+                currencyId = submittedCurrency;
             } else {
                 // Fallback to default if not found or invalid
                 const defaultCurrency = await Currency.findOne({ is_active: true }); // Just pick one active
@@ -637,6 +649,8 @@ const updateItem = asyncHandler(async (req, res) => {
     if (req.body.state !== undefined) updateData.state = req.body.state;
     if (req.body.city !== undefined) updateData.city = req.body.city;
     if (req.body.pincode !== undefined) updateData.pincode = req.body.pincode;
+    
+    if (req.body.currency_id) updateData.currency_id = req.body.currency_id;
     
     if (seo_title !== undefined) updateData.seo_title = seo_title;
     if (seo_description !== undefined) updateData.seo_description = seo_description;

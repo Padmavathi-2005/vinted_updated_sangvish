@@ -117,7 +117,8 @@ export const CurrencyProvider = ({ children }) => {
         // Use the robust convertPrice for the actual math
         const converted = convertPrice(priceAmount, itemCurrency, targetCurrency);
 
-        let formatted = Number(converted).toFixed(targetCurrency.decimal_places || 2);
+        const isNegative = Number(converted) < 0;
+        let formatted = Math.abs(Number(converted)).toFixed(targetCurrency.decimal_places || 2);
 
         if (targetCurrency.thousand_separator) {
             formatted = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, targetCurrency.thousand_separator);
@@ -127,10 +128,12 @@ export const CurrencyProvider = ({ children }) => {
             formatted = formatted.replace('.', targetCurrency.decimal_separator);
         }
 
+        const prefix = isNegative ? '\u2011' : '';
+
         if (targetCurrency.symbol_position === 'after') {
-            return `${formatted}${targetCurrency.symbol || '€'}`;
+            return `${prefix}${formatted}${targetCurrency.symbol || '€'}`;
         }
-        return `${targetCurrency.symbol || '€'}${formatted}`;
+        return `${prefix}${targetCurrency.symbol || '€'}${formatted}`;
     }, [currentCurrency, defaultCurrency, convertPrice]);
 
     return (

@@ -125,8 +125,8 @@ const Categories = () => {
     ];
 
     const filteredCategories = Array.isArray(categories) ? categories.filter(c =>
-        (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.slug || '').toLowerCase().includes(searchTerm.toLowerCase())
+        (c.name || '').toLowerCase().includes(searchTerm?.toLowerCase()) ||
+        (c.slug || '').toLowerCase().includes(searchTerm?.toLowerCase())
     ) : [];
 
 

@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 const errorHandler = (err, req, res, next) => {
-    const statusCode = res.statusCode ? res.statusCode : 500;
+    const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
     
     // Log error to file
     try {

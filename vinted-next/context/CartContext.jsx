@@ -16,14 +16,17 @@ export const CartProvider = ({ children }) => {
     useEffect(() => {
         const initCart = async () => {
             let localItems = [];
+            let guestItemsToMerge = [];
             try {
                 const stored = localStorage.getItem(cartKey);
                 if (stored) {
                     localItems = JSON.parse(stored);
-                } else if (user) {
+                } 
+                
+                if (user) {
                     const guestStored = localStorage.getItem('vinted_cart_guest');
                     if (guestStored) {
-                        localItems = JSON.parse(guestStored);
+                        guestItemsToMerge = JSON.parse(guestStored);
                         localStorage.removeItem('vinted_cart_guest');
                     }
                 }
@@ -36,8 +39,8 @@ export const CartProvider = ({ children }) => {
                     // If we had guest items, merge them
                     const config = { headers: { Authorization: `Bearer ${user.token}` } };
                     let serverItems = [];
-                    if (localItems.length > 0) {
-                        const itemIds = localItems.map(i => i._id);
+                    if (guestItemsToMerge.length > 0) {
+                        const itemIds = guestItemsToMerge.map(i => i._id);
                         const res = await axios.post('/api/cart/merge', { itemIds }, config);
                         serverItems = res.data;
                     } else {

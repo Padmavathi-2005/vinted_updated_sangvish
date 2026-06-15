@@ -16,7 +16,7 @@ import { useSettings } from '@/context/SettingsContext';
 const typeConfig = {
     success: { icon: FaCheckCircle, color: '#22c55e', bg: '#f0fdf4', labelKey: 'notifications.accepted' },
     error: { icon: FaExclamationCircle, color: '#ef4444', bg: '#fff5f5', labelKey: 'notifications.declined' },
-    request: { icon: FaEnvelope, color: '#3b82f6', bg: '#eff6ff', labelKey: 'notifications.request' },
+    request: { icon: FaEnvelope, color: 'var(--primary-color, #3b82f6)', bg: 'color-mix(in srgb, var(--primary-color, #3b82f6) 10%, white)', labelKey: 'notifications.request' },
     message: { icon: FaEnvelope, color: '#8b5cf6', bg: '#f5f3ff', labelKey: 'notifications.message' },
     order: { icon: FaBox, color: '#f97316', bg: '#fff7ed', labelKey: 'notifications.order' },
     info: { icon: FaInfoCircle, color: '#64748b', bg: '#f8fafc', labelKey: 'notifications.info' },
@@ -39,9 +39,21 @@ const isMessageNotif = (notif) =>
 const NotificationsContent = () => {
     const { t } = useTranslation();
     const { notifications, loading, markAsRead, markAllAsRead, fetchNotifications } = useContext(NotificationContext);
-    const { user } = useContext(AuthContext);
+    const { user, mode, setMode } = useContext(AuthContext);
     const { settings } = useSettings();
     const router = useRouter();
+
+    const handleNavigate = (link) => {
+        if (!link) return;
+        try {
+            const urlParams = new URLSearchParams(link.split('?')[1]);
+            const linkMode = urlParams.get('mode');
+            if (linkMode && linkMode !== mode) {
+                setMode(linkMode);
+            }
+        } catch(e) {}
+        router.push(link);
+    };
 
     const formatRelativeTime = (dateStr) => {
         if (!dateStr) return '';
@@ -235,7 +247,7 @@ const NotificationsContent = () => {
                                             </p>
                                             <button
                                                 className="nc-goto-msg-btn"
-                                                onClick={() => router.push(activeNotif.link)}
+                                                onClick={() => handleNavigate(activeNotif.link)}
                                             >
                                                 <FaExternalLinkAlt /> {t('notifications.open_conversation', 'Open Conversation')}
                                             </button>
@@ -252,7 +264,7 @@ const NotificationsContent = () => {
                                             <p className="nc-action-card-label">{t('notifications.view_manage_order', 'View and manage your order in the Orders section.')}</p>
                                             <button
                                                 className="nc-goto-msg-btn"
-                                                onClick={() => router.push(activeNotif.link)}
+                                                onClick={() => handleNavigate(activeNotif.link)}
                                             >
                                                 <FaExternalLinkAlt /> {t('notifications.view_order_details', 'View Order Details')}
                                             </button>
@@ -263,7 +275,7 @@ const NotificationsContent = () => {
                                 {activeNotif.link && !showMsgLink && activeNotif.type !== 'order' && (
                                     <button
                                         className="nc-view-link-btn"
-                                        onClick={() => router.push(activeNotif.link)}
+                                        onClick={() => handleNavigate(activeNotif.link)}
                                     >
                                         <FaExternalLinkAlt /> {t('notifications.view_details', 'View Details')}
                                     </button>
@@ -277,8 +289,8 @@ const NotificationsContent = () => {
                                     </button>
                                 )}
                                 <span className="nc-status-pill" style={{
-                                    background: activeNotif.is_read ? '#f1f5f9' : '#eff6ff',
-                                    color: activeNotif.is_read ? '#64748b' : '#3b82f6'
+                                    background: activeNotif.is_read ? '#f1f5f9' : 'color-mix(in srgb, var(--primary-color, #3b82f6) 10%, white)',
+                                    color: activeNotif.is_read ? '#64748b' : 'var(--primary-color, #3b82f6)'
                                 }}>
                                     {activeNotif.is_read ? t('notifications.read', 'Read') : t('notifications.unread', 'Unread')}
                                 </span>

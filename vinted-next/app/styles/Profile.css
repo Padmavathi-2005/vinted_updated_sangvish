@@ -462,6 +462,10 @@ body {
     font-weight: 700;
     color: #1e293b;
     margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .pd-stat-label {
@@ -1734,13 +1738,32 @@ body.modal-open {
         transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .tracker-line-fill[data-status="confirmed"] { height: 0; width: 3px; }
-    .tracker-line-fill[data-status="packed"] { height: 25%; width: 3px; }
+    .tracker-line-fill[data-status="confirmed"] {
+        height: 0;
+        width: 3px;
+    }
+
+    .tracker-line-fill[data-status="packed"] {
+        height: 25%;
+        width: 3px;
+    }
+
     .tracker-line-fill[data-status="shipped"],
-    .tracker-line-fill[data-status="dispatched"] { height: 50%; width: 3px; }
+    .tracker-line-fill[data-status="dispatched"] {
+        height: 50%;
+        width: 3px;
+    }
+
     .tracker-line-fill[data-status="out_for_delivery"],
-    .tracker-line-fill[data-status="on_the_way"] { height: 75%; width: 3px; }
-    .tracker-line-fill[data-status="delivered"] { height: calc(100% - 20px); width: 3px; }
+    .tracker-line-fill[data-status="on_the_way"] {
+        height: 75%;
+        width: 3px;
+    }
+
+    .tracker-line-fill[data-status="delivered"] {
+        height: calc(100% - 20px);
+        width: 3px;
+    }
 }
 
 .detail-address-card {
@@ -2146,8 +2169,8 @@ body.modal-open {
         display: flex;
         flex-direction: column;
         gap: 0;
-        padding-bottom: 20px;
-        min-height: calc(100vh - 100px);
+        padding-bottom: 0;
+        min-height: auto;
         width: 100%;
         max-width: 100vw;
         overflow-x: hidden;
@@ -2649,7 +2672,7 @@ body.modal-open {
         grid-template-columns: 1fr;
         grid-template-rows: auto auto;
         gap: 12px;
-        padding-bottom: 100px;
+        padding-bottom: 10px;
     }
 
     .pd-main {
@@ -2682,15 +2705,86 @@ body.modal-open {
 }
 
 /* --- Auto-injected Hit Area Fixes for CSS Hover Jitter --- */
-.pd-stat-card { position: relative; }
-.pd-stat-card::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
-.pd-stat-card.clickable { position: relative; }
-.pd-stat-card.clickable::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
-.pd-listing-card { position: relative; }
-.pd-listing-card::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
-.btn-white { position: relative; }
-.btn-white::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
-.pd-order-item-card { position: relative; }
-.pd-order-item-card::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
-.pd-discount-item { position: relative; }
-.pd-discount-item::after { content: ""; position: absolute; bottom: -10px; left: -5px; right: -5px; height: 10px; z-index: -1; }
+.pd-stat-card {
+    position: relative;
+}
+
+.pd-stat-card::after {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    left: -5px;
+    right: -5px;
+    height: 10px;
+    z-index: -1;
+}
+
+.pd-stat-card.clickable {
+    position: relative;
+}
+
+.pd-stat-card.clickable::after {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    left: -5px;
+    right: -5px;
+    height: 10px;
+    z-index: -1;
+}
+
+.pd-listing-card {
+    position: relative;
+}
+
+.pd-listing-card::after {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    left: -5px;
+    right: -5px;
+    height: 10px;
+    z-index: -1;
+}
+
+.btn-white {
+    position: relative;
+}
+
+.btn-white::after {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    left: -5px;
+    right: -5px;
+    height: 10px;
+    z-index: -1;
+}
+
+.pd-order-item-card {
+    position: relative;
+}
+
+.pd-order-item-card::after {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    left: -5px;
+    right: -5px;
+    height: 10px;
+    z-index: -1;
+}
+
+.pd-discount-item {
+    position: relative;
+}
+
+.pd-discount-item::after {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    left: -5px;
+    right: -5px;
+    height: 10px;
+    z-index: -1;
+}

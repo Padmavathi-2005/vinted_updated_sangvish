@@ -162,9 +162,11 @@ const requestWithdrawal = asyncHandler(async (req, res) => {
     // amount is in withdrawalCurrency
     const amountInWalletCurrency = Number(((amount / reqRate) * walletRate).toFixed(2));
 
-    if (wallet.balance < amountInWalletCurrency) {
+    const effectiveAvailableBalance = wallet.balance + (wallet.pending_balance < 0 ? wallet.pending_balance : 0);
+
+    if (effectiveAvailableBalance < amountInWalletCurrency) {
         res.status(400);
-        throw new Error('Insufficient balance in wallet for the requested amount');
+        throw new Error(`Insufficient balance. You only have ${effectiveAvailableBalance.toFixed(2)} ${wallet.currency} available for withdrawal.`);
     }
 
     // Deduct from wallet immediately (mark as pending transaction)
@@ -210,14 +212,17 @@ const requestWithdrawal = asyncHandler(async (req, res) => {
             type: 'request',
             link: '/wallet/withdrawal-requests'
         });
+    }
 
-        // 2. Send Message in a "System" conversation with Admin
+    // 2. Send Message in a "System" conversation with Primary Admin
+    if (admins.length > 0) {
+        const primaryAdmin = admins[0];
         try {
             let conversation = await Conversation.findOne({
                 participants: {
                     $all: [
                         { $elemMatch: { user: req.user._id, on_model: 'User' } },
-                        { $elemMatch: { user: admin._id, on_model: 'Admin' } }
+                        { $elemMatch: { on_model: 'Admin' } }
                     ]
                 }
             });
@@ -226,7 +231,7 @@ const requestWithdrawal = asyncHandler(async (req, res) => {
                 conversation = await Conversation.create({
                     participants: [
                         { user: req.user._id, on_model: 'User' },
-                        { user: admin._id, on_model: 'Admin' }
+                        { user: primaryAdmin._id, on_model: 'Admin' }
                     ],
                     initiator_id: req.user._id,
                     initiator_model: 'User',
@@ -237,7 +242,7 @@ const requestWithdrawal = asyncHandler(async (req, res) => {
             await Message.create({
                 conversation_id: conversation._id,
                 sender_id: req.user._id,
-                receiver_id: admin._id,
+                receiver_id: primaryAdmin._id,
                 message: `WITHDRAWAL_REQUEST::${JSON.stringify({
                     request_id: request._id,
                     amount,

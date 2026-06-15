@@ -845,12 +845,12 @@ const createUser = asyncHandler(async (req, res) => {
         password_hash: password,
         is_blocked: status === 'Inactive' || status === 'Banned',
         profile_image: req.file ? `images/profile/${req.file.filename}` : '',
-        balance: balance || 0,
-        bio: bio || '',
-        rating_avg: rating_avg || 0,
-        rating_count: rating_count || 0,
-        followers_count: followers_count || 0,
-        following_count: following_count || 0,
+        balance: balance && balance !== 'undefined' && balance !== 'null' ? Number(balance) : 0,
+        bio: bio && bio !== 'undefined' && bio !== 'null' ? bio : '',
+        rating_avg: rating_avg && rating_avg !== 'undefined' && rating_avg !== 'null' ? Number(rating_avg) : 0,
+        rating_count: rating_count && rating_count !== 'undefined' && rating_count !== 'null' ? Number(rating_count) : 0,
+        followers_count: followers_count && followers_count !== 'undefined' && followers_count !== 'null' ? Number(followers_count) : 0,
+        following_count: following_count && following_count !== 'undefined' && following_count !== 'null' ? Number(following_count) : 0,
     });
 
     if (user) {
@@ -897,12 +897,12 @@ const updateUser = asyncHandler(async (req, res) => {
         user.is_verified = (req.body.is_verified === 'true' || req.body.is_verified === true);
     }
 
-    if (balance !== undefined) user.balance = balance;
-    if (bio !== undefined) user.bio = bio;
-    if (rating_avg !== undefined) user.rating_avg = rating_avg;
-    if (rating_count !== undefined) user.rating_count = rating_count;
-    if (followers_count !== undefined) user.followers_count = followers_count;
-    if (following_count !== undefined) user.following_count = following_count;
+    if (balance !== undefined && balance !== 'undefined' && balance !== 'null') user.balance = Number(balance);
+    if (bio !== undefined && bio !== 'undefined' && bio !== 'null') user.bio = bio;
+    if (rating_avg !== undefined && rating_avg !== 'undefined' && rating_avg !== 'null') user.rating_avg = Number(rating_avg);
+    if (rating_count !== undefined && rating_count !== 'undefined' && rating_count !== 'null') user.rating_count = Number(rating_count);
+    if (followers_count !== undefined && followers_count !== 'undefined' && followers_count !== 'null') user.followers_count = Number(followers_count);
+    if (following_count !== undefined && following_count !== 'undefined' && following_count !== 'null') user.following_count = Number(following_count);
 
     if (req.body.remove_image === 'true') {
         user.profile_image = '';
@@ -1220,11 +1220,27 @@ const updateOrderAdmin = asyncHandler(async (req, res) => {
         // Sync Timestamps
         const now = new Date();
         const status = req.body.order_status;
-        if (status === 'confirmed' && !order.confirmed_at) order.confirmed_at = now;
-        if (status === 'packed' && !order.packed_at) order.packed_at = now;
-        if (status === 'shipped' && !order.shipped_at) order.shipped_at = now;
-        if (status === 'out_for_delivery' && !order.out_for_delivery_at) order.out_for_delivery_at = now;
-        if (status === 'delivered' && !order.delivered_at) order.delivered_at = now;
+        if (status === 'delivered') {
+            if (!order.delivered_at) order.delivered_at = now;
+            if (!order.out_for_delivery_at) order.out_for_delivery_at = now;
+            if (!order.shipped_at) order.shipped_at = now;
+            if (!order.packed_at) order.packed_at = now;
+            if (!order.confirmed_at) order.confirmed_at = now;
+        } else if (status === 'out_for_delivery') {
+            if (!order.out_for_delivery_at) order.out_for_delivery_at = now;
+            if (!order.shipped_at) order.shipped_at = now;
+            if (!order.packed_at) order.packed_at = now;
+            if (!order.confirmed_at) order.confirmed_at = now;
+        } else if (status === 'shipped') {
+            if (!order.shipped_at) order.shipped_at = now;
+            if (!order.packed_at) order.packed_at = now;
+            if (!order.confirmed_at) order.confirmed_at = now;
+        } else if (status === 'packed') {
+            if (!order.packed_at) order.packed_at = now;
+            if (!order.confirmed_at) order.confirmed_at = now;
+        } else if (status === 'confirmed') {
+            if (!order.confirmed_at) order.confirmed_at = now;
+        }
     }
     if (req.body.payment_status) {
         order.payment_status = req.body.payment_status;

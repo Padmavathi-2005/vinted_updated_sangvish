@@ -58,7 +58,25 @@ const Register = () => {
     }, []);
 
     const onChange = (e) => {
-        setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+        let { name, value } = e.target;
+        
+        if (name === 'otp') {
+            value = value.replace(/\D/g, ''); // Enforce numbers only
+            
+            if (value.length > 0 && value.length < 6) {
+                setError('Please enter at least 6 digits');
+            } else if (error === 'Please enter at least 6 digits') {
+                setError('');
+            }
+        } else if (name === 'password') {
+            if (value.length > 0 && value.length < 6) {
+                setError('Password must be at least 6 characters');
+            } else if (error === 'Password must be at least 6 characters' || error === 'Please enter at least 6 digits') {
+                setError('');
+            }
+        }
+        
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleSendOTP = async (e) => {

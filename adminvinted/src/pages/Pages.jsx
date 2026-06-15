@@ -58,8 +58,8 @@ const Pages = () => {
     };
 
     const filteredPages = pages.filter(page =>
-        page.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        page.slug.toLowerCase().includes(searchTerm.toLowerCase())
+        page.title?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+        page.slug?.toLowerCase().includes(searchTerm?.toLowerCase())
     );
 
     const columns = [
@@ -90,7 +90,7 @@ const Pages = () => {
                 <Card className="main-content-card border-0 shadow-sm p-4">
                     <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                         <div>
-                            <h1 className="dashboard-title h3 mb-1 text-users">{t('pages.title', 'Static Pages')}</h1>
+                            <h1 className="dashboard-title h3 mb-1">{t('pages.title', 'Static Pages')}</h1>
                             <p className="text-muted small mb-0">{t('pages.subtitle', 'Manage your website static informational pages')}</p>
                         </div>
                         <Button

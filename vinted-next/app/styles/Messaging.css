@@ -891,8 +891,13 @@
 }
 
 @media (max-width: 768px) {
+    body:has(.pd-messages-container) footer {
+        display: none !important;
+    }
+
     .pd-messages-container {
-        height: calc(100vh - 120px);
+        height: calc(100dvh - 130px);
+        min-height: calc(100dvh - 130px);
         flex-direction: column;
     }
 

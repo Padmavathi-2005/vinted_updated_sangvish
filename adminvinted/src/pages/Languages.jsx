@@ -157,7 +157,7 @@ const Languages = () => {
         {
             header: 'Code',
             accessor: 'code',
-            render: (row) => <code className="fw-bold">{row.code.toUpperCase()}</code>
+            render: (row) => <code className="fw-bold">{row.code?.toUpperCase()}</code>
         },
         {
             header: 'Direction',
@@ -193,8 +193,8 @@ const Languages = () => {
     ];
 
     const filteredData = Array.isArray(languages) ? languages.filter(l =>
-        (l.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (l.code || '').toLowerCase().includes(searchTerm.toLowerCase())
+        (l.name || '').toLowerCase().includes(searchTerm?.toLowerCase()) ||
+        (l.code || '').toLowerCase().includes(searchTerm?.toLowerCase())
     ) : [];
 
 

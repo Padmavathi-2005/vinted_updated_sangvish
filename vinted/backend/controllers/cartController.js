@@ -129,7 +129,13 @@ export const addToCart = async (req, res) => {
 // @access  Private
 export const removeFromCart = async (req, res) => {
     try {
+        console.log("========== CART REMOVE DEBUG ==========");
+        console.log("Headers:", req.headers['content-type']);
+        console.log("Method:", req.method);
+        console.log("Raw Body:", req.body);
+        
         const { itemId, itemIds } = req.body;
+        console.log("Parsed itemId:", itemId, "Parsed itemIds:", itemIds);
 
         const cart = await Cart.findOne({ user: req.user._id });
         if (!cart) {
@@ -139,12 +145,29 @@ export const removeFromCart = async (req, res) => {
         const idsToRemove = itemIds ? itemIds : (itemId ? [itemId] : []);
 
         if (idsToRemove.length > 0) {
-            // Must cast to ObjectId for $pullAll to work correctly on direct DB updates
-            const objectIdsToRemove = idsToRemove.map(id => new mongoose.Types.ObjectId(id));
-            await Cart.updateOne(
-                { _id: cart._id },
-                { $pullAll: { items: objectIdsToRemove } }
-            );
+            try {
+                // Safely cast to ObjectId, ignore invalid ones
+                const objectIdsToRemove = idsToRemove
+                    .filter(id => mongoose.Types.ObjectId.isValid(id))
+                    .map(id => new mongoose.Types.ObjectId(id));
+                    
+                console.log("Valid ObjectIds to remove:", objectIdsToRemove);
+                console.log("Cart Items BEFORE deletion:", cart.items);
+                    
+                if (objectIdsToRemove.length > 0) {
+                    const updateResult = await Cart.updateOne(
+                        { _id: cart._id },
+                        { $pullAll: { items: objectIdsToRemove } }
+                    );
+                    console.log("MongoDB Update Result:", updateResult);
+                    
+                    // Fetch cart again to verify deletion
+                    const verifyCart = await Cart.findById(cart._id);
+                    console.log("Cart Items AFTER deletion (Verification):", verifyCart.items);
+                }
+            } catch(e) {
+                console.error("Invalid ObjectId format in cart removal:", e);
+            }
         }
 
         const updatedCart = await Cart.findById(cart._id).populate({
@@ -154,7 +177,15 @@ export const removeFromCart = async (req, res) => {
                 select: 'username bundle_discounts'
             }
         });
-        const finalItems = await applyNegotiatedPrices(updatedCart.items, req.user._id);
+        
+        // Clean up any ghost/deleted items from the DB array automatically
+        const existingItems = updatedCart.items.filter(item => item && item.status !== 'deleted');
+        if (existingItems.length !== updatedCart.items.length) {
+            updatedCart.items = existingItems.map(item => item._id);
+            await updatedCart.save();
+        }
+
+        const finalItems = await applyNegotiatedPrices(existingItems, req.user._id);
         res.status(200).json(finalItems);
     } catch (error) {
         res.status(500).json({ message: 'Server Error removing from cart', error: error.message });

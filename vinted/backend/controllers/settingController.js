@@ -270,10 +270,16 @@ const updateSettingsByType = asyncHandler(async (req, res) => {
 
     // Handle any files uploaded
     if (req.files) {
-        Object.keys(req.files).forEach(fieldName => {
-            const file = req.files[fieldName][0];
-            updateData[fieldName] = `images/site/${file.filename}`;
-        });
+        if (Array.isArray(req.files)) {
+            req.files.forEach(file => {
+                updateData[file.fieldname] = `images/site/${file.filename}`;
+            });
+        } else {
+            Object.keys(req.files).forEach(fieldName => {
+                const file = req.files[fieldName][0];
+                updateData[fieldName] = `images/site/${file.filename}`;
+            });
+        }
     }
 
     // Attempt to parse JSON strings for translatable fields or mixed objects
@@ -407,7 +413,7 @@ const getSettings = asyncHandler(async (req, res) => {
     const allSettings = await Setting.find({});
     // Order settings so that more specific/important ones come later in the merge
     // Move footer_settings after social_settings so its social_links take priority
-    const order = ['general_settings', 'site_settings', 'social_settings', 'social_login_settings', 'cookie_settings', 'payment_settings', 'footer_settings'];
+    const order = ['site_settings', 'general_settings', 'social_settings', 'social_login_settings', 'cookie_settings', 'payment_settings', 'footer_settings'];
     allSettings.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
 
     let merged = {};

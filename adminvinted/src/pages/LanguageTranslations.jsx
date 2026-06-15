@@ -51,7 +51,7 @@ const LanguageTranslations = () => {
             // Clean up empty strings before saving (optional, but keeps DB clean)
             const cleanOverrides = { ...overrides };
             Object.keys(cleanOverrides).forEach(key => {
-                if (!cleanOverrides[key] || cleanOverrides[key].trim() === '') {
+                if (!cleanOverrides[key] || String(cleanOverrides[key]).trim() === '') {
                     delete cleanOverrides[key];
                 }
             });
@@ -115,11 +115,11 @@ const LanguageTranslations = () => {
 
     // Filter logic
     const filteredKeys = Object.keys(masterKeys).filter(key => {
-        const search = searchTerm.toLowerCase();
+        const search = searchTerm?.toLowerCase();
         const enValue = String(masterKeys[key]).toLowerCase();
         const fileValue = fileTranslations[key] ? String(fileTranslations[key]).toLowerCase() : '';
         const overrideValue = overrides[key] ? String(overrides[key]).toLowerCase() : '';
-        return key.toLowerCase().includes(search) || enValue.includes(search) || fileValue.includes(search) || overrideValue.includes(search);
+        return key?.toLowerCase().includes(search) || enValue.includes(search) || fileValue.includes(search) || overrideValue.includes(search);
     });
 
     return (
@@ -138,7 +138,7 @@ const LanguageTranslations = () => {
                             <h2 className="dashboard-title mb-1 d-flex align-items-center gap-2">
                                 <FaLanguage className="text-primary" />
                                 Edit Translations: {languageInfo?.name || 'Loading...'} 
-                                {languageInfo && <span className="badge bg-secondary ms-2">{languageInfo.code.toUpperCase()}</span>}
+                                {languageInfo && languageInfo.code && <span className="badge bg-secondary ms-2">{String(languageInfo.code).toUpperCase()}</span>}
                             </h2>
                             <p className="text-muted small mb-0">
                                 Override local translations dynamically. Unchanged inputs fall back to default locales.
@@ -155,7 +155,7 @@ const LanguageTranslations = () => {
                                 </div>
                                 <div className="border-start ps-3 ps-md-4">
                                     <div className="text-muted small text-uppercase fw-bold">Custom Overrides</div>
-                                    <div className="h4 mb-0 fw-bold text-danger">{Object.keys(overrides).filter(k => overrides[k] && overrides[k].trim() !== '').length}</div>
+                                    <div className="h4 mb-0 fw-bold text-danger">{Object.keys(overrides).filter(k => overrides[k] && String(overrides[k]).trim() !== '').length}</div>
                                 </div>
                             </div>
                         </Col>
@@ -238,7 +238,7 @@ const LanguageTranslations = () => {
                                                         value={overrides[key] || ''}
                                                         onChange={(e) => handleOverrideChange(key, e.target.value)}
                                                         placeholder={fileTranslations[key] || masterKeys[key] || 'Translate...'}
-                                                        className={overrides[key] && overrides[key].trim() !== '' ? 'border-primary shadow-sm fw-bold' : ''}
+                                                        className={overrides[key] && String(overrides[key]).trim() !== '' ? 'border-primary shadow-sm fw-bold' : ''}
                                                     />
                                                 </td>
                                                 <td className="px-4 py-3 text-center">

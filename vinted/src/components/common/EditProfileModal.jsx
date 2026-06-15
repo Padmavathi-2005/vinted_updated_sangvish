@@ -205,7 +205,7 @@ const EditProfileModal = ({ user, onClose, onUpdate, inline }) => {
                             position: 'absolute',
                             bottom: '0',
                             right: '0',
-                            background: '#0ea5e9',
+                            background: 'var(--primary-color, #0ea5e9)',
                             color: 'white',
                             borderRadius: '50%',
                             width: '32px',

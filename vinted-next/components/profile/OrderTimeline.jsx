@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaCheckCircle, FaTruck, FaBox, FaHome, FaClock, FaTimesCircle, FaUndo } from 'react-icons/fa';
+import { FaCheckCircle, FaTruck, FaBox, FaHome, FaClock, FaTimesCircle, FaUndo, FaMapMarkerAlt } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 const OrderTimeline = ({ status, history = {} }) => {
@@ -9,6 +9,7 @@ const OrderTimeline = ({ status, history = {} }) => {
         { key: 'confirmed', label: t('order.confirmed', 'Confirmed'), icon: <FaCheckCircle />, date: history.confirmed_at || history.created_at },
         { key: 'packed', label: t('order.packed', 'Packed'), icon: <FaBox />, date: history.packed_at },
         { key: 'shipped', label: t('order.shipped', 'Shipped'), icon: <FaTruck />, date: history.shipped_at },
+        { key: 'out_for_delivery', label: t('order.out_for_delivery', 'Out for Delivery'), icon: <FaMapMarkerAlt />, date: history.out_for_delivery_at },
         { key: 'delivered', label: t('order.delivered', 'Delivered'), icon: <FaHome />, date: history.delivered_at },
     ];
 
@@ -35,10 +36,10 @@ const OrderTimeline = ({ status, history = {} }) => {
         'confirmed': 1,
         'packed': 2,
         'shipped': 3,
-        'out_for_delivery': 3,
-        'delivered': 4,
-        'return_requested': 5,
-        'returned': 5,
+        'out_for_delivery': 4,
+        'delivered': 5,
+        'return_requested': 6,
+        'returned': 6,
         'cancelled': 1,
     };
 

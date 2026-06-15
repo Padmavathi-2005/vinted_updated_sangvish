@@ -8,17 +8,23 @@ const getSocket = () => {
         // In this project, backend is on 5003, frontend on 3000
         let socketUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
         
-        if (!socketUrl) {
-            // Dynamically detect hostname so it works on mobile testing (e.g. 192.168.x.x)
+        // If socketUrl is empty, OR if it's pointing to localhost but we are accessing via a real domain/IP
+        if (!socketUrl || (socketUrl.includes('localhost') && window.location.hostname !== 'localhost')) {
             const hostname = window.location.hostname;
             const protocol = window.location.protocol;
-            socketUrl = `${protocol}//${hostname}:5003`;
+            // If we are on a real domain with https, we should route to the same domain (path will handle the API routing)
+            if (hostname !== 'localhost' && !hostname.match(/^[0-9.]+$/)) {
+                socketUrl = `${protocol}//${hostname}`;
+            } else {
+                // IP address or localhost fallback
+                socketUrl = `${protocol}//${hostname}:5004`;
+            }
         }
         
         socket = socketIO(socketUrl, {
             path: '/api/socket.io',
-            transports: ['polling', 'websocket'],
-            upgrade: false,
+            transports: ['websocket', 'polling'],
+            upgrade: true,
             reconnection: true,
             reconnectionAttempts: 5
         });

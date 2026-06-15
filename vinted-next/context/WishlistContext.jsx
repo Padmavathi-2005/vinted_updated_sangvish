@@ -62,6 +62,9 @@ export const WishlistProvider = ({ children }) => {
             setWishlist((prev) => (Array.isArray(prev) ? [...prev, stringId] : [stringId]));
         } catch (error) {
             console.error('Error adding to wishlist:', error);
+            if (error.response && error.response.data && error.response.data.message) {
+                alert(error.response.data.message);
+            }
         }
     };
 
