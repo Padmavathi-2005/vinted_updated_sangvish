@@ -341,13 +341,15 @@
     "start_chat": "Start New Chat",
     "search_placeholder": "Search conversation...",
     "select_conversation": "Select a Conversation",
-    "select_prompt": "Choose a user from the list on the left to start a real-time conversation.",
+    "select_prompt": "Choose a conversation from the list on the left to view the chat history.",
     "type_message": "Type a message...",
     "send_prompt": "Send a message to start this conversation",
     "new_message": "New Message",
     "search_users": "Search users by name or email...",
     "message_btn": "Message",
-    "no_users": "No users found matching your search."
+    "no_users": "No users found matching your search.",
+    "user_1": "User 1",
+    "user_2": "User 2"
   },
   "notifications_page": {
     "title": "Notifications",

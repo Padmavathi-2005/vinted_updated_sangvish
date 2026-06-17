@@ -245,6 +245,11 @@ const getItems = asyncHandler(async (req, res) => {
             }
         }
 
+        if (sort === 'discounted') {
+            queryObj.original_price = { $gt: 0 };
+            queryObj.$expr = { $lt: ['$price', '$original_price'] };
+        }
+
         // --- Aggregation Pipeline ---
         let pipeline = [{ $match: queryObj }];
 
@@ -713,7 +718,19 @@ const deleteItem = asyncHandler(async (req, res) => {
         throw new Error('User not authorized');
     }
 
+    const itemId = item._id;
     await item.deleteOne();
+
+    // Clean up associated records so they don't break counts
+    try {
+        const Favorite = (await import('../models/Favorite.js')).default;
+        await Favorite.deleteMany({ item_id: itemId });
+        
+        const ItemView = (await import('../models/ItemView.js')).default;
+        await ItemView.deleteMany({ item_id: itemId });
+    } catch (e) {
+        console.error('Error cleaning up associated item records:', e);
+    }
 
     res.status(200).json({ id: req.params.id });
 });

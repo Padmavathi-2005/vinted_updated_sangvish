@@ -1,4 +1,5 @@
 import asyncHandler from 'express-async-handler';
+import mongoose from 'mongoose';
 import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
 import Notification from '../models/Notification.js';
@@ -14,8 +15,10 @@ const getConversations = asyncHandler(async (req, res) => {
     const identifier = req.user._id;
     console.log(`[Admin getConversations] identifier: ${identifier}`);
 
-    // Fetch all conversations for the admin view
-    const query = {}; 
+    // Fetch all conversations for the admin view (only user-to-user)
+    const query = {
+        'participants.on_model': { $ne: 'Admin' }
+    }; 
 
     const conversations = await Conversation.find(query)
         .populate(participantsPopulate)
@@ -28,6 +31,11 @@ const getConversations = asyncHandler(async (req, res) => {
 });
 
 const getMessages = asyncHandler(async (req, res) => {
+    if (!req.params.id || !mongoose.Types.ObjectId.isValid(req.params.id)) {
+        res.status(400);
+        throw new Error('Invalid conversation ID');
+    }
+
     const conversation = await Conversation.findById(req.params.id)
         .populate(participantsPopulate);
 

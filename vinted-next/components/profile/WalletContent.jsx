@@ -200,8 +200,18 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                 <div className="wc-hero-text">
                     <div className="wc-hero-label">{t('wallet.total_balance', 'Total Balance')}</div>
                     <div className="wc-hero-amount">
-                        {formatPrice((walletData?.wallet?.balance || 0) + (walletData?.wallet?.pending_balance || 0), walletData?.wallet?.currency, currentCurrency)}
+                        {formatPrice(walletData?.wallet?.balance || 0, null, defaultCurrency)}
                     </div>
+                    {currentCurrency?.code !== defaultCurrency?.code && (
+                        <div className="wc-hero-converted" style={{ fontSize: '0.8rem', opacity: 0.7, fontWeight: '500' }}>
+                            ≈ {formatPrice(walletData?.wallet?.balance || 0, walletData?.wallet?.currency, currentCurrency)} <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.8 }}>({t('common.in', 'in')} {currentCurrency?.code})</span>
+                        </div>
+                    )}
+                    {(walletData?.wallet?.pending_balance > 0 || walletData?.wallet?.pending_balance < 0) && (
+                        <div className="mt-2" style={{ fontSize: '0.9rem', color: '#ffc107', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <FaClock size={12} /> {t('wallet.pending_earnings', 'Pending Earnings')}: {formatPrice(walletData?.wallet?.pending_balance || 0, null, defaultCurrency)}
+                        </div>
+                    )}
                 </div>
                 <div className="wc-hero-actions" style={{ display: 'flex', gap: '10px' }}>
                     <button 
@@ -221,7 +231,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                     <button 
                         className="wc-withdraw-btn" 
                         onClick={() => {
-                            const effectiveBalance = (walletData?.wallet?.balance || 0) + (walletData?.wallet?.pending_balance < 0 ? walletData?.wallet?.pending_balance : 0);
+                            const effectiveBalance = walletData?.wallet?.balance || 0;
                             if (effectiveBalance <= 0) {
                                 alert(t('wallet.insufficient_balance', 'You cannot withdraw funds because your available balance is zero or negative.'));
                             } else {
@@ -287,8 +297,13 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                             </div>
                             <div className="wc-tx-right">
                                 <span className={`wc-tx-amount ${tx.type === 'credit' ? 'credit' : 'debit'}`}>
-                                    {tx.type === 'credit' ? '+' : '−'}{formatPrice(tx.amount, walletData?.wallet?.currency, currentCurrency)}
+                                    {tx.type === 'credit' ? '+' : '−'}{formatPrice(tx.amount, null, defaultCurrency)}
                                 </span>
+                                {currentCurrency?.code !== defaultCurrency?.code && (
+                                    <span className="wc-tx-converted" style={{ fontSize: '0.72rem', opacity: 0.6, marginTop: '-2px', display: 'block' }}>
+                                        {tx.type === 'credit' ? '+' : '−'}{formatPrice(tx.amount, walletData?.wallet?.currency, currentCurrency)} <span style={{ fontSize: '0.65rem' }}>({currentCurrency?.code})</span>
+                                    </span>
+                                )}
                                 <span className={`wc-tx-status ${tx.status}`}>
                                     {tx.status === 'completed' ? <><FaCheckCircle size={9} /> {t('wallet.completed', 'Completed')}</> :
                                         tx.status === 'failed' ? <><FaExclamationCircle size={9} /> {t('wallet.failed', 'Failed')}</> :
@@ -363,7 +378,12 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                     <div>
                         <h3 className="wc-modal-title">{t('wallet.request_withdrawal', 'Request Withdrawal')}</h3>
                         <p className="wc-modal-sub">
-                            {t('wallet.available', 'Available')}: <strong>{formatPrice(walletData?.wallet?.balance || 0, walletData?.wallet?.currency, currentCurrency)}</strong>
+                            {t('wallet.available', 'Available')}: <strong>{formatPrice(walletData?.wallet?.balance || 0, null, defaultCurrency)}</strong>
+                            {currentCurrency?.code !== defaultCurrency?.code && (
+                                <span className="ms-2 opacity-75" style={{ fontSize: '0.85em' }}>
+                                    (≈ {formatPrice(walletData?.wallet?.balance || 0, walletData?.wallet?.currency, currentCurrency)} {t('common.in', 'in')} {currentCurrency?.code})
+                                </span>
+                            )}
                         </p>
                     </div>
                     <button className="btn-close" onClick={() => setShowWithdrawModal(false)} />
@@ -393,7 +413,7 @@ const WalletContent = ({ activeSubTab: propSubTab = 'wallet' }) => {
                                     onChange={e => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
                                     placeholder="0.00"
                                     min="1"
-                                    max={convertPrice(walletData?.wallet?.balance || 0, walletData?.wallet?.currency, currentCurrency)}
+                                    max={convertPrice(walletData?.wallet?.balance || 0, walletData?.wallet?.currency, defaultCurrency)}
                                     required
                                 />
                             </div>

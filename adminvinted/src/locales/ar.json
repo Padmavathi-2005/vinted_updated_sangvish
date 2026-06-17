@@ -329,13 +329,15 @@
     "start_chat": "بدء محادثة جديدة",
     "search_placeholder": "البحث في المحادثات...",
     "select_conversation": "اختر محادثة",
-    "select_prompt": "اختر مستخدمًا من القائمة على اليسار لبدء محادثة في الوقت الفعلي.",
+    "select_prompt": "Choose a conversation from the list on the left to view the chat history.",
     "type_message": "اكتب رسالة...",
     "send_prompt": "أرسل رسالة لبدء هذه المحادثة",
     "new_message": "رسالة جديدة",
     "search_users": "ابحث عن المستخدمين بالاسم أو البريد الإلكتروني...",
     "message_btn": "رسالة",
-    "no_users": "لم يتم العثور على مستخدمين يطابقون بحثك."
+    "no_users": "لم يتم العثور على مستخدمين يطابقون بحثك.",
+    "user_1": "User 1",
+    "user_2": "User 2"
   },
   "header": {
     "select_language": "Select Language",

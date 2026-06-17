@@ -23,7 +23,8 @@ const Messages = () => {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [msgLoading, setMsgLoading] = useState(false);
-    const [search, setSearch] = useState('');
+    const [search1, setSearch1] = useState('');
+    const [search2, setSearch2] = useState('');
     const [messageInput, setMessageInput] = useState('');
     const messagesEndRef = useRef(null);
 
@@ -104,7 +105,7 @@ const Messages = () => {
         // Polling every 10 seconds for new messages
         const interval = setInterval(() => {
             fetchConversations(true);
-            if (activeConvIdRef.current) {
+            if (activeConvIdRef.current && activeConvIdRef.current !== 'new') {
                 fetchMessages(activeConvIdRef.current, true);
             }
         }, 10000);
@@ -117,9 +118,7 @@ const Messages = () => {
         activeConvIdRef.current = selectedConv?._id;
     }, [selectedConv]);
 
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
+    // Removed useEffect that auto-scrolls on every messages update to allow manual scrolling.
 
     const handleSendMessage = async (e) => {
         if (e) e.preventDefault();
@@ -260,9 +259,32 @@ const Messages = () => {
     };
 
     const filteredConversations = conversations.filter(c => {
-        const other = getOtherParticipant(c);
-        const name = safeString(other?.user?.username || other?.user?.name) || 'User';
-        return name?.toLowerCase().includes(search?.toLowerCase());
+        if (!c.participants || c.participants.length < 2) return true;
+        const p1 = c.participants[0]?.user;
+        const p2 = c.participants[1]?.user;
+        const name1 = safeString(p1?.username || p1?.name)?.toLowerCase() || '';
+        const name2 = safeString(p2?.username || p2?.name)?.toLowerCase() || '';
+
+        const s1 = (search1 || '').toLowerCase().trim();
+        const s2 = (search2 || '').toLowerCase().trim();
+
+        if (!s1 && !s2) return true;
+
+        if (s1 && s2) {
+            const matchA = name1.includes(s1) && name2.includes(s2);
+            const matchB = name1.includes(s2) && name2.includes(s1);
+            return matchA || matchB;
+        }
+
+        if (s1) {
+            return name1.includes(s1) || name2.includes(s1);
+        }
+
+        if (s2) {
+            return name1.includes(s2) || name2.includes(s2);
+        }
+
+        return true;
     });
 
     const filteredUsers = allUsers.filter(u =>
@@ -309,25 +331,27 @@ const Messages = () => {
                 <div className="messages-sidebar-header">
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h2>{t('messages.title', 'Messages')}</h2>
-                        <button className="input-action-btn" onClick={() => setShowUserPicker(true)}>
-                            <FaPlus />
-                        </button>
                     </div>
 
-                    <div className="compose-btn-wrapper">
-                        <button className="sidebar-compose-btn" onClick={() => setShowUserPicker(true)}>
-                            <FaPlus /> {t('messages.start_chat', 'Start New Chat')}
-                        </button>
-                    </div>
-
-                    <div className="search-wrapper">
-                        <FaSearch className="search-icon-inside" />
-                        <input
-                            placeholder={t('messages.search_placeholder', 'Search conversation...')}
-                            className="sidebar-search-input"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+                    <div className="search-wrapper" style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ position: 'relative', flex: 1 }}>
+                            <FaSearch style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '10px', color: '#94a3b8', fontSize: '12px' }} />
+                            <input
+                                placeholder={t('messages.user_1', 'User 1')}
+                                value={search1}
+                                onChange={(e) => setSearch1(e.target.value)}
+                                style={{ paddingLeft: '30px', width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' }}
+                            />
+                        </div>
+                        <div style={{ position: 'relative', flex: 1 }}>
+                            <FaSearch style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '10px', color: '#94a3b8', fontSize: '12px' }} />
+                            <input
+                                placeholder={t('messages.user_2', 'User 2')}
+                                value={search2}
+                                onChange={(e) => setSearch2(e.target.value)}
+                                style={{ paddingLeft: '30px', width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' }}
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -365,10 +389,11 @@ const Messages = () => {
                                         </div>
                                         {other?.profile_image && (
                                             <img 
+                                                key={other._id + other.profile_image}
                                                 src={getImageUrl(other.profile_image)} 
                                                 className="conv-avatar" 
                                                 alt={other.name} 
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0, zIndex: 10 }}
                                                 onError={handleImageError} 
                                             />
                                         )}
@@ -418,6 +443,52 @@ const Messages = () => {
                                 <FaArrowLeft />
                             </button>
                             {(() => {
+                                const isUserToUser = selectedConv?.participants && !selectedConv.participants.some(p => p.on_model === 'Admin');
+                                
+                                if (isUserToUser && selectedConv.participants.length >= 2) {
+                                    const p1 = selectedConv.participants[0]?.user || {};
+                                    const p2 = selectedConv.participants[1]?.user || {};
+                                    const p1Online = p1?.last_login && (new Date() - new Date(p1.last_login)) < 5 * 60000;
+                                    const p2Online = p2?.last_login && (new Date() - new Date(p2.last_login)) < 5 * 60000;
+
+                                    const renderUserHeader = (user, isOnline, alignRight) => (
+                                        <div className={`chat-header-info ${alignRight ? 'flex-row-reverse text-end' : ''}`} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '15px', margin: 0 }}>
+                                            <div className="conv-avatar-wrapper" style={{ position: 'relative', width: '44px', height: '44px', flexShrink: 0 }}>
+                                                <div className="conv-avatar-circle" style={{ position: 'relative', width: '100%', height: '100%', background: '#f1f5f9', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <div className="conv-avatar-placeholder" style={{ width: '44px', height: '44px', fontSize: '1rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                                                        {(user?.username || user?.name || 'U').charAt(0).toUpperCase()}
+                                                    </div>
+                                                    {user?.profile_image && (
+                                                        <img 
+                                                            key={user._id + user.profile_image}
+                                                            src={getImageUrl(user.profile_image)} 
+                                                            className="conv-avatar" 
+                                                            style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0, zIndex: 10 }} 
+                                                            alt="" 
+                                                            onError={handleImageError} 
+                                                        />
+                                                    )}
+                                                </div>
+                                                {isOnline && <div className="online-status-dot" style={{ position: 'absolute', bottom: '1px', right: '1px', width: '12px', height: '12px', background: '#10b981', border: '2px solid white', borderRadius: '50%', zIndex: 2 }}></div>}
+                                            </div>
+                                            <div>
+                                                <h4 className="chat-header-name mb-0">{safeString(user?.username || user?.name) || 'User'}</h4>
+                                                <span className="chat-header-status" style={{ color: isOnline ? '#10b981' : '#94a3b8', fontSize: '12px' }}>
+                                                    {isOnline ? 'Active Now' : 'Offline'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+
+                                    return (
+                                        <div style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'space-between', paddingRight: '20px' }}>
+                                            {renderUserHeader(p1, p1Online, false)}
+                                            <div style={{ color: '#cbd5e1', fontWeight: 'bold', fontSize: '12px', padding: '0 20px' }}>•</div>
+                                            {renderUserHeader(p2, p2Online, true)}
+                                        </div>
+                                    );
+                                }
+
                                 const otherData = getOtherParticipant(selectedConv);
                                 const other = otherData?.user || {};
                                 const isOnline = other?.last_login && (new Date() - new Date(other.last_login)) < 5 * 60000;
@@ -490,15 +561,24 @@ const Messages = () => {
                                 <div className="d-flex justify-content-center p-5"><Spinner animation="border" size="sm" /></div>
                             ) : (
                                 <>
-                                    {messages.length === 0 && selectedConv._id === 'new' && (
+                                    {messages.length === 0 && (
                                         <div className="text-center py-5 opacity-50">
                                             <FaEnvelope size={40} className="mb-3" />
-                                            <p>{t('messages.send_prompt', 'Send a message to start this conversation')}</p>
+                                            <p>
+                                                {selectedConv?.participants?.some(p => p.on_model === 'Admin' || (p.user?._id || p.user)?.toString() === (adminId || '').toString()) 
+                                                    ? t('messages.send_prompt', 'Send a message to start this conversation') 
+                                                    : t('messages.no_messages', 'No messages in this conversation yet')}
+                                            </p>
                                         </div>
                                     )}
                                     {messages.map((m, index) => {
                                         const senderId = m.sender_id?._id || m.sender_id;
-                                        const isMe = m.sender_model === 'Admin' && senderId?.toString() === (adminId || '').toString();
+                                        const isUserToUser = selectedConv?.participants && !selectedConv.participants.some(p => p.on_model === 'Admin');
+                                        const p1Id = selectedConv?.participants?.[0]?.user?._id || selectedConv?.participants?.[0]?.user;
+                                        
+                                        const isMe = isUserToUser 
+                                            ? (senderId?.toString() !== p1Id?.toString()) 
+                                            : (m.sender_model === 'Admin' && senderId?.toString() === (adminId || '').toString());
                                         const isConsecutive = index > 0 && 
                                             (messages[index - 1].sender_id?._id || messages[index - 1].sender_id)?.toString() === 
                                             (m.sender_id?._id || m.sender_id)?.toString();
@@ -520,23 +600,25 @@ const Messages = () => {
                             )}
                         </div>
 
-                        <div className="chat-input-wrapper">
-                            <form className="chat-input-form" onSubmit={handleSendMessage}>
-                                <input
-                                    placeholder={t('messages.type_message', 'Type a message...')}
-                                    className="chat-input-field"
-                                    value={messageInput}
-                                    onChange={(e) => setMessageInput(e.target.value)}
-                                />
-                                <button
-                                    type="submit"
-                                    className="send-btn-primary"
-                                    disabled={!messageInput.trim()}
-                                >
-                                    <FaPaperPlane />
-                                </button>
-                            </form>
-                        </div>
+                        {selectedConv?.participants?.some(p => p.on_model === 'Admin' || (p.user?._id || p.user)?.toString() === (adminId || '').toString()) && (
+                            <div className="chat-input-wrapper">
+                                <form className="chat-input-form" onSubmit={handleSendMessage}>
+                                    <input
+                                        placeholder={t('messages.type_message', 'Type a message...')}
+                                        className="chat-input-field"
+                                        value={messageInput}
+                                        onChange={(e) => setMessageInput(e.target.value)}
+                                    />
+                                    <button
+                                        type="submit"
+                                        className="send-btn-primary"
+                                        disabled={!messageInput.trim()}
+                                    >
+                                        <FaPaperPlane />
+                                    </button>
+                                </form>
+                            </div>
+                        )}
                     </>
                 ) : (
                     <div className="messages-empty-state">
@@ -544,71 +626,11 @@ const Messages = () => {
                             <FaEnvelope />
                         </div>
                         <h3>{t('messages.select_conversation', 'Select a Conversation')}</h3>
-                        <p>{t('messages.select_prompt', 'Choose a user from the list on the left to start a real-time conversation.')}</p>
-                        <Button variant="primary" className="mt-4 rounded-pill px-4" onClick={() => setShowUserPicker(true)}>
-                            {t('messages.start_chat', 'Start New Chat')}
-                        </Button>
+                        <p>{t('messages.select_prompt', 'Choose a conversation from the list on the left to view the chat history.')}</p>
                     </div>
                 )}
             </main>
 
-            {/* User Picker Modal */}
-            <Modal
-                show={showUserPicker}
-                onHide={() => setShowUserPicker(false)}
-                centered
-                size="md"
-                className="user-picker-modal"
-            >
-                <Modal.Header closeButton>
-                    <Modal.Title>{t('messages.new_message', 'New Message')}</Modal.Title>
-                </Modal.Header>
-                <div className="user-picker-search-container">
-                    <div className="user-picker-search-wrapper">
-                        <FaSearch className="text-muted" />
-                        <input
-                            className="user-picker-search-input"
-                            placeholder={t('messages.search_users', 'Search users by name or email...')}
-                            value={userSearch}
-                            onChange={(e) => setUserSearch(e.target.value)}
-                        />
-                    </div>
-                </div>
-                <div className="user-picker-list scroll-premium">
-                    {usersLoading ? (
-                        <div className="text-center p-4"><Spinner animation="border" size="sm" /></div>
-                    ) : (
-                        filteredUsers.map(u => (
-                            <div key={u._id} className="user-picker-item" onClick={() => startNewChat(u)}>
-                                <div className="conv-avatar-wrapper" style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0 }}>
-                                    <div className="conv-avatar-circle" style={{ position: 'relative', width: '100%', height: '100%', background: '#f1f5f9', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <div className="conv-avatar-placeholder" style={{ fontSize: '0.85rem', fontWeight: '800', color: '#94a3b8' }}>
-                                            {(u.username || u.name || 'U').charAt(0).toUpperCase()}
-                                        </div>
-                                        {u.profile_image && (
-                                            <img 
-                                                src={getImageUrl(u.profile_image)} 
-                                                className="conv-avatar" 
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }} 
-                                                alt="" 
-                                                onError={handleImageError} 
-                                            />
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="user-picker-info">
-                                    <h6 className="user-picker-name">{safeString(u.username || u.name)}</h6>
-                                    <p className="user-picker-email">{u.email}</p>
-                                </div>
-                                <div className="user-picker-action">{t('messages.message_btn', 'Message')}</div>
-                            </div>
-                        ))
-                    )}
-                    {!usersLoading && filteredUsers.length === 0 && (
-                        <div className="text-center text-muted p-5">{t('messages.no_users', 'No users found matching your search.')}</div>
-                    )}
-                </div>
-            </Modal>
         </div>
     );
 };

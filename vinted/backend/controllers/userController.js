@@ -196,53 +196,8 @@ const registerUser = asyncHandler(async (req, res) => {
             });
         }
 
-        // 3. Send Welcome Message from Admin (System)
-        try {
-            const settings = await Setting.findOne({ type: 'general_settings' });
-            const siteName = settings?.site_name || 'Vinted';
-            // Get the plain string if it's a map/object
-            const displaySiteName = typeof siteName === 'object' ? (Object.values(siteName)[0] || 'Vinted') : siteName;
-
-            const welcomeAdmin = await Admin.findOne({ is_active: { $ne: false } });
-            if (welcomeAdmin) {
-                const welcomeText = `Hello ${userName}, welcome to ${displaySiteName}! 🌟 We're thrilled to have you join our community. Feel free to explore, buy, or start selling your items. If you need any help, we're here for you!`;
-                
-                const conversation = await Conversation.create({
-                    participants: [
-                        { user: welcomeAdmin._id, on_model: 'Admin' },
-                        { user: user._id, on_model: 'User' }
-                    ],
-                    status: 'accepted',
-                    initiator_id: welcomeAdmin._id,
-                    initiator_model: 'Admin',
-                    last_message: welcomeText,
-                    last_message_at: Date.now(),
-                });
-
-                await Message.create({
-                    conversation_id: conversation._id,
-                    sender_id: welcomeAdmin._id,
-                    sender_model: 'Admin',
-                    receiver_id: user._id,
-                    receiver_model: 'User',
-                    message: welcomeText,
-                    message_type: 'text'
-                });
-
-                // 3b. Send Notification to User for the Welcome Message
-                await Notification.create({
-                    user_id: user._id,
-                    on_model: 'User',
-                    title: `Welcome to ${displaySiteName}!`,
-                    message: `You have a new message from our support team.`,
-                    type: 'message',
-                    link: '/profile?tab=messages'
-                });
-            }
-        } catch (err) {
-            console.error('Welcome message error:', err);
-            // Don't fail the whole registration if welcome message fails
-        }
+        // Note: Admin-to-User chat welcome messages have been disabled.
+        // Users will still receive the Welcome Notification created above.
 
         const userJSON = user.toJSON();
         userJSON.token = generateToken(user._id);

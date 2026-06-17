@@ -115,6 +115,9 @@ const createCategory = async (req, res) => {
         const category = await Category.create({ name, slug });
         res.status(201).json(category);
     } catch (error) {
+        if (error.code === 11000) {
+            return res.status(400).json({ message: 'This category already exists' });
+        }
         res.status(500).json({ message: error.message });
     }
 };
@@ -130,6 +133,9 @@ const createSubcategory = async (req, res) => {
         const subcategory = await Subcategory.create({ name, slug, category_id });
         res.status(201).json(subcategory);
     } catch (error) {
+        if (error.code === 11000) {
+            return res.status(400).json({ message: 'This subcategory already exists in this category' });
+        }
         res.status(500).json({ message: error.message });
     }
 };
@@ -145,6 +151,9 @@ const createItemType = async (req, res) => {
         const itemType = await ItemType.create({ name, slug, category_id, subcategory_id });
         res.status(201).json(itemType);
     } catch (error) {
+        if (error.code === 11000) {
+            return res.status(400).json({ message: 'This item type already exists in this subcategory' });
+        }
         res.status(500).json({ message: error.message });
     }
 };

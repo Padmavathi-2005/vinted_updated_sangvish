@@ -186,5 +186,10 @@
       "social_settings": "ソーシャル設定",
       "notification_settings": "通知設定"
     }
+  },
+  "messages": {
+    "select_prompt": "Choose a conversation from the list on the left to view the chat history.",
+    "user_1": "User 1",
+    "user_2": "User 2"
   }
 }

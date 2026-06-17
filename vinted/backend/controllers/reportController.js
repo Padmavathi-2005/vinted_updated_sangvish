@@ -193,50 +193,11 @@ const handleReportAction = asyncHandler(async (req, res) => {
             title: `Report Action Taken`,
             message: `An admin has taken action on your report regarding "${item.title}". The item was ${action === 'deactivate' ? 'deactivated' : 'deleted'}.`,
             type: 'system',
-            link: `/profile?tab=messages`
+            link: ''
         });
 
-        // Send a Message from Admin to Reporter
-        const reporterObjectId = mongoose.Types.ObjectId.isValid(report.reporter_id)
-            ? new mongoose.Types.ObjectId(report.reporter_id)
-            : report.reporter_id;
-
-        let conversation = await Conversation.findOne({
-            participants: {
-                $all: [
-                    { $elemMatch: { user: reporterObjectId, on_model: 'User' } },
-                    { $elemMatch: { on_model: 'Admin' } }
-                ]
-            }
-        });
-
-        if (!conversation) {
-            conversation = await Conversation.create({
-                participants: [
-                    { user: reporterObjectId, on_model: 'User' },
-                    { user: req.user._id, on_model: 'Admin' }
-                ],
-                initiator_id: req.user._id,
-                initiator_model: 'Admin',
-                last_message: `Update on your report: ${item.title}`,
-                last_message_at: new Date()
-            });
-        }
-
-        await Message.create({
-            conversation_id: conversation._id,
-            sender_id: req.user._id,
-            sender_model: 'Admin',
-            receiver_id: reporterObjectId,
-            receiver_model: 'User',
-            message: `Hello,\n\nWe have reviewed your report regarding the item "${item.title}". Following our review, we have decided to ${action === 'deactivate' ? 'deactivate' : 'delete'} the item from the platform.\n\nThank you for helping keep our community safe!`,
-            message_type: 'system'
-        });
-
-        await Conversation.findByIdAndUpdate(conversation._id, {
-            last_message: `Update on your report: ${item.title}`,
-            last_message_at: new Date()
-        });
+        // Note: Admin-to-User chat messages have been disabled as per requirements.
+        // Users will still receive the Notification created above.
     } catch (err) {
         console.error("Failed to notify reporter", err);
     }

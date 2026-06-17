@@ -37,6 +37,7 @@ import {
     deleteLanguage,
     getLanguageTranslations,
     updateLanguageTranslations,
+    autoTranslateTranslations,
     getOrders,
     updateOrderAdmin,
     deleteOrder,
@@ -117,6 +118,7 @@ router.put('/languages/:id', updateLanguage);
 router.delete('/languages/:id', deleteLanguage);
 router.get('/languages/:id/translations', getLanguageTranslations);
 router.put('/languages/:id/translations', updateLanguageTranslations);
+router.post('/languages/:id/auto-translate', autoTranslateTranslations);
 
 router.get('/currencies', getCurrencies);
 router.post('/currencies', createCurrency);

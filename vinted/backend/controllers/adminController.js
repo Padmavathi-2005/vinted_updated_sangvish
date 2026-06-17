@@ -4,7 +4,9 @@ import asyncHandler from 'express-async-handler';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import Admin from '../models/Admin.js';
+import Setting from '../models/Setting.js';
 import User from '../models/User.js';
 import Item from '../models/Item.js';
 import Category from '../models/Category.js';
@@ -374,6 +376,74 @@ const updateLanguageTranslations = asyncHandler(async (req, res) => {
     await language.save();
 
     res.json({ message: 'Translations updated successfully' });
+});
+
+// Helper to get Gemini API Key
+const getGeminiApiKey = async () => {
+    try {
+        const settings = await Setting.findOne({ type: 'api_settings' }) || await Setting.findOne({ gemini_api_key: { $exists: true } });
+        return settings?.gemini_api_key || process.env.GEMINI_API_KEY;
+    } catch (error) {
+        return process.env.GEMINI_API_KEY;
+    }
+};
+
+// @desc    Auto translate language missing translations
+// @route   POST /api/admin/languages/:id/auto-translate
+// @access  Private (Admin)
+const autoTranslateTranslations = asyncHandler(async (req, res) => {
+    const language = await Language.findById(req.params.id);
+    if (!language) {
+        res.status(404);
+        throw new Error('Language not found');
+    }
+
+    const { textsToTranslate } = req.body;
+    if (!textsToTranslate || textsToTranslate.length === 0) {
+        return res.json({ translated: {} });
+    }
+
+    const apiKey = await getGeminiApiKey();
+    if (!apiKey) {
+        res.status(503);
+        throw new Error('AI service is not configured (Missing Gemini API Key)');
+    }
+
+    const genAIInstance = new GoogleGenerativeAI(apiKey);
+    const model = genAIInstance.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // Prepare text for translation
+    // We send a JSON map of key -> text to translate to save tokens
+    const mapToTranslate = {};
+    textsToTranslate.forEach(item => {
+        mapToTranslate[item.key] = item.text;
+    });
+
+    const prompt = `Translate the following JSON string values from English to ${language.name} (${language.code}). 
+Return strictly ONLY a valid JSON object with the exact same keys and translated values. Do not wrap it in markdown code blocks.
+Data:
+${JSON.stringify(mapToTranslate, null, 2)}`;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const responseText = await result.response.text();
+        let translated = {};
+        
+        try {
+            // Remove markdown formatting if the model still includes it
+            const cleanJsonStr = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
+            translated = JSON.parse(cleanJsonStr);
+        } catch (e) {
+            console.error('Failed to parse AI translation JSON:', e);
+            throw new Error('AI returned malformed JSON');
+        }
+
+        res.json({ translated });
+    } catch (error) {
+        console.error('Auto-translate error:', error);
+        res.status(500);
+        throw new Error('Failed to auto-translate: ' + error.message);
+    }
 });
 
 // @desc    Get all currencies
@@ -1375,6 +1445,7 @@ const updateWithdrawalRequest = asyncHandler(async (req, res) => {
         if (wallet) {
             wallet.balance += request.amount;
             await wallet.save();
+            await User.findByIdAndUpdate(request.user_id, { $inc: { balance: request.amount } });
 
             // Create a refund transaction
             await Transaction.create({
@@ -1557,6 +1628,7 @@ export {
     deleteLanguage,
     getLanguageTranslations,
     updateLanguageTranslations,
+    autoTranslateTranslations,
     getCurrencies,
     createCurrency,
     updateCurrency,

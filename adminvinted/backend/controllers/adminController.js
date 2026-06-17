@@ -374,7 +374,14 @@ const updateLanguageTranslations = asyncHandler(async (req, res) => {
     }
 
     language.translations = req.body;
+    language.markModified('translations'); // Required for Mongoose Mixed/Map types to trigger a save
     await language.save();
+
+    console.log(`[DB CHECK] Translations saved for language ID: ${language._id}. Keys count: ${Object.keys(language.translations || {}).length}`);
+    
+    // Verify it was saved by fetching it again (per user request)
+    const verifyLang = await Language.findById(req.params.id);
+    console.log(`[DB CHECK VERIFICATION] Refetched from DB. Keys count: ${Object.keys(verifyLang.translations || {}).length}`);
 
     res.json({ message: 'Translations updated successfully' });
 });

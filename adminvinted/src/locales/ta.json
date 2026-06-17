@@ -233,5 +233,10 @@
       "social_settings": "சமூக அமைப்புகள்",
       "notification_settings": "அறிவிப்பு அமைப்புகள்"
     }
+  },
+  "messages": {
+    "select_prompt": "Choose a conversation from the list on the left to view the chat history.",
+    "user_1": "User 1",
+    "user_2": "User 2"
   }
 }

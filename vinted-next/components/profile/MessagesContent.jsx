@@ -252,9 +252,10 @@ const MessagesContent = () => {
         const targetItemId = searchParams.get('item');
         if (!targetUserId) return;
 
-        // Check if existing conversation with this user
+        // Check if existing conversation with this user FOR THIS ITEM
         const existingConv = conversations.find(c =>
-            c.participants?.some(p => (p.user?._id || p.user) === targetUserId)
+            c.participants?.some(p => (p.user?._id || p.user) === targetUserId) &&
+            (targetItemId ? (c.item_id?._id || c.item_id) === targetItemId : true)
         );
 
         if (existingConv) {
@@ -395,7 +396,8 @@ const MessagesContent = () => {
 
     const handleStartChat = async (targetUser, targetItemId = null) => {
         const existing = conversations.find(c =>
-            c.participants.some(p => (p.user?._id || p.user) === targetUser._id)
+            c.participants.some(p => (p.user?._id || p.user) === targetUser._id) &&
+            (targetItemId ? (c.item_id?._id || c.item_id) === targetItemId : true)
         );
 
         if (existing) {

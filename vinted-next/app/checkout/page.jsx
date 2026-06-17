@@ -51,6 +51,7 @@ const Checkout = () => {
 
     const [availableMethods, setAvailableMethods] = useState([]);
     const [walletBalance, setWalletBalance] = useState(0);
+    const [walletCurrency, setWalletCurrency] = useState('inr');
     const [paymentMethod, setPaymentMethod] = useState('');
     const [clientSecret, setClientSecret] = useState('');
     const [stripeError, setStripeError] = useState(null);
@@ -178,6 +179,7 @@ const Checkout = () => {
                     const walletRes = await axios.get('/api/wallet/me');
                     currentBalance = walletRes.data?.wallet?.balance || 0;
                     setWalletBalance(currentBalance);
+                    setWalletCurrency(walletRes.data?.wallet?.currency || 'inr');
                 } catch (walletErr) {
                     console.error("Error fetching wallet:", walletErr);
                 }
@@ -788,10 +790,10 @@ const Checkout = () => {
                                 <div className="checkout-stripe-notice" style={{ background: '#ecfdf5', borderColor: '#a7f3d0', color: '#065f46', marginTop: '10px' }}>
                                     <FaShieldAlt style={{ color: '#059669' }} />
                                     <div>
-                                        <strong>{t('profile.wallet_balance') || 'Wallet Balance'}: {formatPrice(walletBalance, 'inr', defaultCurrency)}</strong>
+                                        <strong>{t('profile.wallet_balance') || 'Wallet Balance'}: {formatPrice(walletBalance, walletCurrency, defaultCurrency)}</strong>
                                         {currentCurrency && defaultCurrency && currentCurrency._id !== defaultCurrency._id && (
                                             <p style={{ margin: 0, fontSize: '0.75rem', opacity: 0.8 }}>
-                                                {t('checkout.approx_balance') || 'Estimated Balance'}: {formatPrice(walletBalance, 'inr', currentCurrency)}
+                                                {t('checkout.approx_balance') || 'Estimated Balance'}: {formatPrice(walletBalance, walletCurrency, currentCurrency)}
                                             </p>
                                         )}
                                         <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8, marginTop: '2px' }}>Pay safely using your internal marketplace funds.</p>

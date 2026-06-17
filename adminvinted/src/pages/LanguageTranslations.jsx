@@ -46,6 +46,7 @@ const LanguageTranslations = () => {
         setSaving(true);
         try {
             await axios.put(`/api/admin/languages/${id}/translations`, overrides);
+            console.log("[DB VERIFICATION] Save request completed. The backend has successfully updated the DB with new translations.", overrides);
             showToast('success', 'Translations saved successfully');
             
             // Clean up empty strings before saving (optional, but keeps DB clean)
@@ -68,10 +69,10 @@ const LanguageTranslations = () => {
         try {
             setAutoTranslating(true);
             
-            // Gather keys that don't have an override or a file translation
+            // Gather keys that don't have an override AND (don't have a file translation OR file translation is identical to English)
             const textsToTranslate = [];
             for (const key in masterKeys) {
-                if (!overrides[key] && !fileTranslations[key]) {
+                if (!overrides[key] && (!fileTranslations[key] || fileTranslations[key] === masterKeys[key])) {
                     textsToTranslate.push({ key, text: masterKeys[key] });
                 }
             }
@@ -124,6 +125,15 @@ const LanguageTranslations = () => {
 
     return (
         <div className="admin-dashboard p-0">
+            <style>
+                {`
+                .translation-input::placeholder {
+                    opacity: 0.4 !important;
+                    color: #adb5bd !important;
+                    font-style: italic;
+                }
+                `}
+            </style>
             <Container fluid className="px-0">
                 <Card className="main-content-card border-0 shadow-sm p-4">
                     <div className="d-flex align-items-center mb-4 pb-3 border-bottom">
@@ -238,7 +248,7 @@ const LanguageTranslations = () => {
                                                         value={overrides[key] || ''}
                                                         onChange={(e) => handleOverrideChange(key, e.target.value)}
                                                         placeholder={fileTranslations[key] || masterKeys[key] || 'Translate...'}
-                                                        className={overrides[key] && String(overrides[key]).trim() !== '' ? 'border-primary shadow-sm fw-bold' : ''}
+                                                        className={`translation-input ${overrides[key] && String(overrides[key]).trim() !== '' ? 'border-primary shadow-sm fw-bold' : ''}`}
                                                     />
                                                 </td>
                                                 <td className="px-4 py-3 text-center">

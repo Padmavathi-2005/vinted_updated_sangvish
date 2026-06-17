@@ -162,11 +162,9 @@ const requestWithdrawal = asyncHandler(async (req, res) => {
     // amount is in withdrawalCurrency
     const amountInWalletCurrency = Number(((amount / reqRate) * walletRate).toFixed(2));
 
-    const effectiveAvailableBalance = wallet.balance + (wallet.pending_balance < 0 ? wallet.pending_balance : 0);
-
-    if (effectiveAvailableBalance < amountInWalletCurrency) {
+    if (wallet.balance < amountInWalletCurrency) {
         res.status(400);
-        throw new Error(`Insufficient balance. You only have ${effectiveAvailableBalance.toFixed(2)} ${wallet.currency} available for withdrawal.`);
+        throw new Error(`Insufficient balance. You only have ${wallet.balance.toFixed(2)} ${wallet.currency} available for withdrawal.`);
     }
 
     // Deduct from wallet immediately (mark as pending transaction)

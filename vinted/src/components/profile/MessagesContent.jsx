@@ -170,11 +170,13 @@ const MessagesContent = () => {
         if (loading || !allUsers.length) return;
         const queryParams = new URLSearchParams(location.search);
         const targetUserId = queryParams.get('user');
+        const targetItemId = queryParams.get('item');
         if (!targetUserId) return;
 
-        // Check if existing conversation with this user
+        // Check if existing conversation with this user FOR THIS ITEM
         const existingConv = conversations.find(c =>
-            c.participants?.some(p => (p.user?._id || p.user) === targetUserId)
+            c.participants?.some(p => (p.user?._id || p.user) === targetUserId) &&
+            (targetItemId ? (c.item_id?._id || c.item_id) === targetItemId : true)
         );
 
         if (existingConv) {
@@ -199,6 +201,7 @@ const MessagesContent = () => {
                             { user: user, on_model: 'User' },
                             { user: targetUser, on_model: 'User' }
                         ],
+                        item_id: targetItemId,
                         status: 'pending',
                         initiator_id: user.id || user._id
                     };
@@ -303,9 +306,10 @@ const MessagesContent = () => {
         }
     };
 
-    const handleStartChat = async (targetUser) => {
+    const handleStartChat = async (targetUser, targetItemId = null) => {
         const existing = conversations.find(c =>
-            c.participants.some(p => (p.user?._id || p.user) === targetUser._id)
+            c.participants.some(p => (p.user?._id || p.user) === targetUser._id) &&
+            (targetItemId ? (c.item_id?._id || c.item_id) === targetItemId : true)
         );
 
         if (existing) {
@@ -318,6 +322,7 @@ const MessagesContent = () => {
                     { user: user, on_model: 'User' },
                     { user: targetUser, on_model: 'User' }
                 ],
+                item_id: targetItemId,
                 status: 'pending',
                 initiator_id: user.id
             });
@@ -342,6 +347,7 @@ const MessagesContent = () => {
                 receiver_id: targetReceiverId,
                 receiver_model: targetModel,
                 message: msgText,
+                item_id: activeConv?._id === 'new' ? (activeConv.item_id?._id || activeConv.item_id) : undefined,
                 conversation_id: isCustom ? undefined : (activeConv?._id === 'new' ? undefined : activeConv?._id)
             });
 

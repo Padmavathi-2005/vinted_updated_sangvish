@@ -199,6 +199,12 @@ const sendMessage = asyncHandler(async (req, res) => {
             };
         }
 
+        if (item_id) {
+            query.item_id = item_id;
+        } else {
+            query.item_id = { $exists: false };
+        }
+
         conversation = await Conversation.findOne(query);
     }
 
@@ -229,9 +235,6 @@ const sendMessage = asyncHandler(async (req, res) => {
             throw new Error('This message request was declined.');
         }
 
-        if (item_id) {
-            conversation.item_id = item_id;
-        }
         conversation.last_message = message;
         conversation.last_message_at = Date.now();
         await conversation.save();
@@ -434,6 +437,12 @@ const sendImageMessage = asyncHandler(async (req, res) => {
             };
         }
 
+        if (item_id) {
+            query.item_id = item_id;
+        } else {
+            query.item_id = { $exists: false };
+        }
+
         conversation = await Conversation.findOne(query);
     }
 
@@ -464,9 +473,6 @@ const sendImageMessage = asyncHandler(async (req, res) => {
             throw new Error('This message request was declined.');
         }
 
-        if (item_id) {
-            conversation.item_id = item_id;
-        }
         conversation.last_message = '📷 Image';
         conversation.last_message_at = Date.now();
         await conversation.save();
